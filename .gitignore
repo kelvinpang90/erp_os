@@ -1,0 +1,58 @@
+# ── Secrets & env ────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+.env.claude
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.coveragerc
+
+# ── Node / Frontend ──────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Uploads ──────────────────────────────────────────────────────────────────
+backend/uploads/
+
+# ── Claude Code ──────────────────────────────────────────────────────────────
+.claude/mcp.json
+.claude/settings.local.json
+
+# ── Alembic ──────────────────────────────────────────────────────────────────
+# (versions/ is tracked; only ignore generated env artifacts)
+alembic/versions/*.pyc
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

@@ -1,0 +1,39 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+
+# Database
+sqlalchemy==2.0.36
+aiomysql==0.2.0
+alembic==1.13.3
+
+# Validation & settings
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# Redis
+redis[hiredis]==5.2.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Task queue
+celery==5.4.0
+flower==2.0.1
+
+# Logging
+structlog==24.4.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# HTTP client (for MyInvois integration)
+httpx==0.28.1
+
+# AI
+anthropic==0.40.0
+
+# Utilities
+python-dateutil==2.9.0

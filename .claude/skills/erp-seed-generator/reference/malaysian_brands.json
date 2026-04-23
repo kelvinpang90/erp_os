@@ -1,0 +1,109 @@
+{
+  "_note": "真实马来常见品牌。生成 SKU 时优先从此列表选，不要乱编。定期按市场补充。",
+  "_last_updated": "2026-04-23",
+
+  "beverage_hot": [
+    { "code": "MILO", "name": "Milo", "manufacturer": "Nestlé Malaysia", "country": "MY/CH" },
+    { "code": "NESCAFE", "name": "Nescafé", "manufacturer": "Nestlé Malaysia", "country": "MY/CH" },
+    { "code": "AIK_CHEONG", "name": "Aik Cheong", "manufacturer": "Aik Cheong Coffee", "country": "MY" },
+    { "code": "OLDTOWN", "name": "Old Town White Coffee", "manufacturer": "Old Town Bhd", "country": "MY" },
+    { "code": "BOH", "name": "Boh Tea", "manufacturer": "Boh Plantations", "country": "MY" },
+    { "code": "LIPTON", "name": "Lipton", "manufacturer": "Unilever", "country": "UK" }
+  ],
+
+  "beverage_cold": [
+    { "code": "COCA_COLA", "name": "Coca-Cola", "manufacturer": "Coca-Cola", "country": "US" },
+    { "code": "100PLUS", "name": "100Plus", "manufacturer": "F&N", "country": "MY" },
+    { "code": "YEOS", "name": "Yeo's", "manufacturer": "Yeo Hiap Seng", "country": "SG" },
+    { "code": "SPRITZER", "name": "Spritzer", "manufacturer": "Spritzer Bhd", "country": "MY" },
+    { "code": "ORS", "name": "Orang Kampung", "manufacturer": "Power Root", "country": "MY" },
+    { "code": "VITAGEN", "name": "Vitagen", "manufacturer": "Malaysia Milk", "country": "MY" },
+    { "code": "DUTCH_LADY", "name": "Dutch Lady", "manufacturer": "Dutch Lady Milk", "country": "MY" }
+  ],
+
+  "instant_food": [
+    { "code": "MAGGI", "name": "Maggi", "manufacturer": "Nestlé Malaysia", "country": "MY" },
+    { "code": "MAMEE", "name": "Mamee", "manufacturer": "Mamee-Double Decker", "country": "MY" },
+    { "code": "CINTAN", "name": "Cintan", "manufacturer": "Mamee-Double Decker", "country": "MY" },
+    { "code": "MYKUALI", "name": "MyKuali", "manufacturer": "MyKuali", "country": "MY" },
+    { "code": "INDOMIE", "name": "Indomie", "manufacturer": "Indofood", "country": "ID" }
+  ],
+
+  "snacks": [
+    { "code": "MAMEE_DD", "name": "Mamee Double Decker", "manufacturer": "Mamee-Double Decker", "country": "MY" },
+    { "code": "JACK_N_JILL", "name": "Jack 'n Jill", "manufacturer": "URC", "country": "PH" },
+    { "code": "TWISTIES", "name": "Twisties", "manufacturer": "Mondelez MY", "country": "MY" },
+    { "code": "OREO", "name": "Oreo", "manufacturer": "Mondelez", "country": "US" },
+    { "code": "ROTI_HIGH5", "name": "High 5", "manufacturer": "High 5 Conglomerate", "country": "MY" },
+    { "code": "GARDENIA", "name": "Gardenia", "manufacturer": "Gardenia Bakeries", "country": "MY" },
+    { "code": "JULIES", "name": "Julie's", "manufacturer": "Perfect Food Mfg", "country": "MY" }
+  ],
+
+  "dairy": [
+    { "code": "DUTCH_LADY_MILK", "name": "Dutch Lady", "manufacturer": "Dutch Lady Milk", "country": "MY" },
+    { "code": "FARM_FRESH", "name": "Farm Fresh", "manufacturer": "Farm Fresh Bhd", "country": "MY" },
+    { "code": "F_AND_N", "name": "F&N Magnolia", "manufacturer": "F&N", "country": "MY" },
+    { "code": "MARIGOLD", "name": "Marigold", "manufacturer": "Marigold", "country": "MY" }
+  ],
+
+  "cooking_essentials": [
+    { "code": "KNORR", "name": "Knorr", "manufacturer": "Unilever", "country": "UK" },
+    { "code": "AJINOMOTO", "name": "Ajinomoto", "manufacturer": "Ajinomoto MY", "country": "JP" },
+    { "code": "ALAGAPPAS", "name": "Alagappa's", "manufacturer": "Alagappa's Sdn Bhd", "country": "MY" },
+    { "code": "BABAS", "name": "Baba's", "manufacturer": "Baba Products", "country": "MY" },
+    { "code": "ADABI", "name": "Adabi", "manufacturer": "Adabi Consumer Industries", "country": "MY" },
+    { "code": "KIKKOMAN", "name": "Kikkoman", "manufacturer": "Kikkoman", "country": "JP" }
+  ],
+
+  "rice_oil_flour": [
+    { "code": "JASMINE_RICE", "name": "Jasmine", "manufacturer": "Jasmine Food Corp", "country": "MY" },
+    { "code": "FAIZA", "name": "Faiza", "manufacturer": "Faiza Sdn Bhd", "country": "MY" },
+    { "code": "SARIWANGI", "name": "Sariwangi", "manufacturer": "Bernas", "country": "MY" },
+    { "code": "SEAHORSE", "name": "Sea Horse Oil", "manufacturer": "Yee Lee", "country": "MY" },
+    { "code": "NAYLA", "name": "Nayla", "manufacturer": "Nayla Industries", "country": "MY" },
+    { "code": "BLUE_KEY", "name": "Blue Key Flour", "manufacturer": "Malayan Flour Mills", "country": "MY" }
+  ],
+
+  "personal_care": [
+    { "code": "DARLIE", "name": "Darlie", "manufacturer": "Hawley & Hazel", "country": "HK" },
+    { "code": "COLGATE", "name": "Colgate", "manufacturer": "Colgate-Palmolive", "country": "US" },
+    { "code": "SENSODYNE", "name": "Sensodyne", "manufacturer": "GSK", "country": "UK" },
+    { "code": "DETTOL", "name": "Dettol", "manufacturer": "Reckitt", "country": "UK" },
+    { "code": "LIFEBUOY", "name": "Lifebuoy", "manufacturer": "Unilever", "country": "UK" },
+    { "code": "JOHNSON", "name": "Johnson's Baby", "manufacturer": "Johnson & Johnson", "country": "US" },
+    { "code": "PANTENE", "name": "Pantene", "manufacturer": "P&G", "country": "US" },
+    { "code": "HEAD_SHOULDERS", "name": "Head & Shoulders", "manufacturer": "P&G", "country": "US" }
+  ],
+
+  "cleaning": [
+    { "code": "DYNAMO", "name": "Dynamo", "manufacturer": "Unilever", "country": "UK" },
+    { "code": "BREEZE", "name": "Breeze", "manufacturer": "Unilever", "country": "UK" },
+    { "code": "TOP", "name": "Top", "manufacturer": "Lion Corp", "country": "JP" },
+    { "code": "GLADE", "name": "Glade", "manufacturer": "SC Johnson", "country": "US" },
+    { "code": "HARPIC", "name": "Harpic", "manufacturer": "Reckitt", "country": "UK" }
+  ],
+
+  "pharmacy_otc": [
+    { "code": "PANADOL", "name": "Panadol", "manufacturer": "GSK Consumer Healthcare", "country": "UK", "sst_exempt": true },
+    { "code": "STREPSILS", "name": "Strepsils", "manufacturer": "Reckitt", "country": "UK", "sst_exempt": true },
+    { "code": "VICKS", "name": "Vicks", "manufacturer": "P&G", "country": "US", "sst_exempt": true },
+    { "code": "TIGER_BALM", "name": "Tiger Balm", "manufacturer": "Haw Par Corp", "country": "SG" },
+    { "code": "COUNTERPAIN", "name": "Counterpain", "manufacturer": "Taisho", "country": "JP" },
+    { "code": "EAGLE_BRAND", "name": "Eagle Brand Medicated Oil", "manufacturer": "Haw Par Corp", "country": "SG" }
+  ],
+
+  "electronics_small": [
+    { "code": "SHARP", "name": "Sharp", "manufacturer": "Sharp Malaysia", "country": "JP" },
+    { "code": "PANASONIC", "name": "Panasonic", "manufacturer": "Panasonic Malaysia", "country": "JP" },
+    { "code": "PENSONIC", "name": "Pensonic", "manufacturer": "Pensonic Holdings", "country": "MY" },
+    { "code": "KHIND", "name": "Khind", "manufacturer": "Khind Holdings", "country": "MY" },
+    { "code": "MILUX", "name": "Milux", "manufacturer": "Milux Corp", "country": "MY" }
+  ],
+
+  "stationery": [
+    { "code": "CAMPAP", "name": "Campap", "manufacturer": "Campap Trading", "country": "MY" },
+    { "code": "FABER_CASTELL", "name": "Faber-Castell", "manufacturer": "Faber-Castell", "country": "DE" },
+    { "code": "STABILO", "name": "Stabilo", "manufacturer": "Stabilo", "country": "DE" },
+    { "code": "UHU", "name": "UHU", "manufacturer": "UHU", "country": "DE" }
+  ]
+}
