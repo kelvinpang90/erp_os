@@ -766,9 +766,9 @@ docker compose exec backend python scripts/seed_all_master.py
 
 | Window | 状态 | 开始时间 | 完成时间 | 消息数 | 备注 |
 |---|---|---|---|---|---|
-| 01 脚手架 | ⏳ 待开始 | | | | |
-| 02 数据模型 | ⏳ | | | | |
-| 03 认证 | ⏳ | | | | |
+| 01 脚手架 | ✅ 完成 | 2026-04-23 | 2026-04-23 | ~50 | |
+| 02 数据模型 | ✅ 完成 | 2026-04-23 | 2026-04-23 | ~40 | |
+| 03 认证 | ✅ 完成 | 2026-04-24 | 2026-04-24 | ~80 | 坑：LoginAttempt重复定义、from future annotations与Body()冲突、slowapi参数推断 |
 | 04 SKU + 主数据 | ⏳ | | | | |
 | 05 Supplier/Customer | ⏳ | | | | |
 | 06 Seed 数据 | ⏳ | | | | |
