@@ -3,13 +3,13 @@ services:
   # ── MySQL 8.0 ────────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: erp_mysql
+    container_name: erp_w3_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-erp_os}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -22,10 +22,10 @@ services:
   # ── Redis 7 ──────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: erp_redis
+    container_name: erp_w3_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -39,11 +39,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: erp_backend
+    container_name: erp_w3_backend
     restart: unless-stopped
     env_file: .env
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
@@ -65,12 +65,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
-    container_name: erp_frontend
+    container_name: erp_w3_frontend
     restart: unless-stopped
     environment:
       - VITE_API_URL=http://backend:8000
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -81,10 +81,10 @@ services:
   # ── Nginx reverse proxy ───────────────────────────────────────────────────
   nginx:
     image: nginx:alpine
-    container_name: erp_nginx
+    container_name: erp_w3_nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

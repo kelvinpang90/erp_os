@@ -37,3 +37,6 @@ anthropic==0.40.0
 
 # Utilities
 python-dateutil==2.9.0
+
+# Email validation (required by pydantic EmailStr)
+email-validator==2.2.0
