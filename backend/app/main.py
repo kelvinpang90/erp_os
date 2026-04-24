@@ -1,33 +1,87 @@
+"""
+ERP OS — FastAPI application entry point.
+
+Startup order:
+  1. configure_logging()            structlog JSON/console
+  2. RequestIDMiddleware            UUID4 per request
+  3. CORSMiddleware                 whitelist origins
+  4. slowapi state                  rate limit counters in Redis DB 3
+  5. Exception handlers             AppException → uniform JSON
+  6. Routers                        /api/auth/*, /health
+
+All middleware is added in reverse order of execution (outermost last in code).
+"""
+
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
+from app.core.exceptions import AppException, RateLimitError
+from app.core.logging import RequestIDMiddleware, configure_logging, get_request_id
 from app.core.redis import ping_redis
+from app.routers import auth as auth_router
 
 logger = structlog.get_logger()
 
+# ── Rate limiter (slowapi) ────────────────────────────────────────────────────
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=f"{settings.redis_url}/{settings.REDIS_DB_RATE}",
+    default_limits=["100/minute"],
+)
+
+
+# ── Lifespan ──────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
-    logger.info("startup", app=settings.APP_NAME, version=settings.APP_VERSION)
+    configure_logging()
+    logger.info(
+        "startup",
+        app=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        environment=settings.ENVIRONMENT,
+        demo_mode=settings.DEMO_MODE,
+    )
     yield
     await engine.dispose()
     logger.info("shutdown")
 
+
+# ── Application factory ───────────────────────────────────────────────────────
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+# Attach limiter to app state (required by slowapi)
+app.state.limiter = limiter
+
+
+# ── Middleware ────────────────────────────────────────────────────────────────
+# NOTE: FastAPI/Starlette applies middleware in reverse order of add_middleware().
+# We want: RequestID → CORS → app
+# So we add CORS first, then RequestID.
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,8 +91,80 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestIDMiddleware)
 
-@app.get("/health", tags=["ops"])
+
+# ── Exception handlers ────────────────────────────────────────────────────────
+
+def _error_body(
+    error_code: str,
+    message: str,
+    detail: dict | None = None,
+) -> dict[str, Any]:
+    return {
+        "error_code": error_code,
+        "message": message,
+        "request_id": get_request_id(),
+        "timestamp": datetime.now(UTC).isoformat(),
+        "detail": detail,
+    }
+
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    logger.warning(
+        "app_exception",
+        error_code=exc.error_code,
+        message=exc.message,
+        http_status=exc.http_status,
+    )
+    return JSONResponse(
+        status_code=exc.http_status,
+        content=_error_body(exc.error_code, exc.message, exc.detail),
+    )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    err = RateLimitError()
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content=_error_body(err.error_code, str(exc.detail) or err.message),
+        headers={"Retry-After": "60"},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=_error_body(
+            "VALIDATION_ERROR",
+            "Request validation failed.",
+            {"errors": exc.errors()},
+        ),
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("unhandled_exception", exc_info=exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=_error_body("INTERNAL_ERROR", "An unexpected error occurred."),
+    )
+
+
+# ── Routers ───────────────────────────────────────────────────────────────────
+
+app.include_router(auth_router.router, prefix="/api/auth", tags=["auth"])
+
+
+# ── Health check ──────────────────────────────────────────────────────────────
+
+@app.get("/health", tags=["ops"], include_in_schema=False)
 async def health() -> dict[str, Any]:
     db_ok = False
     try:
@@ -53,6 +179,8 @@ async def health() -> dict[str, Any]:
     return {
         "status": "ok" if (db_ok and redis_ok) else "degraded",
         "version": settings.APP_VERSION,
+        "environment": settings.ENVIRONMENT,
+        "demo_mode": settings.DEMO_MODE,
         "checks": {
             "database": "ok" if db_ok else "error",
             "redis": "ok" if redis_ok else "error",
