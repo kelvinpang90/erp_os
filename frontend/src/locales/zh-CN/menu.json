@@ -1,0 +1,15 @@
+{
+  "dashboard": "仪表盘",
+  "skuManagement": "商品管理",
+  "purchase": "采购",
+  "purchaseOrders": "采购订单",
+  "goodsReceipt": "收货单",
+  "suppliers": "供应商",
+  "sales": "销售",
+  "salesOrders": "销售订单",
+  "deliveryOrders": "发货单",
+  "customers": "客户",
+  "inventory": "库存",
+  "settings": "设置",
+  "logout": "退出登录"
+}

@@ -1,0 +1,15 @@
+{
+  "dashboard": "Dashboard",
+  "skuManagement": "SKU Management",
+  "purchase": "Purchase",
+  "purchaseOrders": "Purchase Orders",
+  "goodsReceipt": "Goods Receipt",
+  "suppliers": "Suppliers",
+  "sales": "Sales",
+  "salesOrders": "Sales Orders",
+  "deliveryOrders": "Delivery Orders",
+  "customers": "Customers",
+  "inventory": "Inventory",
+  "settings": "Settings",
+  "logout": "Logout"
+}

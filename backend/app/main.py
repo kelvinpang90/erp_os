@@ -34,6 +34,13 @@ from app.core.exceptions import AppException, RateLimitError
 from app.core.logging import RequestIDMiddleware, configure_logging, get_request_id
 from app.core.redis import ping_redis
 from app.routers import auth as auth_router
+from app.routers import brand as brand_router
+from app.routers import category as category_router
+from app.routers import currency as currency_router
+from app.routers import exchange_rate as exchange_rate_router
+from app.routers import sku as sku_router
+from app.routers import tax_rate as tax_rate_router
+from app.routers import uom as uom_router
 
 logger = structlog.get_logger()
 
@@ -160,6 +167,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 # ── Routers ───────────────────────────────────────────────────────────────────
 
 app.include_router(auth_router.router, prefix="/api/auth", tags=["auth"])
+app.include_router(brand_router.router, prefix="/api/brands", tags=["brands"])
+app.include_router(category_router.router, prefix="/api/categories", tags=["categories"])
+app.include_router(uom_router.router, prefix="/api/uoms", tags=["uoms"])
+app.include_router(tax_rate_router.router, prefix="/api/tax-rates", tags=["tax-rates"])
+app.include_router(currency_router.router, prefix="/api/currencies", tags=["currencies"])
+app.include_router(exchange_rate_router.router, prefix="/api/exchange-rates", tags=["exchange-rates"])
+app.include_router(sku_router.router, prefix="/api/skus", tags=["skus"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

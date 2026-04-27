@@ -4,6 +4,7 @@ import { ConfigProvider } from 'antd'
 import enUS from 'antd/locale/en_US'
 import dayjs from 'dayjs'
 import 'dayjs/locale/en'
+import './i18n'
 import App from './App'
 
 dayjs.locale('en')
