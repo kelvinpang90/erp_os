@@ -276,7 +276,11 @@ export default function POEditPage() {
       }
       navigate('/purchase/orders')
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Operation failed'
+      const errData = (err as { response?: { data?: { message?: string; detail?: unknown } } })?.response?.data
+      const msg = errData?.message ?? 'Operation failed'
+      // Log full validation detail to browser console for debugging
+      console.error('[PO submit error]', JSON.stringify(errData, null, 2))
+      console.error('[PO submit payload]', JSON.stringify(payload, null, 2))
       message.error(msg)
     }
   }
