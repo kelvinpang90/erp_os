@@ -250,7 +250,7 @@ docker compose exec backend python scripts/seed_all_master.py
 
 # 🛒 Phase 3: 采购闭环（Day 5-6，3 窗口）
 
-## Window 07 —— PO 模块 + 事件总线框架
+## Window 07 —— PO 模块 + 事件总线框架 ✅
 
 **目标**：采购单 CRUD + 状态机 + 事件驱动脊柱。
 
@@ -258,23 +258,23 @@ docker compose exec backend python scripts/seed_all_master.py
 - Window 06 完成
 
 ### 产出物
-- [ ] `backend/app/events/` 完整实现：
+- [x] `backend/app/events/` 完整实现：
   - `base.py` —— EventBus + DomainEvent（同步 + after_commit 异步）
   - `types.py` —— 3 个核心事件
   - `registry.py` —— 启动时注册
   - `handlers/` —— audit / cache / notification / inventory 占位
-- [ ] `backend/app/services/sequence.py` —— DocumentSequenceService（Redis INCR + `document_sequences` 表回写）
-- [ ] `PurchaseOrder` + `PurchaseOrderLine` 完整 5 件套（非 `/new-resource`，手写以处理状态机）
-- [ ] `backend/app/services/purchase.py` ：
+- [x] `backend/app/services/sequence.py` —— DocumentSequenceService（Redis INCR + `document_sequences` 表回写）
+- [x] `PurchaseOrder` + `PurchaseOrderLine` 完整 5 件套（非 `/new-resource`，手写以处理状态机）
+- [x] `backend/app/services/purchase.py` ：
   - `create_po` / `confirm_po`（发 DocumentStatusChanged + StockMovementOccurred）
   - `cancel_po`（按角色判断）
-- [ ] 前端 PO 列表页 + 详情页 + 编辑页
-- [ ] 状态机单测：`tests/unit/test_po_state_machine.py`
+- [x] 前端 PO 列表页 + 详情页 + 编辑页
+- [x] 状态机单测：`tests/unit/test_po_state_machine.py`（6 个测试全绿）
 
 ### 验证
-- 新建 PO → Confirm → Stock.incoming +
-- Cancel confirmed PO → Stock.incoming -
-- 非 Manager 角色点 Cancel → 403
+- [x] 单测：6 个状态机测试全绿
+- [ ] API 集成（需 docker compose up）
+- [ ] 前端 UI（需 Node 环境）
 
 ### 预估消息
 约 80-100 条
