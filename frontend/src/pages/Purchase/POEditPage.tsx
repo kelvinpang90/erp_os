@@ -8,7 +8,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components'
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
@@ -45,23 +45,83 @@ export default function POEditPage() {
   const [supplierOptions, setSupplierOptions] = useState<{ value: number; label: string }[]>([])
   const [warehouseOptions, setWarehouseOptions] = useState<{ value: number; label: string }[]>([])
   const [skuOptions, setSkuOptions] = useState<{ value: number; label: string }[]>([])
+  const [skuLoading, setSkuLoading] = useState(false)
   const [uomOptions, setUomOptions] = useState<{ value: number; label: string }[]>([])
   const [taxRateOptions, setTaxRateOptions] = useState<{ value: number; label: string; rate: number }[]>([])
 
+  // ── SKU server-side search with debounce ──────────────────────────────────
+  const skuDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fetchSkus = useCallback((keyword: string) => {
+    setSkuLoading(true)
+    const q = keyword ? `&search=${encodeURIComponent(keyword)}` : ''
+    axiosInstance
+      .get(`/skus?page_size=50${q}`)
+      .then((res) => {
+        setSkuOptions(
+          res.data.items.map((s: { id: number; code: string; name: string }) => ({
+            value: s.id,
+            label: `${s.code} — ${s.name}`,
+          }))
+        )
+      })
+      .catch(() => {/* silently ignore SKU search errors */})
+      .finally(() => setSkuLoading(false))
+  }, [])
+
+  const handleSkuSearch = useCallback(
+    (keyword: string) => {
+      if (skuDebounceRef.current) clearTimeout(skuDebounceRef.current)
+      skuDebounceRef.current = setTimeout(() => fetchSkus(keyword), 300)
+    },
+    [fetchSkus]
+  )
+
+  // ── Load reference data on mount ─────────────────────────────────────────
   useEffect(() => {
-    // Load reference data
-    Promise.all([
-      axiosInstance.get('/suppliers?page_size=200'),
+    // SKU: load first 50 immediately so the dropdown isn't empty on open
+    fetchSkus('')
+
+    // Small reference lists: use Promise.allSettled so one failure doesn't block others
+    Promise.allSettled([
+      axiosInstance.get('/suppliers?page_size=50'),
       axiosInstance.get('/warehouses?page_size=50'),
-      axiosInstance.get('/skus?page_size=500'),
       axiosInstance.get('/uoms?page_size=100'),
-      axiosInstance.get('/tax-rates?page_size=20'),
-    ]).then(([sup, wh, sku, uom, tax]) => {
-      setSupplierOptions(sup.data.items.map((s: { id: number; name: string }) => ({ value: s.id, label: s.name })))
-      setWarehouseOptions(wh.data.items.map((w: { id: number; name: string }) => ({ value: w.id, label: w.name })))
-      setSkuOptions(sku.data.items.map((s: { id: number; code: string; name: string }) => ({ value: s.id, label: `${s.code} — ${s.name}` })))
-      setUomOptions(uom.data.items.map((u: { id: number; code: string }) => ({ value: u.id, label: u.code })))
-      setTaxRateOptions(tax.data.items.map((t: { id: number; name: string; rate: string }) => ({ value: t.id, label: `${t.name} (${t.rate}%)`, rate: parseFloat(t.rate) })))
+      axiosInstance.get('/tax-rates?page_size=50'),
+    ]).then(([sup, wh, uom, tax]) => {
+      let anyFailed = false
+
+      if (sup.status === 'fulfilled') {
+        setSupplierOptions(
+          sup.value.data.items.map((s: { id: number; name: string }) => ({ value: s.id, label: s.name }))
+        )
+      } else { anyFailed = true }
+
+      if (wh.status === 'fulfilled') {
+        setWarehouseOptions(
+          wh.value.data.items.map((w: { id: number; name: string }) => ({ value: w.id, label: w.name }))
+        )
+      } else { anyFailed = true }
+
+      if (uom.status === 'fulfilled') {
+        setUomOptions(
+          uom.value.data.items.map((u: { id: number; code: string }) => ({ value: u.id, label: u.code }))
+        )
+      } else { anyFailed = true }
+
+      if (tax.status === 'fulfilled') {
+        setTaxRateOptions(
+          tax.value.data.items.map((t: { id: number; name: string; rate: string }) => ({
+            value: t.id,
+            label: `${t.name} (${t.rate}%)`,
+            rate: parseFloat(t.rate),
+          }))
+        )
+      } else { anyFailed = true }
+
+      if (anyFailed) {
+        message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+      }
     })
 
     if (!isCreate && id) {
@@ -99,16 +159,23 @@ export default function POEditPage() {
         .catch(() => message.error('Failed to load purchase order'))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message])
+  }, [id, isCreate, message, fetchSkus])
 
   const lineColumns: ProColumns<LineRow>[] = [
     {
       title: 'SKU',
       dataIndex: 'sku_id',
       valueType: 'select',
-      fieldProps: { options: skuOptions, showSearch: true },
+      fieldProps: {
+        options: skuOptions,
+        showSearch: true,
+        filterOption: false,          // let server handle filtering
+        onSearch: handleSkuSearch,
+        loading: skuLoading,
+        notFoundContent: skuLoading ? 'Searching…' : 'No SKU found',
+      },
       formItemProps: { rules: [{ required: true }] },
-      width: 220,
+      width: 240,
     },
     {
       title: 'UOM',
