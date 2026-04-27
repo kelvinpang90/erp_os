@@ -2,7 +2,7 @@ import { PlusOutlined } from '@ant-design/icons'
 import { ActionType, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Button } from 'antd'
-import { useRef } from 'react'
+import { useRef, type RefObject } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface PaginatedResponse<T> {
@@ -24,6 +24,7 @@ interface ResourceListPageProps<T extends object> {
   createPath?: string
   rowKey?: string
   toolbarActions?: React.ReactNode[]
+  actionRef?: RefObject<ActionType | undefined>
 }
 
 export default function ResourceListPage<T extends object>({
@@ -33,9 +34,11 @@ export default function ResourceListPage<T extends object>({
   createPath,
   rowKey = 'id',
   toolbarActions = [],
+  actionRef: externalActionRef,
 }: ResourceListPageProps<T>) {
   const navigate = useNavigate()
-  const actionRef = useRef<ActionType>()
+  const internalActionRef = useRef<ActionType>()
+  const actionRef = externalActionRef ?? internalActionRef
 
   return (
     <ProTable<T>

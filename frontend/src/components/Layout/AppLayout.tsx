@@ -62,6 +62,9 @@ export default function AppLayout() {
       path: '/settings',
       name: t('settings'),
       icon: <SettingOutlined />,
+      children: [
+        { path: '/settings/warehouses', name: t('warehouses') },
+      ],
     },
   ]
 

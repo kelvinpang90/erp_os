@@ -37,10 +37,13 @@ from app.routers import auth as auth_router
 from app.routers import brand as brand_router
 from app.routers import category as category_router
 from app.routers import currency as currency_router
+from app.routers import customer as customer_router
 from app.routers import exchange_rate as exchange_rate_router
 from app.routers import sku as sku_router
+from app.routers import supplier as supplier_router
 from app.routers import tax_rate as tax_rate_router
 from app.routers import uom as uom_router
+from app.routers import warehouse as warehouse_router
 
 logger = structlog.get_logger()
 
@@ -174,6 +177,9 @@ app.include_router(tax_rate_router.router, prefix="/api/tax-rates", tags=["tax-r
 app.include_router(currency_router.router, prefix="/api/currencies", tags=["currencies"])
 app.include_router(exchange_rate_router.router, prefix="/api/exchange-rates", tags=["exchange-rates"])
 app.include_router(sku_router.router, prefix="/api/skus", tags=["skus"])
+app.include_router(supplier_router.router, prefix="/api/suppliers", tags=["suppliers"])
+app.include_router(customer_router.router, prefix="/api/customers", tags=["customers"])
+app.include_router(warehouse_router.router, prefix="/api/warehouses", tags=["warehouses"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

@@ -3,9 +3,15 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 import enCommon from './locales/en-US/common.json'
+import enCustomer from './locales/en-US/customer.json'
 import enMenu from './locales/en-US/menu.json'
+import enSupplier from './locales/en-US/supplier.json'
+import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
+import zhCustomer from './locales/zh-CN/customer.json'
 import zhMenu from './locales/zh-CN/menu.json'
+import zhSupplier from './locales/zh-CN/supplier.json'
+import zhWarehouse from './locales/zh-CN/warehouse.json'
 
 i18n
   .use(LanguageDetector)
@@ -15,10 +21,16 @@ i18n
       'en-US': {
         common: enCommon,
         menu: enMenu,
+        supplier: enSupplier,
+        customer: enCustomer,
+        warehouse: enWarehouse,
       },
       'zh-CN': {
         common: zhCommon,
         menu: zhMenu,
+        supplier: zhSupplier,
+        customer: zhCustomer,
+        warehouse: zhWarehouse,
       },
     },
     fallbackLng: 'en-US',

@@ -8,6 +8,15 @@ const LoginPage = lazy(() => import('./pages/LoginPage'))
 const SKUListPage = lazy(() => import('./pages/SKU/ListPage'))
 const SKUDetailPage = lazy(() => import('./pages/SKU/DetailPage'))
 const SKUEditPage = lazy(() => import('./pages/SKU/EditPage'))
+const SupplierListPage = lazy(() => import('./pages/Purchase/SupplierListPage'))
+const SupplierDetailPage = lazy(() => import('./pages/Purchase/SupplierDetailPage'))
+const SupplierEditPage = lazy(() => import('./pages/Purchase/SupplierEditPage'))
+const CustomerListPage = lazy(() => import('./pages/Sales/CustomerListPage'))
+const CustomerDetailPage = lazy(() => import('./pages/Sales/CustomerDetailPage'))
+const CustomerEditPage = lazy(() => import('./pages/Sales/CustomerEditPage'))
+const WarehouseListPage = lazy(() => import('./pages/Warehouse/WarehouseListPage'))
+const WarehouseDetailPage = lazy(() => import('./pages/Warehouse/WarehouseDetailPage'))
+const WarehouseEditPage = lazy(() => import('./pages/Warehouse/WarehouseEditPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -35,6 +44,18 @@ function AppRoutes() {
         <Route path="/skus/create" element={<SKUEditPage />} />
         <Route path="/skus/:id" element={<SKUDetailPage />} />
         <Route path="/skus/:id/edit" element={<SKUEditPage />} />
+        <Route path="/purchase/suppliers" element={<SupplierListPage />} />
+        <Route path="/purchase/suppliers/create" element={<SupplierEditPage />} />
+        <Route path="/purchase/suppliers/:id" element={<SupplierDetailPage />} />
+        <Route path="/purchase/suppliers/:id/edit" element={<SupplierEditPage />} />
+        <Route path="/sales/customers" element={<CustomerListPage />} />
+        <Route path="/sales/customers/create" element={<CustomerEditPage />} />
+        <Route path="/sales/customers/:id" element={<CustomerDetailPage />} />
+        <Route path="/sales/customers/:id/edit" element={<CustomerEditPage />} />
+        <Route path="/settings/warehouses" element={<WarehouseListPage />} />
+        <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
+        <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />
+        <Route path="/settings/warehouses/:id/edit" element={<WarehouseEditPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

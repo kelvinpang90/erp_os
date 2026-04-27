@@ -11,5 +11,6 @@
   "customers": "Customers",
   "inventory": "Inventory",
   "settings": "Settings",
+  "warehouses": "Warehouses",
   "logout": "Logout"
 }

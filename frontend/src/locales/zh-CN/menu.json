@@ -11,5 +11,6 @@
   "customers": "客户",
   "inventory": "库存",
   "settings": "设置",
+  "warehouses": "仓库管理",
   "logout": "退出登录"
 }

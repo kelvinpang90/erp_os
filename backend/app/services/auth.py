@@ -284,6 +284,14 @@ _MENU_DEFINITIONS: list[dict] = [
                 "roles": [RoleCode.ADMIN],
                 "children": [],
             },
+            {
+                "key": "settings.warehouses",
+                "path": "/settings/warehouses",
+                "icon": "",
+                "label": "menu.settings.warehouses",
+                "roles": [RoleCode.ADMIN],
+                "children": [],
+            },
         ],
     },
     {
