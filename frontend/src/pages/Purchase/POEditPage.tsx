@@ -4,11 +4,10 @@ import {
   ProFormDatePicker,
   ProFormDigit,
   ProFormSelect,
-  ProFormText,
   ProFormTextArea,
   type ProColumns,
 } from '@ant-design/pro-components'
-import { App, Card, Col, Row, Skeleton, Space, Typography } from 'antd'
+import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
@@ -254,12 +253,12 @@ export default function POEditPage() {
           <EditableProTable<LineRow>
             rowKey="id"
             value={lines}
-            onChange={setLines}
+            onChange={(v) => setLines(v as LineRow[])}
             columns={lineColumns}
             editable={{
               type: 'multiple',
               editableKeys,
-              onChange: setEditableKeys,
+              onChange: (keys) => setEditableKeys(keys as (string | number)[]),
               actionRender: (_, __, defaultDoms) => [defaultDoms.delete],
             }}
             recordCreatorProps={{
