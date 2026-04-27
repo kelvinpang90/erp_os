@@ -17,6 +17,9 @@ const CustomerEditPage = lazy(() => import('./pages/Sales/CustomerEditPage'))
 const WarehouseListPage = lazy(() => import('./pages/Warehouse/WarehouseListPage'))
 const WarehouseDetailPage = lazy(() => import('./pages/Warehouse/WarehouseDetailPage'))
 const WarehouseEditPage = lazy(() => import('./pages/Warehouse/WarehouseEditPage'))
+const POListPage = lazy(() => import('./pages/Purchase/POListPage'))
+const PODetailPage = lazy(() => import('./pages/Purchase/PODetailPage'))
+const POEditPage = lazy(() => import('./pages/Purchase/POEditPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -44,6 +47,10 @@ function AppRoutes() {
         <Route path="/skus/create" element={<SKUEditPage />} />
         <Route path="/skus/:id" element={<SKUDetailPage />} />
         <Route path="/skus/:id/edit" element={<SKUEditPage />} />
+        <Route path="/purchase/orders" element={<POListPage />} />
+        <Route path="/purchase/orders/create" element={<POEditPage />} />
+        <Route path="/purchase/orders/:id" element={<PODetailPage />} />
+        <Route path="/purchase/orders/:id/edit" element={<POEditPage />} />
         <Route path="/purchase/suppliers" element={<SupplierListPage />} />
         <Route path="/purchase/suppliers/create" element={<SupplierEditPage />} />
         <Route path="/purchase/suppliers/:id" element={<SupplierDetailPage />} />

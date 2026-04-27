@@ -34,11 +34,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=Fals
 # ── Database session ──────────────────────────────────────────────────────────
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Yield a fresh AsyncSession per request, auto-commit on success."""
+    """Yield a fresh AsyncSession per request; commit on success, drain after-commit events."""
+    from app.events import event_bus
+
     async with AsyncSessionLocal() as session:
         try:
             yield session
             await session.commit()
+            await event_bus.drain_after_commit(session)
         except Exception:
             await session.rollback()
             raise
