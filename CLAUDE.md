@@ -887,6 +887,18 @@ Cloudflare（DNS + HTTPS + CDN + DDoS）
 - 脏活（seed / test / i18n / UI 调优）委托 subagent
 - 小改用 Edit + 行号，大改用 Plan Mode 先审再写
 
+### Window 分支工作流（强制遵守）
+每个 Window 在独立 worktree 分支开发，完成后立即合并，不积压：
+
+```
+开始 Window N → 在 worktree 开发 → 验证通过 → 合并到 main → 删除 worktree branch → 开始 Window N+1
+```
+
+- **开发完一个合并一个**，禁止积攒多个 window 后批量合并
+- 每个新 Window 必须基于最新 main 拉 worktree，确保依赖完整
+- 合并方式：`git checkout main && git merge --ff-only <branch>`（线性历史优先）
+- 合并后立即删除 worktree 分支，保持分支列表整洁
+
 ---
 
 ## Part 15. Claude Code 数据库操作规范

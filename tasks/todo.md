@@ -769,10 +769,10 @@ docker compose exec backend python scripts/seed_all_master.py
 | 01 脚手架 | ✅ 完成 | 2026-04-23 | 2026-04-23 | ~50 | |
 | 02 数据模型 | ✅ 完成 | 2026-04-23 | 2026-04-23 | ~40 | |
 | 03 认证 | ✅ 完成 | 2026-04-24 | 2026-04-24 | ~80 | 坑：LoginAttempt重复定义、from future annotations与Body()冲突、slowapi参数推断 |
-| 04 SKU + 主数据 | ⏳ | | | | |
-| 05 Supplier/Customer | ⏳ | | | | |
-| 06 Seed 数据 | ⏳ | | | | |
-| 07 PO + 事件 | ⏳ | | | | |
+| 04 SKU + 主数据 | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~80 | |
+| 05 Supplier/Customer | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~60 | |
+| 06 Seed 数据 | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~50 | 200 SKU / 30 supplier / 50 customer / 600 stock 行 |
+| 07 PO + 事件 | 🔄 进行中 | 2026-04-27 | | | |
 | 08 GR + 库存 | ⏳ | | | | |
 | 09 OCR AI | ⏳ | | | | |
 | 10 SO + DO | ⏳ | | | | |
