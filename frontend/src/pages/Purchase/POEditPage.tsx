@@ -8,6 +8,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components'
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
+import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
@@ -247,8 +248,13 @@ export default function POEditPage() {
   }, [lines, taxRateOptions])
 
   const handleSubmit = async (values: Record<string, unknown>) => {
+    // ProFormDatePicker returns dayjs objects — Pydantic v2 date field only accepts "YYYY-MM-DD"
+    const fmtDate = (v: unknown) => (dayjs.isDayjs(v) ? v.format('YYYY-MM-DD') : v)
+
     const payload = {
       ...values,
+      business_date: fmtDate(values.business_date),
+      expected_date: fmtDate(values.expected_date),
       lines: lines.map((l) => ({
         sku_id: l.sku_id,
         uom_id: l.uom_id,
