@@ -13,16 +13,25 @@ import { Dropdown } from 'antd'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../stores/authStore'
+
+// Top-level paths that require role-based visibility check.
+// Items not in this set are always visible (e.g., Dashboard, SKUs).
+// The backend's /api/auth/me menu is the source of truth for visibility:
+// if a frontend item's path is in ROLE_GATED_PATHS, it's only shown when the
+// backend menu (already role-filtered) contains a node with the same path.
+const ROLE_GATED_PATHS = new Set(['/purchase', '/sales', '/inventory', '/reports', '/settings'])
 
 export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout, user } = useAuth()
   const { t, i18n } = useTranslation('menu')
+  const backendMenu = useAuthStore((s) => s.menu)
 
   const currentLang = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en-US'
 
-  const menuItems = [
+  const allMenuItems = [
     {
       path: '/',
       name: t('dashboard'),
@@ -67,6 +76,12 @@ export default function AppLayout() {
       ],
     },
   ]
+
+  // Filter by backend-provided menu (role-aware)
+  const allowedPaths = new Set(backendMenu.map((m) => m.path))
+  const menuItems = allMenuItems.filter(
+    (item) => !ROLE_GATED_PATHS.has(item.path) || allowedPaths.has(item.path),
+  )
 
   const langItems = [
     {

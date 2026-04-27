@@ -23,7 +23,7 @@ class PurchaseOrderRepository(BaseRepository[PurchaseOrder]):
                 PurchaseOrder.organization_id == org_id,
                 PurchaseOrder.deleted_at.is_(None),
             )
-            .options(selectinload(PurchaseOrder.lines))
+            .options(selectinload(PurchaseOrder.lines).selectinload(PurchaseOrderLine.sku))
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()

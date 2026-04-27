@@ -5,6 +5,7 @@ import {
   ProFormDigit,
   ProFormSelect,
   ProFormTextArea,
+  type EditableFormInstance,
   type ProColumns,
 } from '@ant-design/pro-components'
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
@@ -40,7 +41,7 @@ export default function POEditPage() {
 
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
-  const [lines, setLines] = useState<LineRow[]>([{ id: `new-${Date.now()}` }])
+  const [lines, setLines] = useState<LineRow[]>([])
   const [editableKeys, setEditableKeys] = useState<(string | number)[]>([])
 
   const [supplierOptions, setSupplierOptions] = useState<{ value: number; label: string }[]>([])
@@ -49,6 +50,8 @@ export default function POEditPage() {
   const [skuLoading, setSkuLoading] = useState(false)
   const [uomOptions, setUomOptions] = useState<{ value: number; label: string }[]>([])
   const [taxRateOptions, setTaxRateOptions] = useState<{ value: number; label: string; rate: number }[]>([])
+
+  const editableFormRef = useRef<EditableFormInstance<LineRow>>()
 
   // ── SKU server-side search with debounce ──────────────────────────────────
   const skuDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -76,6 +79,30 @@ export default function POEditPage() {
       skuDebounceRef.current = setTimeout(() => fetchSkus(keyword), 300)
     },
     [fetchSkus]
+  )
+
+  const handleSkuChange = useCallback(
+    async (skuId: number, rowId: string | number) => {
+      if (!skuId) return
+      try {
+        const res = await axiosInstance.get(`/skus/${skuId}`)
+        const sku = res.data
+        const taxRatePercent =
+          taxRateOptions.find((t) => t.value === sku.tax_rate_id)?.rate ??
+          parseFloat(sku.tax_rate?.rate ?? '0')
+        const autoFill = {
+          uom_id: sku.base_uom_id,
+          unit_price_excl_tax: parseFloat(sku.unit_price_excl_tax),
+          tax_rate_id: sku.tax_rate_id,
+          tax_rate_percent: taxRatePercent,
+        }
+        editableFormRef.current?.setRowData?.(rowId, autoFill)
+        setLines((prev) => prev.map((l) => (l.id === rowId ? { ...l, ...autoFill } : l)))
+      } catch {
+        // silently ignore — user can fill manually
+      }
+    },
+    [taxRateOptions]
   )
 
   // ── Load reference data on mount ─────────────────────────────────────────
@@ -156,6 +183,7 @@ export default function POEditPage() {
             discount_percent: parseFloat(l.discount_percent),
           }))
           setLines(loadedLines)
+          setEditableKeys(loadedLines.map((l) => l.id))
         })
         .catch(() => message.error('Failed to load purchase order'))
         .finally(() => setLoading(false))
@@ -170,7 +198,8 @@ export default function POEditPage() {
       fieldProps: {
         options: skuOptions,
         showSearch: true,
-        filterOption: false,          // let server handle filtering
+        allowClear: true,
+        filterOption: false,
         onSearch: handleSkuSearch,
         loading: skuLoading,
         notFoundContent: skuLoading ? 'Searching…' : 'No SKU found',
@@ -251,11 +280,17 @@ export default function POEditPage() {
     // ProFormDatePicker returns dayjs objects — Pydantic v2 date field only accepts "YYYY-MM-DD"
     const fmtDate = (v: unknown) => (dayjs.isDayjs(v) ? v.format('YYYY-MM-DD') : v)
 
+    const filledLines = lines.filter((l) => l.sku_id != null)
+    if (filledLines.length === 0) {
+      message.error('Please add at least one order line.')
+      return
+    }
+
     const payload = {
       ...values,
       business_date: fmtDate(values.business_date),
       expected_date: fmtDate(values.expected_date),
-      lines: lines.map((l) => ({
+      lines: filledLines.map((l) => ({
         sku_id: l.sku_id,
         uom_id: l.uom_id,
         description: l.description,
@@ -278,9 +313,6 @@ export default function POEditPage() {
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { message?: string; detail?: unknown } } })?.response?.data
       const msg = errData?.message ?? 'Operation failed'
-      // Log full validation detail to browser console for debugging
-      console.error('[PO submit error]', JSON.stringify(errData, null, 2))
-      console.error('[PO submit payload]', JSON.stringify(payload, null, 2))
       message.error(msg)
     }
   }
@@ -329,6 +361,7 @@ export default function POEditPage() {
         <Card title="Order Lines" size="small" style={{ marginBottom: 24 }}>
           <EditableProTable<LineRow>
             rowKey="id"
+            editableFormRef={editableFormRef}
             value={lines}
             onChange={(v) => setLines(v as LineRow[])}
             columns={lineColumns}
@@ -336,6 +369,13 @@ export default function POEditPage() {
               type: 'multiple',
               editableKeys,
               onChange: (keys) => setEditableKeys(keys as (string | number)[]),
+              onValuesChange: (record: LineRow, allValues: LineRow[]) => {
+                setLines(allValues)
+                const prev = lines.find((l) => l.id === record.id)
+                if (record.sku_id != null && record.sku_id !== prev?.sku_id) {
+                  handleSkuChange(record.sku_id, record.id)
+                }
+              },
               actionRender: (_, __, defaultDoms) => [defaultDoms.delete],
             }}
             recordCreatorProps={{

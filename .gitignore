@@ -49,6 +49,7 @@ backend/uploads/
 .claude/mcp.json
 .claude/settings.local.json
 .claude/worktrees
+.claire
 
 # ── Alembic ──────────────────────────────────────────────────────────────────
 # (versions/ is tracked; only ignore generated env artifacts)

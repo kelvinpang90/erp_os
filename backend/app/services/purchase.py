@@ -97,7 +97,12 @@ def _calc_totals(line_dicts: list[dict]) -> dict:
 
 
 def _to_response(po: PurchaseOrder) -> PurchaseOrderDetail:
-    lines = [POLineResponse.model_validate(ln) for ln in (po.lines or [])]
+    lines = []
+    for ln in po.lines or []:
+        resp = POLineResponse.model_validate(ln)
+        resp.sku_code = ln.sku.code if ln.sku else ""
+        resp.sku_name = ln.sku.name if ln.sku else ""
+        lines.append(resp)
     detail = PurchaseOrderDetail.model_validate(po)
     detail.lines = lines
     return detail
@@ -299,7 +304,6 @@ async def update_po(
 
     for k, v in update_fields.items():
         setattr(po, k, v)
-    session.add(po)
     await session.flush()
 
     po = await repo.get_detail(org_id, po_id)  # type: ignore[assignment]

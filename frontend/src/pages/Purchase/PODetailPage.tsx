@@ -115,7 +115,13 @@ export default function PODetailPage() {
 
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
-    { title: 'SKU ID', dataIndex: 'sku_id', width: 80 },
+    {
+      title: 'SKU',
+      dataIndex: 'sku_code',
+      width: 260,
+      render: (_: unknown, record: { sku_code?: string; sku_name?: string }) =>
+        record.sku_code ? `${record.sku_code} — ${record.sku_name}` : '-',
+    },
     { title: 'Description', dataIndex: 'description', ellipsis: true },
     { title: 'Qty Ordered', dataIndex: 'qty_ordered', width: 110, align: 'right' as const },
     { title: 'Qty Received', dataIndex: 'qty_received', width: 110, align: 'right' as const },

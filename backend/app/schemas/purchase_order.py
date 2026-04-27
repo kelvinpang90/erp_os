@@ -28,6 +28,8 @@ class POLineResponse(BaseModel):
     id: int
     line_no: int
     sku_id: int
+    sku_code: str = ""
+    sku_name: str = ""
     uom_id: int
     description: Optional[str]
     qty_ordered: Decimal
