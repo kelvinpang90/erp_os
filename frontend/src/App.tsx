@@ -24,6 +24,12 @@ const OCRUploadPage = lazy(() => import('./pages/Purchase/OCRUploadPage'))
 const GRListPage = lazy(() => import('./pages/Purchase/GRListPage'))
 const GRCreatePage = lazy(() => import('./pages/Purchase/GRCreatePage'))
 const GRDetailPage = lazy(() => import('./pages/Purchase/GRDetailPage'))
+const SOListPage = lazy(() => import('./pages/Sales/SOListPage'))
+const SODetailPage = lazy(() => import('./pages/Sales/SODetailPage'))
+const SOEditPage = lazy(() => import('./pages/Sales/SOEditPage'))
+const DOListPage = lazy(() => import('./pages/Sales/DOListPage'))
+const DOCreatePage = lazy(() => import('./pages/Sales/DOCreatePage'))
+const DODetailPage = lazy(() => import('./pages/Sales/DODetailPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -67,6 +73,13 @@ function AppRoutes() {
         <Route path="/sales/customers/create" element={<CustomerEditPage />} />
         <Route path="/sales/customers/:id" element={<CustomerDetailPage />} />
         <Route path="/sales/customers/:id/edit" element={<CustomerEditPage />} />
+        <Route path="/sales/orders" element={<SOListPage />} />
+        <Route path="/sales/orders/create" element={<SOEditPage />} />
+        <Route path="/sales/orders/:id" element={<SODetailPage />} />
+        <Route path="/sales/orders/:id/edit" element={<SOEditPage />} />
+        <Route path="/sales/delivery" element={<DOListPage />} />
+        <Route path="/sales/delivery/create" element={<DOCreatePage />} />
+        <Route path="/sales/delivery/:id" element={<DODetailPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />

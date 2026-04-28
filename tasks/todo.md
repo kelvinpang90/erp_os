@@ -347,7 +347,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 
 # 💰 Phase 4: 销售 + e-Invoice 闭环（Day 7-8，3 窗口）
 
-## Window 10 —— SO + DeliveryOrder 模块
+## Window 10 —— SO + DeliveryOrder 模块 ✅
 
 **目标**：销售单 + 发货单 + 库存 Reserved/On-hand 联动。
 
@@ -355,16 +355,19 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 - Window 09 完成
 
 ### 产出物
-- [ ] `SalesOrder` + `SalesOrderLine` 完整模块
-- [ ] `DeliveryOrder` + `DeliveryOrderLine` 完整模块
-- [ ] `backend/app/services/sales.py`：
+- [x] `SalesOrder` + `SalesOrderLine` 完整模块（schema/repo/service/router）
+- [x] `DeliveryOrder` + `DeliveryOrderLine` 完整模块（schema/repo/service/router）
+- [x] `backend/app/services/sales.py`：
   - `create_so` / `confirm_so`（检查可用库存、锁 Reserved、发事件）
-  - `create_delivery_order`（扣 On-hand、释放 Reserved、记 SALES_OUT Movement、写 snapshot_avg_cost）
-  - `cancel_so`（释放 Reserved）
-- [ ] 防超卖：用 `UPDATE ... WHERE available >= ?` 原子 SQL
-- [ ] 前端 SO 列表 + 详情 + 编辑
-- [ ] 前端 DO 创建表单
-- [ ] 单测：`test_so_state_machine.py` + `test_no_oversell.py`
+  - `cancel_so`（释放 Reserved；CONFIRMED 状态需 Manager/Admin）
+- [x] `backend/app/services/delivery_order.py` `create_do`（扣 On-hand、释放 Reserved、记 SALES_OUT、写 snapshot_avg_cost、推进 SO 状态）
+- [x] 防超卖：用 `UPDATE ... WHERE on_hand - reserved - quality_hold >= ?` 原子 SQL（available 是 Computed 列，WHERE 用展开式）
+- [x] 前端 SO 列表 + 详情 + 编辑 + Columns
+- [x] 前端 DO 列表 + 详情 + 创建 + Columns
+- [x] 单测：`test_so_state_machine.py`（8 test）+ `test_no_oversell.py`（8 test）
+- [x] i18n: sales_order + delivery_order 双语
+- [x] inventory.py 三新 API：apply_reserve / apply_unreserve / apply_sales_out
+- [x] 为 Window 12 退货预留 hooks: SOLine.snapshot_avg_cost（首次发货写入）+ SOLine.qty_shipped（累加）+ DOLine.batch_no/expiry_date/serial_no（追溯）
 
 ### 验证
 - 新建 SO → Confirm → Reserved +，Available -
@@ -776,7 +779,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 | 07 PO + 事件 | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~80 | |
 | 08 GR + 库存 | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 53/53 单测全绿；端到端 4% 容差通过、6% 拒绝；avg_cost 公式验证正确 |
 | 09 OCR AI | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~90 | 72/72 测试全绿；SSE 4 事件流；Claude Sonnet 4.6 真实调用 2.6s / $0.0048；修复 SSE+session lifecycle bug |
-| 10 SO + DO | ⏳ | | | | |
+| 10 SO + DO | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 83/83 单测全绿（新增 16）；inventory 三新 API（apply_reserve/unreserve/sales_out）；防超卖原子 SQL；snapshot_avg_cost 首次发货写入；为 W12 退货留好 hook |
 | 11 Invoice + MyInvois | ⏳ | | | | |
 | 12 e-Invoice AI + CN | ⏳ | | | | |
 | 13 Stock Movements | ⏳ | | | | |

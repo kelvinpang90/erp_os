@@ -4,18 +4,22 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import enCommon from './locales/en-US/common.json'
 import enCustomer from './locales/en-US/customer.json'
+import enDeliveryOrder from './locales/en-US/delivery_order.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
 import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
+import enSalesOrder from './locales/en-US/sales_order.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
 import zhCustomer from './locales/zh-CN/customer.json'
+import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
+import zhSalesOrder from './locales/zh-CN/sales_order.json'
 import zhSupplier from './locales/zh-CN/supplier.json'
 import zhWarehouse from './locales/zh-CN/warehouse.json'
 
@@ -32,6 +36,8 @@ i18n
         warehouse: enWarehouse,
         purchase_order: enPurchaseOrder,
         goods_receipt: enGoodsReceipt,
+        sales_order: enSalesOrder,
+        delivery_order: enDeliveryOrder,
         ocr: enOcr,
       },
       'zh-CN': {
@@ -42,6 +48,8 @@ i18n
         warehouse: zhWarehouse,
         purchase_order: zhPurchaseOrder,
         goods_receipt: zhGoodsReceipt,
+        sales_order: zhSalesOrder,
+        delivery_order: zhDeliveryOrder,
         ocr: zhOcr,
       },
     },

@@ -44,6 +44,8 @@ from app.routers import customer as customer_router
 from app.routers import exchange_rate as exchange_rate_router
 from app.routers import goods_receipt as goods_receipt_router
 from app.routers import purchase_order as purchase_order_router
+from app.routers import sales_order as sales_order_router
+from app.routers import delivery_order as delivery_order_router
 from app.routers import sku as sku_router
 from app.routers import supplier as supplier_router
 from app.routers import tax_rate as tax_rate_router
@@ -188,6 +190,8 @@ app.include_router(customer_router.router, prefix="/api/customers", tags=["custo
 app.include_router(warehouse_router.router, prefix="/api/warehouses", tags=["warehouses"])
 app.include_router(purchase_order_router.router, prefix="/api/purchase-orders", tags=["purchase-orders"])
 app.include_router(goods_receipt_router.router, prefix="/api/goods-receipts", tags=["goods-receipts"])
+app.include_router(sales_order_router.router, prefix="/api/sales-orders", tags=["sales-orders"])
+app.include_router(delivery_order_router.router, prefix="/api/delivery-orders", tags=["delivery-orders"])
 app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 
 
