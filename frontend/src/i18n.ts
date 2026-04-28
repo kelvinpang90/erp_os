@@ -4,12 +4,14 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import enCommon from './locales/en-US/common.json'
 import enCustomer from './locales/en-US/customer.json'
+import enGoodsReceipt from './locales/en-US/goods_receipt.json'
 import enMenu from './locales/en-US/menu.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
 import zhCustomer from './locales/zh-CN/customer.json'
+import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
 import zhSupplier from './locales/zh-CN/supplier.json'
@@ -27,6 +29,7 @@ i18n
         customer: enCustomer,
         warehouse: enWarehouse,
         purchase_order: enPurchaseOrder,
+        goods_receipt: enGoodsReceipt,
       },
       'zh-CN': {
         common: zhCommon,
@@ -35,6 +38,7 @@ i18n
         customer: zhCustomer,
         warehouse: zhWarehouse,
         purchase_order: zhPurchaseOrder,
+        goods_receipt: zhGoodsReceipt,
       },
     },
     fallbackLng: 'en-US',

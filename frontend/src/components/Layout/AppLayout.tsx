@@ -48,7 +48,7 @@ export default function AppLayout() {
       icon: <ShoppingCartOutlined />,
       children: [
         { path: '/purchase/orders', name: t('purchaseOrders') },
-        { path: '/purchase/receipts', name: t('goodsReceipt') },
+        { path: '/purchase/goods-receipts', name: t('goodsReceipt') },
         { path: '/purchase/suppliers', name: t('suppliers') },
       ],
     },

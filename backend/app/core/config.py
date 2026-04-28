@@ -1,6 +1,8 @@
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -58,6 +60,11 @@ class Settings(BaseSettings):
 
     # ── Sentry ────────────────────────────────────────────────────────────────
     SENTRY_DSN: str = ""
+
+    # ── Inventory / Goods Receipt ────────────────────────────────────────────
+    # Allowed over-receipt tolerance as a fraction (0–1).
+    # 0 → strict reject; 0.05 → 5% tolerance (ISO 9001 industry default).
+    GR_OVER_RECEIPT_TOLERANCE: Decimal = Field(default=Decimal("0.05"), ge=0, le=1)
 
     @property
     def cors_origins_list(self) -> list[str]:

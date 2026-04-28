@@ -160,6 +160,14 @@ export default function PODetailPage() {
                 </Button>
               </>
             )}
+            {(po.status === 'CONFIRMED' || po.status === 'PARTIAL_RECEIVED') && (
+              <Button
+                type="primary"
+                onClick={() => navigate(`/purchase/goods-receipts/create?po_id=${id}`)}
+              >
+                Create Goods Receipt
+              </Button>
+            )}
             {(po.status === 'DRAFT' || po.status === 'CONFIRMED') && (
               <Button danger onClick={() => setCancelModal(true)}>
                 Cancel PO
