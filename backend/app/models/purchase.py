@@ -197,6 +197,10 @@ class GoodsReceiptLine(Base):
     )
     qty_received: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    # Snapshot of (sku, warehouse) weighted-average cost AFTER this line was
+    # applied. Filled in by goods_receipt.create_gr right after
+    # inventory.apply_purchase_in returns. Nullable to tolerate legacy rows.
+    avg_cost_after: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4), nullable=True)
     batch_no: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     expiry_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     remarks: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

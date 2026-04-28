@@ -225,7 +225,7 @@ async def create_gr(
         po_line.qty_received = po_line.qty_received + qty
 
         # Apply 6-dim stock update + cost recompute + StockMovement audit.
-        await inventory_svc.apply_purchase_in(
+        _stock, new_avg_cost = await inventory_svc.apply_purchase_in(
             session,
             org_id=org_id,
             sku_id=po_line.sku_id,
@@ -238,6 +238,9 @@ async def create_gr(
             expiry_date=in_line.expiry_date,
             actor_user_id=user.id,
         )
+        # Snapshot the post-update weighted-average cost on the GR line so
+        # the UI can show "this line bumped (sku, warehouse) avg_cost to X".
+        gr_line.avg_cost_after = new_avg_cost
 
     # ── PO status transition ──────────────────────────────────────────────
     # After accumulating qty_received on each line, decide the new PO status.

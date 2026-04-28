@@ -19,6 +19,7 @@
   "qty_received": "本次收货",
   "qty_max_allowed": "上限",
   "unit_cost": "单价",
+  "avg_cost_after": "本次后加权均价",
   "batch_no": "批号",
   "expiry_date": "效期",
   "actions": "操作",

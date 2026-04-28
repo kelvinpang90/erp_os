@@ -18,6 +18,7 @@ interface GRLine {
   qty_already_received: string
   qty_received: string
   unit_cost: string
+  avg_cost_after?: string | null
   batch_no?: string | null
   expiry_date?: string | null
   remarks?: string | null
@@ -110,6 +111,18 @@ export default function GRDetailPage() {
       width: 120,
       align: 'right' as const,
       render: (val: string) => fmt(val),
+    },
+    {
+      title: t('avg_cost_after'),
+      dataIndex: 'avg_cost_after',
+      width: 130,
+      align: 'right' as const,
+      render: (val: string | null | undefined) =>
+        val == null ? (
+          <span style={{ color: '#bbb' }}>—</span>
+        ) : (
+          <span style={{ color: '#1677ff', fontWeight: 500 }}>{fmt(val)}</span>
+        ),
     },
     {
       title: t('batch_no'),

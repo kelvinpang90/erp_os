@@ -38,6 +38,9 @@ class GoodsReceiptLineResponse(BaseModel):
     uom_id: int
     qty_received: Decimal
     unit_cost: Decimal
+    # Weighted-average cost of (sku, warehouse) AFTER this receipt line was
+    # applied. None for legacy rows created before W8.
+    avg_cost_after: Optional[Decimal] = None
     # Snapshot fields from the referenced PO line for convenient display
     qty_ordered: Decimal = Decimal("0")
     qty_already_received: Decimal = Decimal("0")

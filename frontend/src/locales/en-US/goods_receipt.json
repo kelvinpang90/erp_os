@@ -19,6 +19,7 @@
   "qty_received": "Qty Received",
   "qty_max_allowed": "Max Allowed",
   "unit_cost": "Unit Cost",
+  "avg_cost_after": "Avg Cost After",
   "batch_no": "Batch No.",
   "expiry_date": "Expiry Date",
   "actions": "Actions",
