@@ -80,6 +80,10 @@ class GoodsReceiptResponse(BaseModel):
 
 class GoodsReceiptDetail(GoodsReceiptResponse):
     remarks: Optional[str]
+    # Convenience name fields populated by the service layer (eager-loaded
+    # relations) so the UI can show human-readable labels.
+    warehouse_name: str = ""
+    received_by_name: str = ""
     lines: List[GoodsReceiptLineResponse] = []
 
     model_config = _decimal_cfg

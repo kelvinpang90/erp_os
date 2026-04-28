@@ -110,6 +110,11 @@ class PurchaseOrderDetail(PurchaseOrderResponse):
     cancelled_at: Optional[datetime]
     created_by: Optional[int]
     updated_by: Optional[int]
+    # Convenience name fields populated by the service layer (eager-loaded
+    # relations) so the UI can display human-readable labels without an
+    # extra round trip to /suppliers/:id and /warehouses/:id.
+    supplier_name: str = ""
+    warehouse_name: str = ""
     lines: List[POLineResponse] = []
 
     model_config = _decimal_cfg

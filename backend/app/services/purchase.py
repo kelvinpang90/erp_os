@@ -105,6 +105,9 @@ def _to_response(po: PurchaseOrder) -> PurchaseOrderDetail:
         lines.append(resp)
     detail = PurchaseOrderDetail.model_validate(po)
     detail.lines = lines
+    # Populate convenience name fields from eager-loaded relations.
+    detail.supplier_name = po.supplier.name if po.supplier is not None else ""
+    detail.warehouse_name = po.warehouse.name if po.warehouse is not None else ""
     return detail
 
 

@@ -82,6 +82,10 @@ def _to_response(gr: GoodsReceipt) -> GoodsReceiptDetail:
     detail.lines = line_resps
     if gr.purchase_order is not None:
         detail.purchase_order_no = gr.purchase_order.document_no
+    if gr.warehouse is not None:
+        detail.warehouse_name = gr.warehouse.name
+    if gr.receiver is not None:
+        detail.received_by_name = gr.receiver.full_name
     return detail
 
 

@@ -27,6 +27,8 @@ class GoodsReceiptRepository(BaseRepository[GoodsReceipt]):
                 selectinload(GoodsReceipt.lines).selectinload(GoodsReceiptLine.sku),
                 selectinload(GoodsReceipt.lines).selectinload(GoodsReceiptLine.purchase_order_line),
                 selectinload(GoodsReceipt.purchase_order),
+                selectinload(GoodsReceipt.warehouse),
+                selectinload(GoodsReceipt.receiver),
             )
         )
         result = await self.session.execute(stmt)

@@ -30,9 +30,11 @@ interface GRDetail {
   purchase_order_id: number
   purchase_order_no: string
   warehouse_id: number
+  warehouse_name: string
   receipt_date: string
   delivery_note_no?: string | null
   received_by?: number | null
+  received_by_name: string
   remarks?: string | null
   created_by?: number | null
   created_at: string
@@ -158,13 +160,13 @@ export default function GRDetailPage() {
             {gr.receipt_date}
           </ProDescriptions.Item>
           <ProDescriptions.Item label={t('warehouse')}>
-            #{gr.warehouse_id}
+            {gr.warehouse_name || `#${gr.warehouse_id}`}
           </ProDescriptions.Item>
           <ProDescriptions.Item label={t('delivery_note_no')}>
             {gr.delivery_note_no ?? '—'}
           </ProDescriptions.Item>
           <ProDescriptions.Item label={t('received_by')}>
-            {gr.received_by ? `User #${gr.received_by}` : '—'}
+            {gr.received_by_name || (gr.received_by ? `User #${gr.received_by}` : '—')}
           </ProDescriptions.Item>
           <ProDescriptions.Item label="Created At">
             {new Date(gr.created_at).toLocaleString('en-MY')}

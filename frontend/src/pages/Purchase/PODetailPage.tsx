@@ -25,7 +25,9 @@ interface PODetail {
   document_no: string
   status: string
   supplier_id: number
+  supplier_name: string
   warehouse_id: number
+  warehouse_name: string
   business_date: string
   expected_date?: string
   currency: string
@@ -177,8 +179,12 @@ export default function PODetailPage() {
         }
       >
         <ProDescriptions column={3}>
-          <ProDescriptions.Item label="Supplier ID">{po.supplier_id}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Warehouse ID">{po.warehouse_id}</ProDescriptions.Item>
+          <ProDescriptions.Item label="Supplier">
+            {po.supplier_name || `#${po.supplier_id}`}
+          </ProDescriptions.Item>
+          <ProDescriptions.Item label="Warehouse">
+            {po.warehouse_name || `#${po.warehouse_id}`}
+          </ProDescriptions.Item>
           <ProDescriptions.Item label="Order Date">{po.business_date}</ProDescriptions.Item>
           <ProDescriptions.Item label="Expected Date">{po.expected_date ?? '—'}</ProDescriptions.Item>
           <ProDescriptions.Item label="Currency">{po.currency}</ProDescriptions.Item>
