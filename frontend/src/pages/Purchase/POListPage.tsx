@@ -1,3 +1,6 @@
+import { ScanOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
@@ -19,6 +22,7 @@ async function fetchPOs(params: {
 
 export default function POListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation('ocr')
 
   return (
     <ResourceListPage<PORow>
@@ -46,6 +50,15 @@ export default function POListPage() {
       ]}
       fetchData={fetchPOs}
       createPath="/purchase/orders/create"
+      toolbarActions={[
+        <Button
+          key="ocr-upload"
+          icon={<ScanOutlined />}
+          onClick={() => navigate('/purchase/orders/ocr-upload')}
+        >
+          {t('page_title')}
+        </Button>,
+      ]}
     />
   )
 }

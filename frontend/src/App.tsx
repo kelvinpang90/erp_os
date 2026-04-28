@@ -20,6 +20,7 @@ const WarehouseEditPage = lazy(() => import('./pages/Warehouse/WarehouseEditPage
 const POListPage = lazy(() => import('./pages/Purchase/POListPage'))
 const PODetailPage = lazy(() => import('./pages/Purchase/PODetailPage'))
 const POEditPage = lazy(() => import('./pages/Purchase/POEditPage'))
+const OCRUploadPage = lazy(() => import('./pages/Purchase/OCRUploadPage'))
 const GRListPage = lazy(() => import('./pages/Purchase/GRListPage'))
 const GRCreatePage = lazy(() => import('./pages/Purchase/GRCreatePage'))
 const GRDetailPage = lazy(() => import('./pages/Purchase/GRDetailPage'))
@@ -51,6 +52,7 @@ function AppRoutes() {
         <Route path="/skus/:id" element={<SKUDetailPage />} />
         <Route path="/skus/:id/edit" element={<SKUEditPage />} />
         <Route path="/purchase/orders" element={<POListPage />} />
+        <Route path="/purchase/orders/ocr-upload" element={<OCRUploadPage />} />
         <Route path="/purchase/orders/create" element={<POEditPage />} />
         <Route path="/purchase/orders/:id" element={<PODetailPage />} />
         <Route path="/purchase/orders/:id/edit" element={<POEditPage />} />

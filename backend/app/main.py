@@ -35,6 +35,7 @@ from app.core.logging import RequestIDMiddleware, configure_logging, get_request
 from app.core.redis import ping_redis
 from app.events import event_bus
 from app.events.registry import setup_event_handlers
+from app.routers import ai as ai_router
 from app.routers import auth as auth_router
 from app.routers import brand as brand_router
 from app.routers import category as category_router
@@ -187,6 +188,7 @@ app.include_router(customer_router.router, prefix="/api/customers", tags=["custo
 app.include_router(warehouse_router.router, prefix="/api/warehouses", tags=["warehouses"])
 app.include_router(purchase_order_router.router, prefix="/api/purchase-orders", tags=["purchase-orders"])
 app.include_router(goods_receipt_router.router, prefix="/api/goods-receipts", tags=["goods-receipts"])
+app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

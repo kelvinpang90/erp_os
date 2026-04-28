@@ -1,0 +1,38 @@
+{
+  "page_title": "OCR Purchase Order Upload",
+  "page_subtitle": "Drop a supplier invoice (PDF or image). We'll extract the fields and pre-fill a new PO so you only have to review and save.",
+  "drag_hint": "Click or drag an invoice file to this area",
+  "accept_hint": "Single PDF, JPG, PNG, or WEBP. Up to {{size}} MB.",
+  "manual_fallback_button": "Skip OCR and start blank",
+  "stages": {
+    "uploaded": "File uploaded — preparing AI...",
+    "calling_ai": "Calling Claude Vision...",
+    "parsing": "Parsing extracted fields...",
+    "done": "Done! Redirecting to PO form...",
+    "error": "Something went wrong"
+  },
+  "errors": {
+    "title": "OCR could not finish",
+    "file_too_large": "File exceeds the {{size}} MB limit.",
+    "network": "Network error. Please check your connection and retry.",
+    "no_stream": "Server did not return a streaming response.",
+    "stream_aborted": "The upload was interrupted. Please try again.",
+    "generic": "OCR failed. Please fill the PO form manually.",
+    "AI_TIMEOUT": "OCR took too long. Please try a smaller / clearer image, or fill the form manually.",
+    "AI_FEATURE_DISABLED": "OCR is currently disabled for your organization. Contact an admin.",
+    "AI_DAILY_QUOTA_EXCEEDED": "You've reached today's OCR quota. Resets at midnight UTC.",
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a minute and try again.",
+    "FILE_TOO_LARGE": "File exceeds the size limit.",
+    "UNSUPPORTED_MIME_TYPE": "This file type is not supported. Use PDF, JPG, PNG, or WEBP.",
+    "AI_ERROR": "OCR failed. Please fill the form manually."
+  },
+  "result_preview": {
+    "title": "Extracted fields",
+    "supplier": "Supplier",
+    "tin": "TIN",
+    "lines": "Line items",
+    "confidence": "Confidence",
+    "use": "Use these and continue",
+    "discard": "Discard and start blank"
+  }
+}

@@ -7,12 +7,14 @@ import {
   ProFormTextArea,
   type EditableFormInstance,
   type ProColumns,
+  type ProFormInstance,
 } from '@ant-design/pro-components'
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
+import type { OCRPurchaseOrderResult } from './OCRUploadPage'
 
 interface LineRow {
   id: string | number
@@ -37,21 +39,30 @@ export default function POEditPage() {
   const { id } = useParams<{ id?: string }>()
   const isCreate = !id
   const navigate = useNavigate()
+  const location = useLocation()
   const { message } = App.useApp()
+
+  // OCR prefill payload (when arriving from /purchase/orders/ocr-upload).
+  // Only meaningful on create; ignored when editing an existing PO.
+  const ocrPrefill = isCreate
+    ? ((location.state as { ocrPrefill?: OCRPurchaseOrderResult } | null)?.ocrPrefill ?? null)
+    : null
 
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
   const [lines, setLines] = useState<LineRow[]>([])
   const [editableKeys, setEditableKeys] = useState<(string | number)[]>([])
+  const [ocrApplied, setOcrApplied] = useState(false)
 
   const [supplierOptions, setSupplierOptions] = useState<{ value: number; label: string }[]>([])
   const [warehouseOptions, setWarehouseOptions] = useState<{ value: number; label: string }[]>([])
-  const [skuOptions, setSkuOptions] = useState<{ value: number; label: string }[]>([])
+  const [skuOptions, setSkuOptions] = useState<{ value: number; label: string; code: string }[]>([])
   const [skuLoading, setSkuLoading] = useState(false)
   const [uomOptions, setUomOptions] = useState<{ value: number; label: string }[]>([])
   const [taxRateOptions, setTaxRateOptions] = useState<{ value: number; label: string; rate: number }[]>([])
 
   const editableFormRef = useRef<EditableFormInstance<LineRow>>()
+  const formRef = useRef<ProFormInstance<Record<string, unknown>>>()
 
   // ── SKU server-side search with debounce ──────────────────────────────────
   const skuDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -66,6 +77,7 @@ export default function POEditPage() {
           res.data.items.map((s: { id: number; code: string; name: string }) => ({
             value: s.id,
             label: `${s.code} — ${s.name}`,
+            code: s.code,
           }))
         )
       })
@@ -152,6 +164,8 @@ export default function POEditPage() {
       }
     })
 
+    // Editing an existing PO — load it. OCR prefill (create-only) is handled
+    // by a separate effect once the reference dropdowns are populated.
     if (!isCreate && id) {
       axiosInstance
         .get(`/purchase-orders/${id}`)
@@ -189,6 +203,105 @@ export default function POEditPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isCreate, message, fetchSkus])
+
+  // ── OCR prefill: apply once reference dropdowns are populated ──────────
+  useEffect(() => {
+    if (!ocrPrefill || ocrApplied) return
+    const refsReady =
+      supplierOptions.length > 0 &&
+      warehouseOptions.length > 0 &&
+      uomOptions.length > 0 &&
+      taxRateOptions.length > 0
+    if (!refsReady) return
+
+    let supplierId: number | undefined
+    const ocrName = (ocrPrefill.supplier_name ?? '').trim().toLowerCase()
+    if (ocrName) {
+      const hit = supplierOptions.find(
+        (s) => s.label.toLowerCase() === ocrName ||
+               s.label.toLowerCase().includes(ocrName) ||
+               ocrName.includes(s.label.toLowerCase()),
+      )
+      supplierId = hit?.value
+    }
+
+    const num = (v: string | number | null | undefined): number | undefined => {
+      if (v === null || v === undefined || v === '') return undefined
+      const n = typeof v === 'string' ? parseFloat(v) : v
+      return Number.isFinite(n) ? n : undefined
+    }
+
+    const matchUom = (uom: string | null): number | undefined => {
+      if (!uom) return undefined
+      const lc = uom.trim().toLowerCase()
+      return uomOptions.find((u) => u.label.toLowerCase() === lc)?.value
+    }
+
+    const matchTaxRate = (pct: number | undefined): { id?: number; rate: number } => {
+      if (pct === undefined) return { rate: 0 }
+      // Find an exact rate match within 0.01 tolerance
+      const hit = taxRateOptions.find((t) => Math.abs(t.rate - pct) < 0.01)
+      return { id: hit?.value, rate: pct }
+    }
+
+    const matchSku = (skuCode: string | null): number | undefined => {
+      if (!skuCode) return undefined
+      const lc = skuCode.trim().toLowerCase()
+      return skuOptions.find((s) => s.code.toLowerCase() === lc)?.value
+    }
+
+    const headerValues: Record<string, unknown> = {
+      currency: (ocrPrefill.currency ?? 'MYR').toUpperCase(),
+      exchange_rate: 1,
+      payment_terms_days: 30,
+    }
+    if (supplierId !== undefined) headerValues.supplier_id = supplierId
+    if (ocrPrefill.business_date) headerValues.business_date = dayjs(ocrPrefill.business_date)
+    if (ocrPrefill.remarks) headerValues.remarks = ocrPrefill.remarks
+
+    setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
+    formRef.current?.setFieldsValue(headerValues)
+
+    const newLines: LineRow[] = ocrPrefill.lines.map((line, idx) => {
+      const tax = matchTaxRate(num(line.tax_rate_percent))
+      return {
+        id: `ocr-${idx}-${Date.now()}`,
+        sku_id: matchSku(line.sku_code),
+        uom_id: matchUom(line.uom),
+        description: line.description,
+        qty_ordered: num(line.qty),
+        unit_price_excl_tax: num(line.unit_price_excl_tax),
+        tax_rate_id: tax.id,
+        tax_rate_percent: tax.rate,
+        discount_percent: num(line.discount_percent) ?? 0,
+      }
+    })
+    setLines(newLines)
+    setEditableKeys(newLines.map((l) => l.id))
+
+    const missing: string[] = []
+    if (ocrPrefill.supplier_name && supplierId === undefined) missing.push('supplier')
+    const linesMissingSku = newLines.filter((l) => l.sku_id === undefined).length
+    if (linesMissingSku > 0) missing.push(`${linesMissingSku} SKU`)
+    if (missing.length > 0) {
+      message.warning(
+        `OCR prefilled. Please review unmatched fields: ${missing.join(', ')}.`,
+      )
+    } else {
+      message.success(`OCR prefilled (confidence: ${ocrPrefill.confidence}). Please review and save.`)
+    }
+
+    setOcrApplied(true)
+  }, [
+    ocrPrefill,
+    ocrApplied,
+    supplierOptions,
+    warehouseOptions,
+    uomOptions,
+    taxRateOptions,
+    skuOptions,
+    message,
+  ])
 
   const lineColumns: ProColumns<LineRow>[] = [
     {
@@ -322,6 +435,7 @@ export default function POEditPage() {
   return (
     <Card title={isCreate ? 'New Purchase Order' : 'Edit Purchase Order'}>
       <ProForm
+        formRef={formRef}
         initialValues={initialValues ?? {
           currency: 'MYR',
           exchange_rate: 1,

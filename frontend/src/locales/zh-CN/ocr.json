@@ -1,0 +1,38 @@
+{
+  "page_title": "OCR 智能录入采购单",
+  "page_subtitle": "上传一份供应商发票（PDF 或图片），系统会自动抽取关键字段并预填到新建 PO 表单，您只需核对后保存。",
+  "drag_hint": "点击或拖拽发票文件到此区域",
+  "accept_hint": "单个 PDF / JPG / PNG / WEBP 文件，最大 {{size}} MB。",
+  "manual_fallback_button": "跳过 OCR，手动新建",
+  "stages": {
+    "uploaded": "文件已上传，准备调用 AI...",
+    "calling_ai": "正在调用 Claude Vision 模型...",
+    "parsing": "解析返回字段...",
+    "done": "完成！正在跳转到采购单表单...",
+    "error": "出错了"
+  },
+  "errors": {
+    "title": "OCR 未能完成",
+    "file_too_large": "文件超过 {{size}} MB 上限。",
+    "network": "网络异常，请检查连接后重试。",
+    "no_stream": "服务端未返回流式响应。",
+    "stream_aborted": "上传被中断，请重试。",
+    "generic": "OCR 调用失败，请手动填写采购单。",
+    "AI_TIMEOUT": "OCR 超时，请换一张更清晰 / 更小的图片，或手动填写。",
+    "AI_FEATURE_DISABLED": "OCR 已被组织管理员关闭，请联系管理员。",
+    "AI_DAILY_QUOTA_EXCEEDED": "已达今日 OCR 配额上限，UTC 零点重置。",
+    "RATE_LIMIT_EXCEEDED": "请求过于频繁，请稍后再试。",
+    "FILE_TOO_LARGE": "文件大小超出限制。",
+    "UNSUPPORTED_MIME_TYPE": "暂不支持该文件类型，请使用 PDF / JPG / PNG / WEBP。",
+    "AI_ERROR": "OCR 调用失败，请手动填写采购单。"
+  },
+  "result_preview": {
+    "title": "已抽取字段",
+    "supplier": "供应商",
+    "tin": "TIN",
+    "lines": "明细行",
+    "confidence": "置信度",
+    "use": "使用并继续",
+    "discard": "丢弃并新建空白"
+  }
+}

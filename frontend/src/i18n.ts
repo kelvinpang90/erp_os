@@ -6,6 +6,7 @@ import enCommon from './locales/en-US/common.json'
 import enCustomer from './locales/en-US/customer.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
 import enMenu from './locales/en-US/menu.json'
+import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
@@ -13,6 +14,7 @@ import zhCommon from './locales/zh-CN/common.json'
 import zhCustomer from './locales/zh-CN/customer.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
 import zhMenu from './locales/zh-CN/menu.json'
+import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
 import zhSupplier from './locales/zh-CN/supplier.json'
 import zhWarehouse from './locales/zh-CN/warehouse.json'
@@ -30,6 +32,7 @@ i18n
         warehouse: enWarehouse,
         purchase_order: enPurchaseOrder,
         goods_receipt: enGoodsReceipt,
+        ocr: enOcr,
       },
       'zh-CN': {
         common: zhCommon,
@@ -39,6 +42,7 @@ i18n
         warehouse: zhWarehouse,
         purchase_order: zhPurchaseOrder,
         goods_receipt: zhGoodsReceipt,
+        ocr: zhOcr,
       },
     },
     fallbackLng: 'en-US',

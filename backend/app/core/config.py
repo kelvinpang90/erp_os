@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     AI_TIMEOUT_SECONDS: int = 3
 
+    # OCR — Claude Vision based PO invoice extraction
+    AI_OCR_MODEL: str = "claude-sonnet-4-6"
+    AI_OCR_TIMEOUT_SECONDS: int = 30
+    AI_OCR_DAILY_QUOTA: int = 20
+    AI_OCR_MAX_FILE_MB: int = 10
+
     # ── File Storage ──────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "/app/uploads"
     MAX_UPLOAD_SIZE_MB: int = 20
