@@ -60,11 +60,17 @@ interface SSEFrame {
 /**
  * Parse a chunk of SSE text into discrete frames. Maintains a buffer for
  * partial frames split across reads.
+ *
+ * The SSE spec accepts \n\n, \r\r, or \r\n\r\n as event separators. Python
+ * libs like sse-starlette emit CRLF (\r\n\r\n) — normalize to LF before
+ * splitting so a single indexOf('\n\n') handles all cases.
  */
 function makeSSEParser(): (chunk: string) => SSEFrame[] {
   let buffer = ''
   return (chunk: string) => {
-    buffer += chunk
+    // Normalize CRLF / CR to LF up front. SSE spec allows all three line
+    // endings; the rest of the parser only deals with LF.
+    buffer += chunk.replace(/\r\n?/g, '\n')
     const frames: SSEFrame[] = []
     let sep: number
     while ((sep = buffer.indexOf('\n\n')) !== -1) {

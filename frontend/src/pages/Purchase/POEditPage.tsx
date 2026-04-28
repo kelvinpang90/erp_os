@@ -205,6 +205,9 @@ export default function POEditPage() {
   }, [id, isCreate, message, fetchSkus])
 
   // ── OCR prefill: apply once reference dropdowns are populated ──────────
+  // SKUs aren't matched against the local cache (which only has the first 50
+  // alphabetically) — instead we fire a server-side lookup per unique sku_code
+  // to avoid pagination misses.
   useEffect(() => {
     if (!ocrPrefill || ocrApplied) return
     const refsReady =
@@ -213,17 +216,6 @@ export default function POEditPage() {
       uomOptions.length > 0 &&
       taxRateOptions.length > 0
     if (!refsReady) return
-
-    let supplierId: number | undefined
-    const ocrName = (ocrPrefill.supplier_name ?? '').trim().toLowerCase()
-    if (ocrName) {
-      const hit = supplierOptions.find(
-        (s) => s.label.toLowerCase() === ocrName ||
-               s.label.toLowerCase().includes(ocrName) ||
-               ocrName.includes(s.label.toLowerCase()),
-      )
-      supplierId = hit?.value
-    }
 
     const num = (v: string | number | null | undefined): number | undefined => {
       if (v === null || v === undefined || v === '') return undefined
@@ -244,54 +236,118 @@ export default function POEditPage() {
       return { id: hit?.value, rate: pct }
     }
 
-    const matchSku = (skuCode: string | null): number | undefined => {
-      if (!skuCode) return undefined
-      const lc = skuCode.trim().toLowerCase()
-      return skuOptions.find((s) => s.code.toLowerCase() === lc)?.value
-    }
+    setOcrApplied(true)  // claim the prefill slot first so we don't race on re-renders
 
-    const headerValues: Record<string, unknown> = {
-      currency: (ocrPrefill.currency ?? 'MYR').toUpperCase(),
-      exchange_rate: 1,
-      payment_terms_days: 30,
-    }
-    if (supplierId !== undefined) headerValues.supplier_id = supplierId
-    if (ocrPrefill.business_date) headerValues.business_date = dayjs(ocrPrefill.business_date)
-    if (ocrPrefill.remarks) headerValues.remarks = ocrPrefill.remarks
-
-    setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
-    formRef.current?.setFieldsValue(headerValues)
-
-    const newLines: LineRow[] = ocrPrefill.lines.map((line, idx) => {
-      const tax = matchTaxRate(num(line.tax_rate_percent))
-      return {
-        id: `ocr-${idx}-${Date.now()}`,
-        sku_id: matchSku(line.sku_code),
-        uom_id: matchUom(line.uom),
-        description: line.description,
-        qty_ordered: num(line.qty),
-        unit_price_excl_tax: num(line.unit_price_excl_tax),
-        tax_rate_id: tax.id,
-        tax_rate_percent: tax.rate,
-        discount_percent: num(line.discount_percent) ?? 0,
+    const apply = async () => {
+      // 1. Match supplier from the cached options (50 should cover the common case)
+      let supplierId: number | undefined
+      const ocrName = (ocrPrefill.supplier_name ?? '').trim().toLowerCase()
+      if (ocrName) {
+        const hit = supplierOptions.find(
+          (s) => s.label.toLowerCase() === ocrName ||
+                 s.label.toLowerCase().includes(ocrName) ||
+                 ocrName.includes(s.label.toLowerCase()),
+        )
+        supplierId = hit?.value
       }
-    })
-    setLines(newLines)
-    setEditableKeys(newLines.map((l) => l.id))
 
-    const missing: string[] = []
-    if (ocrPrefill.supplier_name && supplierId === undefined) missing.push('supplier')
-    const linesMissingSku = newLines.filter((l) => l.sku_id === undefined).length
-    if (linesMissingSku > 0) missing.push(`${linesMissingSku} SKU`)
-    if (missing.length > 0) {
-      message.warning(
-        `OCR prefilled. Please review unmatched fields: ${missing.join(', ')}.`,
-      )
-    } else {
-      message.success(`OCR prefilled (confidence: ${ocrPrefill.confidence}). Please review and save.`)
+      // 2. Resolve SKUs by server-side search per unique code. Each call is a
+      //    LIKE %code% search; we filter to exact code match in the response.
+      type ServerSku = {
+        id: number; code: string; name: string;
+        base_uom_id?: number;
+        unit_price_excl_tax?: string;
+        tax_rate_id?: number;
+        tax_rate?: { rate?: string };
+      }
+      const codes = Array.from(new Set(
+        ocrPrefill.lines
+          .map((l) => l.sku_code?.trim())
+          .filter((c): c is string => !!c),
+      ))
+      const skuByCode = new Map<string, ServerSku>()
+
+      await Promise.all(codes.map(async (code) => {
+        try {
+          const res = await axiosInstance.get(
+            `/skus?page_size=10&search=${encodeURIComponent(code)}`,
+          )
+          const exact = (res.data.items as ServerSku[]).find(
+            (s) => s.code.toLowerCase() === code.toLowerCase(),
+          )
+          if (exact) skuByCode.set(code.toLowerCase(), exact)
+        } catch {
+          // ignore — line will fall back to "Please select"
+        }
+      }))
+
+      // 3. Make sure the matched SKUs are in the dropdown options so the
+      //    select widget can render their labels.
+      if (skuByCode.size > 0) {
+        setSkuOptions((prev) => {
+          const seen = new Set(prev.map((o) => o.value))
+          const additions = Array.from(skuByCode.values())
+            .filter((s) => !seen.has(s.id))
+            .map((s) => ({ value: s.id, label: `${s.code} — ${s.name}`, code: s.code }))
+          return additions.length > 0 ? [...prev, ...additions] : prev
+        })
+      }
+
+      // 4. Header
+      const headerValues: Record<string, unknown> = {
+        currency: (ocrPrefill.currency ?? 'MYR').toUpperCase(),
+        exchange_rate: 1,
+        payment_terms_days: 30,
+      }
+      if (supplierId !== undefined) headerValues.supplier_id = supplierId
+      if (ocrPrefill.business_date) headerValues.business_date = dayjs(ocrPrefill.business_date)
+      if (ocrPrefill.remarks) headerValues.remarks = ocrPrefill.remarks
+
+      setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
+      formRef.current?.setFieldsValue(headerValues)
+
+      // 5. Lines — prefer SKU's own UOM/tax/price when we have the SKU; fall
+      //    back to whatever OCR returned if the SKU wasn't found.
+      const newLines: LineRow[] = ocrPrefill.lines.map((line, idx) => {
+        const code = line.sku_code?.trim().toLowerCase()
+        const sku = code ? skuByCode.get(code) : undefined
+
+        const ocrTax = matchTaxRate(num(line.tax_rate_percent))
+        const skuTaxRateId = sku?.tax_rate_id
+        const skuTaxRatePct = sku?.tax_rate?.rate ? parseFloat(sku.tax_rate.rate) : undefined
+
+        return {
+          id: `ocr-${idx}-${Date.now()}`,
+          sku_id: sku?.id,
+          uom_id: sku?.base_uom_id ?? matchUom(line.uom),
+          description: line.description,
+          qty_ordered: num(line.qty),
+          unit_price_excl_tax:
+            num(line.unit_price_excl_tax) ??
+            (sku?.unit_price_excl_tax ? parseFloat(sku.unit_price_excl_tax) : undefined),
+          tax_rate_id: skuTaxRateId ?? ocrTax.id,
+          tax_rate_percent: skuTaxRatePct ?? ocrTax.rate,
+          discount_percent: num(line.discount_percent) ?? 0,
+        }
+      })
+      setLines(newLines)
+      setEditableKeys(newLines.map((l) => l.id))
+
+      // 6. Tell user what to review
+      const missing: string[] = []
+      if (ocrPrefill.supplier_name && supplierId === undefined) missing.push('supplier')
+      const linesMissingSku = newLines.filter((l) => l.sku_id === undefined).length
+      if (linesMissingSku > 0) missing.push(`${linesMissingSku} SKU`)
+      if (missing.length > 0) {
+        message.warning(
+          `OCR prefilled. Please review unmatched fields: ${missing.join(', ')}.`,
+        )
+      } else {
+        message.success(`OCR prefilled (confidence: ${ocrPrefill.confidence}). Please review and save.`)
+      }
     }
 
-    setOcrApplied(true)
+    void apply()
   }, [
     ocrPrefill,
     ocrApplied,
@@ -299,7 +355,6 @@ export default function POEditPage() {
     warehouseOptions,
     uomOptions,
     taxRateOptions,
-    skuOptions,
     message,
   ])
 
