@@ -315,7 +315,8 @@ docker compose exec backend python scripts/seed_all_master.py
 ## Window 09 —— OCR AI 功能（SSE 流式）
 
 **目标**：上传 PDF → SSE 进度 → 表单自动填充。
-
+OCR（Optical Character Recognition，光学字符识别）= 让机器从图片/PDF 里把文字"读出来"。
+SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流"。客户端发一次请求，服务器保持连接不断，可以多次往回推数据，直到服务器主动关闭。
 ### 前置条件
 - Window 08 完成
 - 需要 `ANTHROPIC_API_KEY`
@@ -774,7 +775,7 @@ docker compose exec backend python scripts/seed_all_master.py
 | 06 Seed 数据 | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~50 | 200 SKU / 30 supplier / 50 customer / 600 stock 行 |
 | 07 PO + 事件 | ✅ 完成 | 2026-04-27 | 2026-04-27 | ~80 | |
 | 08 GR + 库存 | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 53/53 单测全绿；端到端 4% 容差通过、6% 拒绝；avg_cost 公式验证正确 |
-| 09 OCR AI | ⏳ | | | | |
+| 09 OCR AI | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~90 | 72/72 测试全绿；SSE 4 事件流；Claude Sonnet 4.6 真实调用 2.6s / $0.0048；修复 SSE+session lifecycle bug |
 | 10 SO + DO | ⏳ | | | | |
 | 11 Invoice + MyInvois | ⏳ | | | | |
 | 12 e-Invoice AI + CN | ⏳ | | | | |
