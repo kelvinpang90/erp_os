@@ -47,7 +47,8 @@ class Invoice(Base, SoftDeleteMixin, TimestampedMixin, VersionedMixin):
         UniqueConstraint("uin", name="uq_inv_uin"),
         # Window 11: 1 SO ↔ 1 Invoice. NULL allowed (e.g. consolidated B2C
         # invoices) — MySQL does not enforce uniqueness across NULLs.
-        Index("uq_inv_so", "organization_id", "sales_order_id", unique=True),
+        # Single-column so it can also serve the FK on sales_order_id.
+        Index("uq_inv_so", "sales_order_id", unique=True),
         Index("ix_inv_org_status_date", "organization_id", "status", "business_date"),
         Index("ix_inv_customer", "customer_id"),
         Index("ix_inv_validated_at", "status", "validated_at"),

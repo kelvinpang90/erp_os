@@ -26,18 +26,23 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Drop the non-unique helper index added by the initial schema before
-    # creating the unique one (MySQL allows multiple indexes on the same
-    # column but having both is wasteful).
-    op.drop_index("ix_inv_so", table_name="invoices")
+    # Order matters: create the new unique index FIRST so the FK on
+    # invoices.sales_order_id always has an index to use, then drop the
+    # old non-unique helper. MySQL refuses to drop an index still backing
+    # a foreign-key constraint (errno 1553).
+    #
+    # NOTE: SO IDs are globally unique auto-increment PKs, and an SO belongs
+    # to exactly one organisation, so a unique index on sales_order_id alone
+    # is sufficient to enforce "1 SO ↔ 1 Invoice" without an org_id prefix.
     op.create_index(
         "uq_inv_so",
         "invoices",
-        ["organization_id", "sales_order_id"],
+        ["sales_order_id"],
         unique=True,
     )
+    op.drop_index("ix_inv_so", table_name="invoices")
 
 
 def downgrade() -> None:
-    op.drop_index("uq_inv_so", table_name="invoices")
     op.create_index("ix_inv_so", "invoices", ["sales_order_id"], unique=False)
+    op.drop_index("uq_inv_so", table_name="invoices")
