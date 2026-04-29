@@ -202,6 +202,10 @@ async def test_generate_draft_happy_path():
             new=AsyncMock(return_value="INV-2026-00001"),
         ),
         patch("app.services.einvoice._to_detail", return_value=sentinel),
+        patch(
+            "app.services.einvoice._so_already_consolidated",
+            new=AsyncMock(return_value=False),
+        ),
     ):
         result = await einvoice_service.generate_draft_from_so(
             session,
@@ -280,6 +284,10 @@ async def test_generate_rejects_zero_shipped_lines():
     with (
         patch("app.services.einvoice.SalesOrderRepository", return_value=so_repo),
         patch("app.services.einvoice.InvoiceRepository", return_value=inv_repo),
+        patch(
+            "app.services.einvoice._so_already_consolidated",
+            new=AsyncMock(return_value=False),
+        ),
     ):
         with pytest.raises(BusinessRuleError) as exc:
             await einvoice_service.generate_draft_from_so(

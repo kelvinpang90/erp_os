@@ -26,7 +26,7 @@ class InvoicePayload:
     """
 
     document_no: str
-    invoice_type: str          # "INVOICE" | "SELF_BILLED" | "CONSOLIDATED"
+    invoice_type: str          # "INVOICE" | "SELF_BILLED" | "CONSOLIDATED" | "CREDIT_NOTE"
     business_date: str         # ISO date
     currency: str              # ISO 4217
     exchange_rate: Decimal

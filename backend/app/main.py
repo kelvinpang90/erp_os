@@ -39,6 +39,7 @@ from app.routers import ai as ai_router
 from app.routers import auth as auth_router
 from app.routers import brand as brand_router
 from app.routers import category as category_router
+from app.routers import credit_note as credit_note_router
 from app.routers import currency as currency_router
 from app.routers import customer as customer_router
 from app.routers import exchange_rate as exchange_rate_router
@@ -194,6 +195,7 @@ app.include_router(goods_receipt_router.router, prefix="/api/goods-receipts", ta
 app.include_router(sales_order_router.router, prefix="/api/sales-orders", tags=["sales-orders"])
 app.include_router(delivery_order_router.router, prefix="/api/delivery-orders", tags=["delivery-orders"])
 app.include_router(invoice_router.router, prefix="/api/invoices", tags=["invoices"])
+app.include_router(credit_note_router.router, prefix="/api/credit-notes", tags=["credit-notes"])
 app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 
 

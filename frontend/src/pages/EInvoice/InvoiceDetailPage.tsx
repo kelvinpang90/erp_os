@@ -19,6 +19,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import CountdownTimer from './CountdownTimer'
 import { STATUS_COLOR, STATUS_LABEL } from './InvoiceColumns'
+import PrecheckModal from './PrecheckModal'
 
 interface InvoiceLine {
   id: number
@@ -82,6 +83,7 @@ export default function InvoiceDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [rejectModal, setRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  const [precheckOpen, setPrecheckOpen] = useState(false)
 
   const loadInvoice = () => {
     if (!id) return
@@ -94,21 +96,6 @@ export default function InvoiceDetailPage() {
   }
 
   useEffect(loadInvoice, [id])
-
-  const handleSubmit = async () => {
-    if (!id) return
-    setActionLoading(true)
-    try {
-      await axiosInstance.post(`/invoices/${id}/submit`)
-      message.success('Invoice submitted to MyInvois. UIN issued.')
-      loadInvoice()
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to submit invoice.')
-    } finally {
-      setActionLoading(false)
-    }
-  }
 
   const handleReject = async () => {
     if (!id || rejectReason.trim().length < 3) {
@@ -184,6 +171,9 @@ export default function InvoiceDetailPage() {
     inv.seconds_until_finalize !== undefined &&
     inv.seconds_until_finalize > 0
   const isValidated = inv.status === 'VALIDATED'
+  // Window 12: Credit Note can be issued against any non-cancelled invoice
+  // that LHDN has accepted (VALIDATED or FINAL).
+  const isCreditable = inv.status === 'VALIDATED' || inv.status === 'FINAL'
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -205,8 +195,21 @@ export default function InvoiceDetailPage() {
         extra={
           <Space>
             {isSubmittable && (
-              <Button type="primary" loading={actionLoading} onClick={handleSubmit}>
-                Submit to MyInvois
+              <Button
+                type="primary"
+                loading={actionLoading}
+                onClick={() => setPrecheckOpen(true)}
+              >
+                Run Precheck &amp; Submit
+              </Button>
+            )}
+            {isCreditable && (
+              <Button
+                onClick={() =>
+                  navigate(`/sales/credit-notes/new?invoice_id=${inv.id}`)
+                }
+              >
+                Issue Credit Note
               </Button>
             )}
             {isRejectable && (
@@ -389,6 +392,13 @@ export default function InvoiceDetailPage() {
           </Col>
         </Row>
       </Card>
+
+      <PrecheckModal
+        open={precheckOpen}
+        invoiceId={inv.id}
+        onClose={() => setPrecheckOpen(false)}
+        onSubmitted={loadInvoice}
+      />
 
       <Modal
         title="Reject Invoice (as Buyer)"

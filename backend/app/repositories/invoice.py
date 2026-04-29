@@ -29,6 +29,8 @@ class InvoiceRepository(BaseRepository[Invoice]):
                 selectinload(Invoice.lines).selectinload(InvoiceLine.sku),
                 selectinload(Invoice.lines).selectinload(InvoiceLine.uom),
                 selectinload(Invoice.lines).selectinload(InvoiceLine.tax_rate),
+                # Window 12: CN creation reads SOLine.snapshot_avg_cost via this path.
+                selectinload(Invoice.lines).selectinload(InvoiceLine.sales_order_line),
                 selectinload(Invoice.customer),
                 selectinload(Invoice.warehouse),
                 selectinload(Invoice.sales_order),

@@ -32,6 +32,9 @@ const DOCreatePage = lazy(() => import('./pages/Sales/DOCreatePage'))
 const DODetailPage = lazy(() => import('./pages/Sales/DODetailPage'))
 const InvoiceListPage = lazy(() => import('./pages/EInvoice/InvoiceListPage'))
 const InvoiceDetailPage = lazy(() => import('./pages/EInvoice/InvoiceDetailPage'))
+const CreditNoteListPage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteListPage'))
+const CreditNoteDetailPage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteDetailPage'))
+const CreditNoteCreatePage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteCreatePage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -84,6 +87,9 @@ function AppRoutes() {
         <Route path="/sales/delivery/:id" element={<DODetailPage />} />
         <Route path="/sales/einvoice" element={<InvoiceListPage />} />
         <Route path="/sales/einvoice/:id" element={<InvoiceDetailPage />} />
+        <Route path="/sales/credit-notes" element={<CreditNoteListPage />} />
+        <Route path="/sales/credit-notes/new" element={<CreditNoteCreatePage />} />
+        <Route path="/sales/credit-notes/:id" element={<CreditNoteDetailPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />

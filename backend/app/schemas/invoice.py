@@ -120,3 +120,23 @@ class FinalizeScanResult(BaseModel):
 
     finalized_count: int
     finalize_window_seconds: int
+
+
+# ── Window 12: Consolidated invoice ──────────────────────────────────────────
+
+
+class GenerateConsolidatedIn(BaseModel):
+    """Request body for POST /invoices/admin/generate-monthly-consolidated."""
+
+    year: int = Field(..., ge=2024, le=2100)
+    month: int = Field(..., ge=1, le=12)
+
+
+class ConsolidatedScanResult(BaseModel):
+    """Response for the monthly consolidated batch job."""
+
+    generated_count: int
+    customer_ids: List[int]
+    invoice_ids: List[int]
+    year: int
+    month: int

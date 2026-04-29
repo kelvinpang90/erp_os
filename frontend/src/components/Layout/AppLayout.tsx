@@ -60,6 +60,7 @@ export default function AppLayout() {
         { path: '/sales/orders', name: t('salesOrders') },
         { path: '/sales/delivery', name: t('deliveryOrders') },
         { path: '/sales/einvoice', name: t('einvoice') },
+        { path: '/sales/credit-notes', name: t('creditNotes') },
         { path: '/sales/customers', name: t('customers') },
       ],
     },

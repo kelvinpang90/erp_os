@@ -546,6 +546,149 @@ async def apply_sales_out(
     return stock, snapshot_avg_cost
 
 
+# ── Window 12: Sales return (Credit Note) ────────────────────────────────────
+
+
+async def apply_sales_return(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    warehouse_id: int,
+    qty: Decimal,
+    unit_cost: Decimal,
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    batch_no: Optional[str] = None,
+    expiry_date=None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> tuple[Stock, Decimal]:
+    """Apply a sales-return (Credit Note) inbound to inventory.
+
+    Cloned from apply_purchase_in but with three deliberate differences:
+
+    1. ``incoming`` is NOT decremented — sales returns never went through a PO,
+       so there's no Incoming reservation to release.
+    2. ``movement_type`` is ``SALES_RETURN`` (not ``PURCHASE_IN``) so the audit
+       trail correctly distinguishes returns from receipts.
+    3. ``source_document_type`` is ``CN`` (not ``GR``).
+
+    The ``unit_cost`` should be the SOLine.snapshot_avg_cost captured at first
+    shipment so the weighted-average doesn't get polluted by the return — see
+    Window 10's snapshot_avg_cost design.
+
+    Effects within the current transaction:
+    1. Recompute the weighted-average cost for (sku, warehouse).
+    2. Atomically update Stock: on_hand += qty, avg_cost = new_avg,
+       last_cost = unit_cost, version += 1.
+    3. Insert one StockMovement audit row (SALES_RETURN / CN).
+    4. Publish a StockMovementOccurred event.
+
+    Args:
+        qty: Return quantity (must be > 0).
+        unit_cost: Snapshot avg_cost from the SOLine (>= 0).
+        source_document_id: CreditNote.id.
+        source_line_id: CreditNoteLine.id.
+
+    Returns:
+        Tuple ``(stock, new_avg_cost)``.
+
+    Raises:
+        BusinessRuleError: optimistic-lock conflict.
+        ValueError: qty or unit_cost out of range.
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+    if unit_cost < 0:
+        raise ValueError("unit_cost must be >= 0")
+
+    stock = await _get_or_create_stock(
+        session,
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+    )
+
+    new_avg = compute_weighted_average(
+        current_qty=stock.on_hand,
+        current_avg_cost=stock.avg_cost,
+        incoming_qty=qty,
+        incoming_unit_cost=unit_cost,
+    )
+
+    now = _utc_naive()
+    expected_version = stock.version
+
+    result = await session.execute(
+        update(Stock)
+        .where(Stock.id == stock.id, Stock.version == expected_version)
+        .values(
+            on_hand=Stock.on_hand + qty,
+            # incoming intentionally untouched — see docstring.
+            avg_cost=new_avg,
+            last_cost=unit_cost,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise BusinessRuleError(
+            message=(
+                f"Stock for sku={sku_id} warehouse={warehouse_id} was modified "
+                "concurrently. Please retry."
+            ),
+            error_code="STOCK_CONFLICT",
+        )
+
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        movement_type=StockMovementType.SALES_RETURN,
+        quantity=qty,
+        unit_cost=unit_cost,
+        avg_cost_after=new_avg,
+        source_document_type=StockMovementSourceType.CN,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        batch_no=batch_no,
+        expiry_date=expiry_date,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=warehouse_id,
+            movement_type=StockMovementType.SALES_RETURN.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.CN.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_sales_return_applied",
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        qty=str(qty),
+        unit_cost=str(unit_cost),
+        new_avg_cost=str(new_avg),
+        cn_id=source_document_id,
+    )
+
+    return stock, new_avg
+
+
 # ── Reserved for future windows ──────────────────────────────────────────────
 
 

@@ -790,7 +790,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 | 09 OCR AI | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~90 | 72/72 测试全绿；SSE 4 事件流；Claude Sonnet 4.6 真实调用 2.6s / $0.0048；修复 SSE+session lifecycle bug |
 | 10 SO + DO | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 83/83 单测全绿（新增 16）；inventory 三新 API（apply_reserve/unreserve/sales_out）；防超卖原子 SQL；snapshot_avg_cost 首次发货写入；为 W12 退货留好 hook |
 | 11 Invoice + MyInvois | ✅ 完成 | 2026-04-29 | 2026-04-29 | ~80 | 99/99 单测全绿（新增 16）；Mock adapter 通过 Protocol 隔离，未来真实 LHDN 对接零侵入；72h 用懒触发 + admin scan 替代 Celery（推迟 W18）；DEMO_MODE 自动 72h→72s |
-| 12 e-Invoice AI + CN | ⏳ | | | | |
+| 12 e-Invoice AI + CN | ✅ 完成 | 2026-04-29 | 2026-04-29 | ~70 | 145/145 单测全绿（新增 34: 14 precheck + 4 sales_return + 10 CN + 6 consolidated）；7 硬规则 + 3 LLM 软规则 + 三档降级（gate/超时/error）；CN 5 件套完整含 cancel 库存回滚；Consolidated 按客户分组 + SO_ALREADY_CONSOLIDATED 反向校验；前端 PrecheckModal 三档行为 + CN 三页 + Generate Monthly Consolidated Modal |
 | 13 Stock Movements | ⏳ | | | | |
 | 14 Branch Inventory | ⏳ | | | | |
 | 15 Dashboard + Reports | ⏳ | | | | |
@@ -807,7 +807,9 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 
 此处快速记录，细节到 `tasks/lessons.md`：
 
-（待填）
+- **W12 / consolidated 测试**：`generate_monthly_consolidated` 先 `session.add(invoice)` → `flush` 拿 id，再二次 `session.add(invoice)` 写 totals。AsyncMock flush 不分配 id，导致 `invoice.id is None` 让 Pydantic 校验 `invoice_ids: List[int]` 失败。修法：测试 `session.add` 用 side_effect 给 Invoice 类对象自动赋 id（计数器），同时 dedupe（同一对象第二次 add 跳过），让 `_captured_invoices` 长度反映"创建了几张 invoice"。
+- **W12 / `_so_already_consolidated` 回归**：在 `generate_draft_from_so` 加这个 guard 后，旧测试 (`test_generate_draft_happy_path` / `test_generate_rejects_zero_shipped_lines`) 没 mock 它，`session.execute` 默认返回 truthy MagicMock 让 guard 误判 True。修法：旧测试也加 `patch _so_already_consolidated → False`。教训：service 内调用的 helper 加 guard 时同步审视所有相关测试。
+- **W12 / TIN 正则**：`EI00000000010` 是 13 字符（EI + 11 位），原正则 `EI\d{8,10}` 不通。修法：`_is_valid_tin` 提前查 `_GENERAL_PUBLIC_TINS` 集合再走正则，让特殊值跳过格式约束。
 
 ## 整体评审（完工后填写）
 

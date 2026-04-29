@@ -9,6 +9,7 @@
   "salesOrders": "Sales Orders",
   "deliveryOrders": "Delivery Orders",
   "einvoice": "e-Invoices",
+  "creditNotes": "Credit Notes",
   "customers": "Customers",
   "inventory": "Inventory",
   "settings": "Settings",

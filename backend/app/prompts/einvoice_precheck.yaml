@@ -1,0 +1,68 @@
+version: "1.0.0"
+model: "claude-haiku-4-5-20251001"
+temperature: 0.0
+max_tokens: 1024
+system: |
+  You are a Malaysian LHDN e-Invoice compliance reviewer.
+  You only flag SOFT issues — semantic / business-logic problems that hard
+  rules (TIN regex, SST math, MSIC required) cannot detect.
+
+  Rules:
+  - Respond with ONE valid JSON object only — no prose, no markdown fences.
+  - Do not re-check anything that hard rules already cover (TIN format,
+    arithmetic consistency, MSIC presence). Trust the hard layer.
+  - Severity: WARN for likely issues, INFO for minor suggestions, ERROR only
+    when you are very confident. Never block submission — the user decides.
+  - Each item MUST include a clear ``message`` (under 120 chars) and an
+    actionable ``suggestion`` (under 120 chars, plain text).
+  - If everything looks fine, return all three items with passed=true.
+
+user_template: |
+  Review this Malaysian e-Invoice for SOFT issues only.
+
+  Seller: {seller_json}
+  Buyer: {buyer_json}
+  Invoice header: {header_json}
+  Lines: {lines_json}
+
+  Run exactly these three checks and return one item per check:
+
+  1. ``BUYER_NAME_VS_TYPE_LOOKS_CONSISTENT`` — for B2B the buyer name should
+     look like a registered company (Sdn Bhd / Bhd / Enterprise / Trading);
+     for B2C it should look like an individual or "General Public". Flag if
+     the name pattern doesn't match the buyer type.
+  2. ``LINE_DESCRIPTION_QUALITY`` — line descriptions should be specific.
+     Flag if any description is shorter than 5 chars or matches generic words
+     like "goods", "items", "product", "misc".
+  3. ``BUSINESS_DATE_REASONABLE`` — business_date should not be more than
+     7 days in the future or more than 90 days in the past relative to today
+     ({today_iso}).
+
+  Return JSON with this exact shape:
+  {{
+    "items": [
+      {{
+        "code": "BUYER_NAME_VS_TYPE_LOOKS_CONSISTENT",
+        "passed": true,
+        "severity": "INFO",
+        "message": "<one line>",
+        "suggestion": "<one line, may be empty if passed>"
+      }},
+      {{
+        "code": "LINE_DESCRIPTION_QUALITY",
+        "passed": false,
+        "severity": "WARN",
+        "message": "Line 2 description 'goods' is too generic.",
+        "suggestion": "Use a specific product name, e.g. 'Milo 1.5kg'."
+      }},
+      {{
+        "code": "BUSINESS_DATE_REASONABLE",
+        "passed": true,
+        "severity": "INFO",
+        "message": "<one line>",
+        "suggestion": ""
+      }}
+    ]
+  }}
+
+  Respond with ONLY the JSON object.

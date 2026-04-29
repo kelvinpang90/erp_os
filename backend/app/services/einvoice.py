@@ -18,11 +18,13 @@ Covers:
 
 from __future__ import annotations
 
+import calendar
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
 import structlog
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -31,18 +33,20 @@ from app.core.exceptions import (
     InvalidStatusTransitionError,
     NotFoundError,
 )
-from app.enums import InvoiceStatus, InvoiceType, RejectedBy, SOStatus
+from app.enums import CustomerType, InvoiceStatus, InvoiceType, RejectedBy, SOStatus
 from app.events import event_bus
 from app.events.types import DocumentStatusChanged, EInvoiceValidated
 from app.integrations.myinvois import InvoicePayload
 from app.integrations.myinvois_factory import get_myinvois_adapter
 from app.models.invoice import Invoice, InvoiceLine
 from app.models.organization import User
-from app.models.sales import SalesOrder
+from app.models.partner import Customer
+from app.models.sales import SalesOrder, SalesOrderLine
 from app.repositories.invoice import InvoiceRepository
 from app.repositories.sales_order import SalesOrderRepository
 from app.schemas.common import PaginatedResponse, PaginationParams
 from app.schemas.invoice import (
+    ConsolidatedScanResult,
     FinalizeScanResult,
     GenerateFromSOIn,
     InvoiceDetail,
@@ -249,6 +253,18 @@ async def generate_draft_from_so(
         # Idempotent: return the existing invoice.
         full = await _lazy_finalize_if_due(session, full, actor_user_id=user.id)
         return _to_detail(full)
+
+    # Window 12: refuse if any line of this SO has already been pulled into a
+    # consolidated invoice — the customer was already billed via the monthly
+    # rollup, billing again would be double-charging.
+    if await _so_already_consolidated(session, org_id, so.id):
+        raise BusinessRuleError(
+            message=(
+                f"SO {so.document_no} has already been billed via a Consolidated "
+                "Invoice and cannot be invoiced again."
+            ),
+            error_code="SO_ALREADY_CONSOLIDATED",
+        )
 
     shipped_lines = [ln for ln in so.lines or [] if ln.qty_shipped > 0]
     if not shipped_lines:
@@ -533,6 +549,248 @@ async def list_invoices(
         total=total,
         page=pagination.page,
         page_size=pagination.page_size,
+    )
+
+
+# ── Window 12: Consolidated invoice (B2C monthly rollup) ─────────────────────
+
+
+async def _so_already_consolidated(
+    session: AsyncSession, org_id: int, so_id: int
+) -> bool:
+    """True if any line of ``so_id`` has been pulled into a CONSOLIDATED invoice."""
+    stmt = (
+        select(InvoiceLine.id)
+        .join(Invoice, Invoice.id == InvoiceLine.invoice_id)
+        .join(SalesOrderLine, SalesOrderLine.id == InvoiceLine.sales_order_line_id)
+        .where(
+            Invoice.organization_id == org_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.invoice_type == InvoiceType.CONSOLIDATED,
+            SalesOrderLine.sales_order_id == so_id,
+        )
+        .limit(1)
+    )
+    return (await session.execute(stmt)).scalar_one_or_none() is not None
+
+
+async def _consolidated_so_ids(session: AsyncSession, org_id: int) -> set[int]:
+    """All SO ids whose lines already appear in a CONSOLIDATED invoice."""
+    stmt = (
+        select(SalesOrderLine.sales_order_id)
+        .join(InvoiceLine, InvoiceLine.sales_order_line_id == SalesOrderLine.id)
+        .join(Invoice, Invoice.id == InvoiceLine.invoice_id)
+        .where(
+            Invoice.organization_id == org_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.invoice_type == InvoiceType.CONSOLIDATED,
+        )
+        .distinct()
+    )
+    return {int(row[0]) for row in (await session.execute(stmt)).all()}
+
+
+def _month_bounds(year: int, month: int) -> tuple[date, date]:
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, 1), date(year, month, last_day)
+
+
+async def generate_monthly_consolidated(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    user: User,
+    year: int,
+    month: int,
+) -> ConsolidatedScanResult:
+    """Generate one DRAFT consolidated Invoice per B2C customer for the month.
+
+    Eligible SOs:
+      * customer.customer_type == B2C
+      * status ∈ {PARTIAL_SHIPPED, FULLY_SHIPPED}
+      * business_date in the requested month
+      * has at least one shipped line
+      * not yet attached to any individual Invoice (sales_order_id IS NULL on
+        existing invoices)
+      * not yet rolled up into a previous Consolidated Invoice
+
+    The resulting Invoice has ``sales_order_id=NULL``; per-line traceability is
+    preserved via ``InvoiceLine.sales_order_line_id``.
+    """
+    start, end = _month_bounds(year, month)
+
+    # 1. Find all SO ids already billed individually (sales_order_id NOT NULL).
+    individually_invoiced_stmt = select(Invoice.sales_order_id).where(
+        Invoice.organization_id == org_id,
+        Invoice.deleted_at.is_(None),
+        Invoice.sales_order_id.is_not(None),
+    )
+    individually_invoiced = {
+        int(row[0])
+        for row in (await session.execute(individually_invoiced_stmt)).all()
+    }
+
+    # 2. Find SO ids already pulled into a previous Consolidated.
+    already_consolidated = await _consolidated_so_ids(session, org_id)
+    excluded_so_ids = individually_invoiced | already_consolidated
+
+    # 3. Candidate SOs.
+    cand_stmt = (
+        select(SalesOrder)
+        .join(Customer, Customer.id == SalesOrder.customer_id)
+        .where(
+            SalesOrder.organization_id == org_id,
+            SalesOrder.deleted_at.is_(None),
+            Customer.customer_type == CustomerType.B2C,
+            SalesOrder.status.in_(
+                (SOStatus.PARTIAL_SHIPPED, SOStatus.FULLY_SHIPPED)
+            ),
+            SalesOrder.business_date >= start,
+            SalesOrder.business_date <= end,
+        )
+    )
+    if excluded_so_ids:
+        cand_stmt = cand_stmt.where(SalesOrder.id.notin_(excluded_so_ids))
+
+    candidate_ids = [
+        int(so.id) for so in (await session.execute(cand_stmt)).scalars().all()
+    ]
+    if not candidate_ids:
+        return ConsolidatedScanResult(
+            generated_count=0, customer_ids=[], invoice_ids=[],
+            year=year, month=month,
+        )
+
+    # Load each candidate via the SO repo (selectinload customer + lines + sku).
+    so_repo = SalesOrderRepository(session)
+    detailed: list[SalesOrder] = []
+    for so_id in candidate_ids:
+        so = await so_repo.get_detail(org_id, so_id)
+        if so is None:
+            continue
+        if not any((ln.qty_shipped or Decimal("0")) > 0 for ln in (so.lines or [])):
+            continue
+        detailed.append(so)
+
+    # Group by customer.
+    by_customer: dict[int, list[SalesOrder]] = {}
+    for so in detailed:
+        by_customer.setdefault(so.customer_id, []).append(so)
+
+    if not by_customer:
+        return ConsolidatedScanResult(
+            generated_count=0, customer_ids=[], invoice_ids=[],
+            year=year, month=month,
+        )
+
+    # Load org for line MSIC fallback.
+    from app.models.organization import Organization  # local import to avoid cycle
+    org_row = await session.get(Organization, org_id)
+    org_msic_fallback = org_row.msic_code if org_row else None
+
+    invoice_ids: list[int] = []
+    customer_ids: list[int] = sorted(by_customer.keys())
+    today = date.today()
+
+    for customer_id, sos in by_customer.items():
+        document_no = await next_document_no(session, "INV", org_id)
+        first_so = sos[0]
+        invoice = Invoice(
+            organization_id=org_id,
+            document_no=document_no,
+            invoice_type=InvoiceType.CONSOLIDATED,
+            status=InvoiceStatus.DRAFT,
+            sales_order_id=None,                      # consolidated has no single SO
+            customer_id=customer_id,
+            warehouse_id=first_so.warehouse_id,       # any of the SOs' warehouses
+            business_date=today,
+            due_date=today + timedelta(days=first_so.payment_terms_days or 0),
+            currency=first_so.currency,
+            exchange_rate=first_so.exchange_rate,
+            remarks=f"Monthly consolidated for {year}-{month:02d}",
+            created_by=user.id,
+        )
+        session.add(invoice)
+        await session.flush()
+
+        subtotal = Decimal("0")
+        tax_total = Decimal("0")
+        discount_total = Decimal("0")
+        line_no = 0
+
+        for so in sos:
+            for sol in so.lines or []:
+                qty = sol.qty_shipped or Decimal("0")
+                if qty <= 0:
+                    continue
+                line_no += 1
+
+                line_excl = _quantize(
+                    qty * sol.unit_price_excl_tax - (sol.discount_amount or Decimal("0"))
+                )
+                line_tax = _quantize(line_excl * sol.tax_rate_percent / Decimal("100"))
+                line_incl = _quantize(line_excl + line_tax)
+
+                sku_msic = getattr(sol.sku, "msic_code", None) if sol.sku else None
+                line_msic = sku_msic or org_msic_fallback
+
+                inv_line = InvoiceLine(
+                    invoice_id=invoice.id,
+                    sales_order_line_id=sol.id,
+                    line_no=line_no,
+                    sku_id=sol.sku_id,
+                    description=(
+                        sol.description or (sol.sku.name if sol.sku else "")
+                    ),
+                    uom_id=sol.uom_id,
+                    qty=qty,
+                    unit_price_excl_tax=sol.unit_price_excl_tax,
+                    tax_rate_id=sol.tax_rate_id,
+                    tax_rate_percent=sol.tax_rate_percent,
+                    tax_amount=line_tax,
+                    discount_amount=(sol.discount_amount or Decimal("0")),
+                    line_total_excl_tax=line_excl,
+                    line_total_incl_tax=line_incl,
+                    msic_code=line_msic,
+                )
+                session.add(inv_line)
+
+                subtotal += line_excl
+                tax_total += line_tax
+                discount_total += sol.discount_amount or Decimal("0")
+                # Note: we deliberately do NOT mutate sol.qty_invoiced here —
+                # the consolidated invoice doesn't follow the same partial-
+                # invoicing book-keeping path; instead the SO is gated against
+                # individual invoicing via _so_already_consolidated().
+
+        invoice.subtotal_excl_tax = _quantize(subtotal)
+        invoice.tax_amount = _quantize(tax_total)
+        invoice.discount_amount = _quantize(discount_total)
+        invoice.total_incl_tax = _quantize(subtotal + tax_total)
+        invoice.base_currency_amount = _quantize(
+            invoice.total_incl_tax * invoice.exchange_rate
+        )
+        session.add(invoice)
+        await session.flush()
+        invoice_ids.append(invoice.id)
+
+        logger.info(
+            "consolidated_invoice_drafted",
+            invoice_id=invoice.id,
+            document_no=invoice.document_no,
+            customer_id=customer_id,
+            line_count=line_no,
+            total=str(invoice.total_incl_tax),
+            year=year,
+            month=month,
+        )
+
+    return ConsolidatedScanResult(
+        generated_count=len(invoice_ids),
+        customer_ids=customer_ids,
+        invoice_ids=invoice_ids,
+        year=year,
+        month=month,
     )
 
 
