@@ -58,7 +58,7 @@ export default function AppLayout() {
       icon: <ShoppingOutlined />,
       children: [
         { path: '/sales/orders', name: t('salesOrders') },
-        { path: '/sales/deliveries', name: t('deliveryOrders') },
+        { path: '/sales/delivery', name: t('deliveryOrders') },
         { path: '/sales/einvoice', name: t('einvoice') },
         { path: '/sales/customers', name: t('customers') },
       ],
