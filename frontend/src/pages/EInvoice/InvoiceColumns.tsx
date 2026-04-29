@@ -61,9 +61,11 @@ export const invoiceColumns: ProColumns<InvoiceRow>[] = [
       REJECTED: { text: STATUS_LABEL.REJECTED },
       CANCELLED: { text: STATUS_LABEL.CANCELLED },
     },
-    render: (val) => (
-      <Tag color={STATUS_COLOR[String(val)] ?? 'default'}>
-        {STATUS_LABEL[String(val)] ?? String(val)}
+    // ProTable wraps the rendered value with valueEnum's React node first,
+    // so use the row record (2nd arg) to read the raw status string.
+    render: (_, row) => (
+      <Tag color={STATUS_COLOR[row.status] ?? 'default'}>
+        {STATUS_LABEL[row.status] ?? row.status}
       </Tag>
     ),
   },

@@ -111,8 +111,8 @@ export default function InvoiceDetailPage() {
   }
 
   const handleReject = async () => {
-    if (!id || !rejectReason.trim()) {
-      message.warning('Please provide a rejection reason.')
+    if (!id || rejectReason.trim().length < 3) {
+      message.warning('Rejection reason must be at least 3 characters.')
       return
     }
     setActionLoading(true)
@@ -123,8 +123,15 @@ export default function InvoiceDetailPage() {
       setRejectReason('')
       loadInvoice()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to reject invoice.')
+      const data = (err as { response?: { data?: { message?: string; detail?: { errors?: { msg?: string; loc?: (string | number)[] }[] } } } })
+        ?.response?.data
+      // Surface Pydantic field-level errors when available (the generic
+      // "Request validation failed" alone is unhelpful).
+      const fieldErrors = data?.detail?.errors
+        ?.map((e) => `${(e.loc ?? []).filter((p) => p !== 'body').join('.')}: ${e.msg ?? ''}`)
+        .filter(Boolean)
+        .join('; ')
+      message.error(fieldErrors || data?.message || 'Failed to reject invoice.')
     } finally {
       setActionLoading(false)
     }
@@ -397,13 +404,16 @@ export default function InvoiceDetailPage() {
       >
         <Typography.Paragraph>
           Reject this invoice on behalf of the buyer. Allowed only inside the 72h
-          opposition window (72s in DEMO_MODE). Reason will be sent to LHDN.
+          opposition window (72s in DEMO_MODE). Reason will be sent to LHDN
+          (minimum 3 characters).
         </Typography.Paragraph>
         <Input.TextArea
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
           rows={3}
           placeholder="e.g. Wrong amount on line 2"
+          maxLength={1000}
+          showCount
         />
       </Modal>
     </Space>

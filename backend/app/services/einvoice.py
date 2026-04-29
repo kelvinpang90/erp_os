@@ -267,6 +267,12 @@ async def generate_draft_from_so(
         else today
     )
 
+    # Load org for LHDN line-MSIC fallback (relationship is not eager-loaded
+    # by SO repo; explicit fetch avoids lazy-load greenlet errors).
+    from app.models.organization import Organization  # local to avoid cycle
+    org_row = await session.get(Organization, org_id)
+    org_msic_fallback = org_row.msic_code if org_row else None
+
     invoice = Invoice(
         organization_id=org_id,
         document_no=document_no,
@@ -295,6 +301,9 @@ async def generate_draft_from_so(
         line_tax = _quantize(line_excl * sol.tax_rate_percent / Decimal("100"))
         line_incl = _quantize(line_excl + line_tax)
 
+        sku_msic = getattr(sol.sku, "msic_code", None) if sol.sku else None
+        line_msic = sku_msic or org_msic_fallback
+
         inv_line = InvoiceLine(
             invoice_id=invoice.id,
             sales_order_line_id=sol.id,
@@ -310,7 +319,7 @@ async def generate_draft_from_so(
             discount_amount=sol.discount_amount,
             line_total_excl_tax=line_excl,
             line_total_incl_tax=line_incl,
-            msic_code=(sol.sku.msic_code if sol.sku and getattr(sol.sku, "msic_code", None) else None),
+            msic_code=line_msic,
         )
         session.add(inv_line)
 
