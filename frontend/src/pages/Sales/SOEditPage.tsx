@@ -285,7 +285,12 @@ export default function SOEditPage() {
       const qty = l.qty_ordered ?? 0
       const price = l.unit_price_excl_tax ?? 0
       const disc = l.discount_percent ?? 0
-      const taxPct = l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id)
+      // Always derive from tax_rate_id (the dropdown's authoritative value).
+      // Don't trust l.tax_rate_percent — it can desync with tax_rate_id in
+      // edge cases (e.g. when EditableProTable's batched onValuesChange
+      // captures only the changed field and tax_rate_percent retains its
+      // pre-change value). Backend re-derives from id on save anyway.
+      const taxPct = getTaxRatePercent(taxRateOptions, l.tax_rate_id)
       const gross = qty * price
       const discAmt = gross * (disc / 100)
       const excl = gross - discAmt
@@ -317,7 +322,9 @@ export default function SOEditPage() {
         qty_ordered: l.qty_ordered,
         unit_price_excl_tax: l.unit_price_excl_tax,
         tax_rate_id: l.tax_rate_id,
-        tax_rate_percent: l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id),
+        // Derive from tax_rate_id (single source of truth); backend ignores
+        // this field anyway and looks up the rate by tax_rate_id.
+        tax_rate_percent: getTaxRatePercent(taxRateOptions, l.tax_rate_id),
         discount_percent: l.discount_percent ?? 0,
       })),
     }

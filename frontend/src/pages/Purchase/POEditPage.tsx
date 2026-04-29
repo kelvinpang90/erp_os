@@ -449,7 +449,9 @@ export default function POEditPage() {
       const qty = l.qty_ordered ?? 0
       const price = l.unit_price_excl_tax ?? 0
       const disc = l.discount_percent ?? 0
-      const taxPct = l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id)
+      // Always derive from tax_rate_id — never trust l.tax_rate_percent
+      // because EditableProTable batching can desync it from tax_rate_id.
+      const taxPct = getTaxRatePercent(taxRateOptions, l.tax_rate_id)
       const gross = qty * price
       const discAmt = gross * (disc / 100)
       const excl = gross - discAmt
@@ -481,7 +483,8 @@ export default function POEditPage() {
         qty_ordered: l.qty_ordered,
         unit_price_excl_tax: l.unit_price_excl_tax,
         tax_rate_id: l.tax_rate_id,
-        tax_rate_percent: l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id),
+        // Derive from tax_rate_id; backend re-derives from id on save.
+        tax_rate_percent: getTaxRatePercent(taxRateOptions, l.tax_rate_id),
         discount_percent: l.discount_percent ?? 0,
       })),
     }
