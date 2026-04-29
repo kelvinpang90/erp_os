@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 import structlog
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
@@ -27,10 +28,12 @@ from app.core.exceptions import (
     BusinessRuleError,
     InvalidStatusTransitionError,
     NotFoundError,
+    ValidationError,
 )
 from app.enums import RoleCode, SOStatus
 from app.events import event_bus
 from app.events.types import DocumentStatusChanged
+from app.models.master import TaxRate
 from app.models.organization import User
 from app.models.sales import SalesOrder, SalesOrderLine
 from app.repositories.sales_order import SalesOrderRepository
@@ -54,11 +57,53 @@ _TWO = Decimal("0.01")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _calc_line(line_in: SOLineCreate, line_no: int) -> dict:
+
+async def _load_tax_rate_map(
+    session: AsyncSession,
+    org_id: int,
+    ids: set[int],
+) -> dict[int, Decimal]:
+    """Bulk-load tax rates by id (org-scoped, active only).
+
+    Source of truth for tax_rate_percent is the ``tax_rates`` table — caller
+    inputs (``SOLineCreate.tax_rate_percent``) are ignored. Raises
+    ValidationError listing any missing or cross-org or inactive ids.
+    """
+    if not ids:
+        return {}
+    stmt = select(TaxRate.id, TaxRate.rate).where(
+        TaxRate.organization_id == org_id,
+        TaxRate.id.in_(ids),
+        TaxRate.is_active.is_(True),
+    )
+    rows = (await session.execute(stmt)).all()
+    rate_map = {row.id: row.rate for row in rows}
+    missing = ids - rate_map.keys()
+    if missing:
+        raise ValidationError(
+            message=(
+                f"Tax rate id(s) {sorted(missing)} not found, inactive, or belong "
+                f"to a different organization."
+            ),
+            error_code="TAX_RATE_INVALID",
+        )
+    return rate_map
+
+
+def _calc_line(
+    line_in: SOLineCreate,
+    line_no: int,
+    *,
+    tax_rate_percent: Decimal,
+) -> dict:
+    """Compute line totals. ``tax_rate_percent`` is server-authoritative
+    (loaded by caller via ``_load_tax_rate_map``); the value on ``line_in``
+    is intentionally ignored.
+    """
     qty = line_in.qty_ordered.quantize(_TWO, ROUND_HALF_UP)
     price = line_in.unit_price_excl_tax.quantize(_TWO, ROUND_HALF_UP)
     disc_pct = line_in.discount_percent.quantize(_TWO, ROUND_HALF_UP)
-    tax_pct = line_in.tax_rate_percent.quantize(_TWO, ROUND_HALF_UP)
+    tax_pct = tax_rate_percent.quantize(_TWO, ROUND_HALF_UP)
 
     gross = (qty * price).quantize(_TWO, ROUND_HALF_UP)
     disc_amt = (gross * disc_pct / Decimal("100")).quantize(_TWO, ROUND_HALF_UP)
@@ -168,7 +213,13 @@ async def create_so(
     user: User,
 ) -> SalesOrderDetail:
     document_no = await next_document_no(session, "SO", org_id)
-    line_dicts = [_calc_line(ln, idx + 1) for idx, ln in enumerate(data.lines)]
+    rate_map = await _load_tax_rate_map(
+        session, org_id, {ln.tax_rate_id for ln in data.lines}
+    )
+    line_dicts = [
+        _calc_line(ln, idx + 1, tax_rate_percent=rate_map[ln.tax_rate_id])
+        for idx, ln in enumerate(data.lines)
+    ]
     totals = _calc_totals(line_dicts, data.shipping_amount)
 
     exchange_rate = data.exchange_rate.quantize(Decimal("0.00000001"), ROUND_HALF_UP)
@@ -252,7 +303,13 @@ async def update_so(
             await session.delete(line)
         await session.flush()
 
-        line_dicts = [_calc_line(ln, idx + 1) for idx, ln in enumerate(data.lines)]
+        rate_map = await _load_tax_rate_map(
+            session, org_id, {ln.tax_rate_id for ln in data.lines}
+        )
+        line_dicts = [
+            _calc_line(ln, idx + 1, tax_rate_percent=rate_map[ln.tax_rate_id])
+            for idx, ln in enumerate(data.lines)
+        ]
         shipping = (
             data.shipping_amount
             if data.shipping_amount is not None

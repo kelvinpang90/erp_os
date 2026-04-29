@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
+import { getTaxRatePercent } from '../../utils/taxRate'
 import type { OCRPurchaseOrderResult } from './OCRUploadPage'
 
 interface LineRow {
@@ -100,7 +101,7 @@ export default function POEditPage() {
         const res = await axiosInstance.get(`/skus/${skuId}`)
         const sku = res.data
         const taxRatePercent =
-          taxRateOptions.find((t) => t.value === sku.tax_rate_id)?.rate ??
+          getTaxRatePercent(taxRateOptions, sku.tax_rate_id) ||
           parseFloat(sku.tax_rate?.rate ?? '0')
         const autoFill = {
           uom_id: sku.base_uom_id,
@@ -115,6 +116,21 @@ export default function POEditPage() {
       }
     },
     [taxRateOptions]
+  )
+
+  // Sync tax_rate_percent when the user changes only the Tax Rate dropdown
+  // (no SKU change). Backend is authoritative on save, but real-time totals
+  // need this in form state. See SOEditPage for the same pattern.
+  const handleTaxRateChange = useCallback(
+    (taxRateId: number, rowId: string | number) => {
+      if (!taxRateId) return
+      const newPct = getTaxRatePercent(taxRateOptions, taxRateId)
+      editableFormRef.current?.setRowData?.(rowId, { tax_rate_percent: newPct })
+      setLines((prev) =>
+        prev.map((l) => (l.id === rowId ? { ...l, tax_rate_percent: newPct } : l)),
+      )
+    },
+    [taxRateOptions],
   )
 
   // ── Load reference data on mount ─────────────────────────────────────────
@@ -433,7 +449,7 @@ export default function POEditPage() {
       const qty = l.qty_ordered ?? 0
       const price = l.unit_price_excl_tax ?? 0
       const disc = l.discount_percent ?? 0
-      const taxPct = l.tax_rate_percent ?? (taxRateOptions.find((t) => t.value === l.tax_rate_id)?.rate ?? 0)
+      const taxPct = l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id)
       const gross = qty * price
       const discAmt = gross * (disc / 100)
       const excl = gross - discAmt
@@ -465,7 +481,7 @@ export default function POEditPage() {
         qty_ordered: l.qty_ordered,
         unit_price_excl_tax: l.unit_price_excl_tax,
         tax_rate_id: l.tax_rate_id,
-        tax_rate_percent: l.tax_rate_percent ?? taxRateOptions.find((t) => t.value === l.tax_rate_id)?.rate ?? 0,
+        tax_rate_percent: l.tax_rate_percent ?? getTaxRatePercent(taxRateOptions, l.tax_rate_id),
         discount_percent: l.discount_percent ?? 0,
       })),
     }
@@ -543,6 +559,11 @@ export default function POEditPage() {
                 const prev = lines.find((l) => l.id === record.id)
                 if (record.sku_id != null && record.sku_id !== prev?.sku_id) {
                   handleSkuChange(record.sku_id, record.id)
+                } else if (
+                  record.tax_rate_id != null &&
+                  record.tax_rate_id !== prev?.tax_rate_id
+                ) {
+                  handleTaxRateChange(record.tax_rate_id, record.id)
                 }
               },
               actionRender: (_, __, defaultDoms) => [defaultDoms.delete],

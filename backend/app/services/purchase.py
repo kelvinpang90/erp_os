@@ -28,6 +28,7 @@ from app.core.exceptions import (
 from app.enums import POSource, POStatus, RoleCode
 from app.events import event_bus
 from app.events.types import DocumentStatusChanged
+from app.models.master import TaxRate
 from app.models.organization import User
 from app.models.purchase import PurchaseOrder, PurchaseOrderLine
 from app.models.stock import Stock
@@ -51,11 +52,51 @@ _TWO = Decimal("0.01")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _calc_line(line_in: POLineCreate, line_no: int) -> dict:
+
+async def _load_tax_rate_map(
+    session: AsyncSession,
+    org_id: int,
+    ids: set[int],
+) -> dict[int, Decimal]:
+    """Bulk-load tax rates by id (org-scoped, active only).
+
+    Mirrors ``services.sales._load_tax_rate_map``. Source of truth for
+    tax_rate_percent is the ``tax_rates`` table — caller-supplied
+    ``POLineCreate.tax_rate_percent`` is ignored. Raises ValidationError
+    listing any missing / cross-org / inactive ids.
+    """
+    if not ids:
+        return {}
+    stmt = select(TaxRate.id, TaxRate.rate).where(
+        TaxRate.organization_id == org_id,
+        TaxRate.id.in_(ids),
+        TaxRate.is_active.is_(True),
+    )
+    rows = (await session.execute(stmt)).all()
+    rate_map = {row.id: row.rate for row in rows}
+    missing = ids - rate_map.keys()
+    if missing:
+        raise ValidationError(
+            message=(
+                f"Tax rate id(s) {sorted(missing)} not found, inactive, or belong "
+                f"to a different organization."
+            ),
+            error_code="TAX_RATE_INVALID",
+        )
+    return rate_map
+
+
+def _calc_line(
+    line_in: POLineCreate,
+    line_no: int,
+    *,
+    tax_rate_percent: Decimal,
+) -> dict:
+    """Compute line totals. ``tax_rate_percent`` is server-authoritative."""
     qty = line_in.qty_ordered.quantize(_TWO, ROUND_HALF_UP)
     price = line_in.unit_price_excl_tax.quantize(_TWO, ROUND_HALF_UP)
     disc_pct = line_in.discount_percent.quantize(_TWO, ROUND_HALF_UP)
-    tax_pct = line_in.tax_rate_percent.quantize(_TWO, ROUND_HALF_UP)
+    tax_pct = tax_rate_percent.quantize(_TWO, ROUND_HALF_UP)
 
     gross = (qty * price).quantize(_TWO, ROUND_HALF_UP)
     disc_amt = (gross * disc_pct / Decimal("100")).quantize(_TWO, ROUND_HALF_UP)
@@ -208,7 +249,13 @@ async def create_po(
     user: User,
 ) -> PurchaseOrderDetail:
     document_no = await next_document_no(session, "PO", org_id)
-    line_dicts = [_calc_line(ln, idx + 1) for idx, ln in enumerate(data.lines)]
+    rate_map = await _load_tax_rate_map(
+        session, org_id, {ln.tax_rate_id for ln in data.lines}
+    )
+    line_dicts = [
+        _calc_line(ln, idx + 1, tax_rate_percent=rate_map[ln.tax_rate_id])
+        for idx, ln in enumerate(data.lines)
+    ]
     totals = _calc_totals(line_dicts)
 
     exchange_rate = data.exchange_rate.quantize(Decimal("0.00000001"), ROUND_HALF_UP)
@@ -293,7 +340,13 @@ async def update_po(
             await session.delete(line)
         await session.flush()
 
-        line_dicts = [_calc_line(ln, idx + 1) for idx, ln in enumerate(data.lines)]
+        rate_map = await _load_tax_rate_map(
+            session, org_id, {ln.tax_rate_id for ln in data.lines}
+        )
+        line_dicts = [
+            _calc_line(ln, idx + 1, tax_rate_percent=rate_map[ln.tax_rate_id])
+            for idx, ln in enumerate(data.lines)
+        ]
         totals = _calc_totals(line_dicts)
         update_fields.update(totals)
 

@@ -18,7 +18,10 @@ class SOLineCreate(BaseModel):
     qty_ordered: Decimal = Field(..., gt=Decimal("0"))
     unit_price_excl_tax: Decimal = Field(..., ge=Decimal("0"))
     tax_rate_id: int
-    tax_rate_percent: Decimal = Field(..., ge=Decimal("0"))
+    # Server-authoritative: real rate is loaded from tax_rates by tax_rate_id;
+    # this field is accepted for client-side real-time totals UI but IGNORED
+    # by the service layer to prevent percent / id drift.
+    tax_rate_percent: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     discount_percent: Decimal = Field(Decimal("0"), ge=Decimal("0"), le=Decimal("100"))
     batch_no: Optional[str] = Field(None, max_length=64)
     expiry_date: Optional[date] = None
