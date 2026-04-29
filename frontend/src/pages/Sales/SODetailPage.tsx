@@ -71,6 +71,8 @@ export default function SODetailPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
+  const [invoiceId, setInvoiceId] = useState<number | null>(null)
+
   const loadSO = () => {
     if (!id) return
     setLoading(true)
@@ -81,7 +83,23 @@ export default function SODetailPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadSO, [id])
+  // Detect whether an invoice already exists for this SO so the button
+  // can either jump to it or trigger generation. Window 11 enforces 1 SO ↔ 1 Invoice.
+  const loadInvoiceForSO = () => {
+    if (!id) return
+    axiosInstance
+      .get(`/invoices?sales_order_id=${id}&page_size=1`)
+      .then((res) => {
+        const items = res.data?.items ?? []
+        setInvoiceId(items.length > 0 ? items[0].id : null)
+      })
+      .catch(() => setInvoiceId(null))
+  }
+
+  useEffect(() => {
+    loadSO()
+    loadInvoiceForSO()
+  }, [id])
 
   const handleConfirm = async () => {
     if (!id) return
@@ -93,6 +111,22 @@ export default function SODetailPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       message.error(msg ?? 'Failed to confirm sales order.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleGenerateInvoice = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await axiosInstance.post(`/invoices/generate-from-so/${id}`, {})
+      const newId = res.data?.id
+      message.success(`Invoice ${res.data?.document_no} generated.`)
+      if (newId) navigate(`/sales/einvoice/${newId}`)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      message.error(msg ?? 'Failed to generate invoice.')
     } finally {
       setActionLoading(false)
     }
@@ -152,6 +186,7 @@ export default function SODetailPage() {
   // Show "Create Delivery Order" button when SO has shippable lines.
   const isShippable = so.status === 'CONFIRMED' || so.status === 'PARTIAL_SHIPPED'
   const isCancellable = so.status === 'DRAFT' || so.status === 'CONFIRMED'
+  const isInvoiceable = so.status === 'PARTIAL_SHIPPED' || so.status === 'FULLY_SHIPPED'
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -181,6 +216,20 @@ export default function SODetailPage() {
                 onClick={() => navigate(`/sales/delivery/create?so_id=${id}`)}
               >
                 Create Delivery Order
+              </Button>
+            )}
+            {isInvoiceable && invoiceId !== null && (
+              <Button onClick={() => navigate(`/sales/einvoice/${invoiceId}`)}>
+                View Invoice
+              </Button>
+            )}
+            {isInvoiceable && invoiceId === null && (
+              <Button
+                type="primary"
+                loading={actionLoading}
+                onClick={handleGenerateInvoice}
+              >
+                Generate Invoice
               </Button>
             )}
             {isCancellable && (

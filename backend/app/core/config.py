@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     # 0 → strict reject; 0.05 → 5% tolerance (ISO 9001 industry default).
     GR_OVER_RECEIPT_TOLERANCE: Decimal = Field(default=Decimal("0.05"), ge=0, le=1)
 
+    # ── e-Invoice / MyInvois ─────────────────────────────────────────────────
+    # Adapter selection: "mock" (Window 11 default), "sandbox", "production".
+    MYINVOIS_MODE: Literal["mock", "sandbox", "production"] = "mock"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

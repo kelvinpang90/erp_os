@@ -379,7 +379,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 
 ---
 
-## Window 11 —— Invoice 模块 + MyInvois Mock 提交
+## Window 11 —— Invoice 模块 + MyInvois Mock 提交 ✅
 
 **目标**：e-Invoice 草稿 → 提交 → UIN → 72h 逻辑。
 
@@ -387,27 +387,36 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 - Window 10 完成
 
 ### 产出物
-- [ ] `Invoice` + `InvoiceLine` 完整模块
-- [ ] `backend/app/services/einvoice.py`：
-  - `generate_draft_from_so(so_id)` —— 从 SO 生成 invoice 草稿
-  - `submit_to_myinvois(invoice_id)` —— mock LHDN API（返回 UIN + QR）
-  - `reject_by_buyer(invoice_id, reason)` —— 买家拒绝
-- [ ] Mock MyInvois adapter（`backend/app/integrations/myinvois_mock.py`）
-- [ ] `backend/app/tasks/einvoice.py`：
-  - `finalize_expired_einvoices`（Celery Beat 每 10min）
-  - `DEMO_MODE=true` 时 72h → 72s
-- [ ] 前端 Invoice 列表 + 详情（含 QR code 显示 + 72h 倒计时）
-- [ ] 前端 SO 详情页加 "Generate Invoice" 按钮
-- [ ] 事件：`EInvoiceValidated` handler（通知买家 + 清缓存）
+- [x] `Invoice` + `InvoiceLine` 完整模块（schema/repo/service/router）
+- [x] `backend/app/services/einvoice.py`：
+  - `generate_draft_from_so(so_id)` —— 从 SO 生成 invoice 草稿（1 SO ↔ 1 Invoice 唯一约束 + 幂等）
+  - `submit_to_myinvois(invoice_id)` —— mock LHDN API（同步返回 UIN + QR）
+  - `reject_by_buyer(invoice_id, reason)` —— 买家拒绝（72h/72s 窗口校验）
+  - `_lazy_finalize_if_due()` + `run_finalize_scan()` —— 替代 Celery Beat 的懒触发 + admin 扫描方案
+- [x] Mock MyInvois adapter（**Protocol 接口** + Mock 实现 + 工厂）—— 真实 LHDN 对接零侵入
+- [x] `DEMO_MODE=true` 时 72h → 72s（`get_finalize_window()` 工具）
+- [x] 前端 Invoice 列表 + 详情（含 QR code 显示 + 倒计时组件 + Run Finalize Scan 按钮）
+- [x] 前端 SO 详情页加 "Generate Invoice" / "View Invoice" 按钮
+- [x] 事件：`EInvoiceValidated` handler 实现（写 Notification 表 + i18n_key）
+- [x] Alembic migration 加 `uq_inv_so` 唯一索引（org+SO 唯一）
+- [x] `MYINVOIS_MODE` 环境变量（mock/sandbox/production）
+- [x] i18n: einvoice + menu.einvoice 双语
+- [x] 单测：`test_einvoice_service.py` 16 个 case 全绿
+- [x] 整体 99/99 单测全绿（无回归）
+
+### 决策（与原计划差异）
+- **72h FINAL 调度**：原计划用 Celery Beat 每 10min 扫描，**改为懒触发 + 管理员手动按钮**。理由：tasks/ 目录还没起 Celery 基础设施，bootstrap 成本 15-20 条消息。Window 18 (CI/CD) 一并搭。
+- **MyInvois adapter 抽象**：超出原计划（原是写死 mock）。加 Protocol 接口让未来真实对接零侵入，成本 +1 文件。
+- **Celery 任务 (`tasks/einvoice.py`)**：未实现。等 Window 18 起 Celery 时一并加。
 
 ### 验证
-- SO → Invoice 草稿生成
-- Submit → 异步 → 返回 UIN
-- Demo Mode 下 72s 后状态自动变 FINAL
-- Buyer 在 72h 内 Reject → 状态 REJECTED
+- [x] 99/99 单测通过（含 16 新 + 83 原）
+- [x] FastAPI 路由注册：6 个 invoice endpoint
+- [x] Migration 文件可加载
+- [ ] 端到端 docker compose 走查（待新 session）
 
-### 预估消息
-约 80-100 条
+### 实际消息
+约 80 条
 
 ---
 
@@ -780,7 +789,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 | 08 GR + 库存 | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 53/53 单测全绿；端到端 4% 容差通过、6% 拒绝；avg_cost 公式验证正确 |
 | 09 OCR AI | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~90 | 72/72 测试全绿；SSE 4 事件流；Claude Sonnet 4.6 真实调用 2.6s / $0.0048；修复 SSE+session lifecycle bug |
 | 10 SO + DO | ✅ 完成 | 2026-04-28 | 2026-04-28 | ~70 | 83/83 单测全绿（新增 16）；inventory 三新 API（apply_reserve/unreserve/sales_out）；防超卖原子 SQL；snapshot_avg_cost 首次发货写入；为 W12 退货留好 hook |
-| 11 Invoice + MyInvois | ⏳ | | | | |
+| 11 Invoice + MyInvois | ✅ 完成 | 2026-04-29 | 2026-04-29 | ~80 | 99/99 单测全绿（新增 16）；Mock adapter 通过 Protocol 隔离，未来真实 LHDN 对接零侵入；72h 用懒触发 + admin scan 替代 Celery（推迟 W18）；DEMO_MODE 自动 72h→72s |
 | 12 e-Invoice AI + CN | ⏳ | | | | |
 | 13 Stock Movements | ⏳ | | | | |
 | 14 Branch Inventory | ⏳ | | | | |

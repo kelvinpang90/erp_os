@@ -30,6 +30,8 @@ const SOEditPage = lazy(() => import('./pages/Sales/SOEditPage'))
 const DOListPage = lazy(() => import('./pages/Sales/DOListPage'))
 const DOCreatePage = lazy(() => import('./pages/Sales/DOCreatePage'))
 const DODetailPage = lazy(() => import('./pages/Sales/DODetailPage'))
+const InvoiceListPage = lazy(() => import('./pages/EInvoice/InvoiceListPage'))
+const InvoiceDetailPage = lazy(() => import('./pages/EInvoice/InvoiceDetailPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -80,6 +82,8 @@ function AppRoutes() {
         <Route path="/sales/delivery" element={<DOListPage />} />
         <Route path="/sales/delivery/create" element={<DOCreatePage />} />
         <Route path="/sales/delivery/:id" element={<DODetailPage />} />
+        <Route path="/sales/einvoice" element={<InvoiceListPage />} />
+        <Route path="/sales/einvoice/:id" element={<InvoiceDetailPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />

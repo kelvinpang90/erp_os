@@ -8,6 +8,7 @@
   "sales": "Sales",
   "salesOrders": "Sales Orders",
   "deliveryOrders": "Delivery Orders",
+  "einvoice": "e-Invoices",
   "customers": "Customers",
   "inventory": "Inventory",
   "settings": "Settings",

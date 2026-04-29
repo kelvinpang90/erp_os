@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import enCommon from './locales/en-US/common.json'
 import enCustomer from './locales/en-US/customer.json'
 import enDeliveryOrder from './locales/en-US/delivery_order.json'
+import enEinvoice from './locales/en-US/einvoice.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
 import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
@@ -15,6 +16,7 @@ import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
 import zhCustomer from './locales/zh-CN/customer.json'
 import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
+import zhEinvoice from './locales/zh-CN/einvoice.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
@@ -39,6 +41,7 @@ i18n
         sales_order: enSalesOrder,
         delivery_order: enDeliveryOrder,
         ocr: enOcr,
+        einvoice: enEinvoice,
       },
       'zh-CN': {
         common: zhCommon,
@@ -51,6 +54,7 @@ i18n
         sales_order: zhSalesOrder,
         delivery_order: zhDeliveryOrder,
         ocr: zhOcr,
+        einvoice: zhEinvoice,
       },
     },
     fallbackLng: 'en-US',

@@ -43,6 +43,7 @@ from app.routers import currency as currency_router
 from app.routers import customer as customer_router
 from app.routers import exchange_rate as exchange_rate_router
 from app.routers import goods_receipt as goods_receipt_router
+from app.routers import invoice as invoice_router
 from app.routers import purchase_order as purchase_order_router
 from app.routers import sales_order as sales_order_router
 from app.routers import delivery_order as delivery_order_router
@@ -192,6 +193,7 @@ app.include_router(purchase_order_router.router, prefix="/api/purchase-orders", 
 app.include_router(goods_receipt_router.router, prefix="/api/goods-receipts", tags=["goods-receipts"])
 app.include_router(sales_order_router.router, prefix="/api/sales-orders", tags=["sales-orders"])
 app.include_router(delivery_order_router.router, prefix="/api/delivery-orders", tags=["delivery-orders"])
+app.include_router(invoice_router.router, prefix="/api/invoices", tags=["invoices"])
 app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 
 
