@@ -35,6 +35,15 @@ const InvoiceDetailPage = lazy(() => import('./pages/EInvoice/InvoiceDetailPage'
 const CreditNoteListPage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteListPage'))
 const CreditNoteDetailPage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteDetailPage'))
 const CreditNoteCreatePage = lazy(() => import('./pages/Sales/CreditNote/CreditNoteCreatePage'))
+const TransferListPage = lazy(() => import('./pages/Inventory/TransferListPage'))
+const TransferDetailPage = lazy(() => import('./pages/Inventory/TransferDetailPage'))
+const TransferCreatePage = lazy(() => import('./pages/Inventory/TransferCreatePage'))
+const TransferEditPage = lazy(() => import('./pages/Inventory/TransferEditPage'))
+const TransferReceivePage = lazy(() => import('./pages/Inventory/TransferReceivePage'))
+const AdjustmentListPage = lazy(() => import('./pages/Inventory/AdjustmentListPage'))
+const AdjustmentCreatePage = lazy(() => import('./pages/Inventory/AdjustmentCreatePage'))
+const AdjustmentDetailPage = lazy(() => import('./pages/Inventory/AdjustmentDetailPage'))
+const MovementListPage = lazy(() => import('./pages/Inventory/MovementListPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -90,6 +99,15 @@ function AppRoutes() {
         <Route path="/sales/credit-notes" element={<CreditNoteListPage />} />
         <Route path="/sales/credit-notes/new" element={<CreditNoteCreatePage />} />
         <Route path="/sales/credit-notes/:id" element={<CreditNoteDetailPage />} />
+        <Route path="/inventory/transfers" element={<TransferListPage />} />
+        <Route path="/inventory/transfers/new" element={<TransferCreatePage />} />
+        <Route path="/inventory/transfers/:id" element={<TransferDetailPage />} />
+        <Route path="/inventory/transfers/:id/edit" element={<TransferEditPage />} />
+        <Route path="/inventory/transfers/:id/receive" element={<TransferReceivePage />} />
+        <Route path="/inventory/adjustments" element={<AdjustmentListPage />} />
+        <Route path="/inventory/adjustments/new" element={<AdjustmentCreatePage />} />
+        <Route path="/inventory/adjustments/:id" element={<AdjustmentDetailPage />} />
+        <Route path="/inventory/movements" element={<MovementListPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />

@@ -68,6 +68,11 @@ export default function AppLayout() {
       path: '/inventory',
       name: t('inventory'),
       icon: <AppstoreOutlined />,
+      children: [
+        { path: '/inventory/transfers', name: t('stockTransfers') },
+        { path: '/inventory/adjustments', name: t('stockAdjustments') },
+        { path: '/inventory/movements', name: t('stockMovements') },
+      ],
     },
     {
       path: '/settings',

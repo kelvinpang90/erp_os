@@ -44,11 +44,14 @@ from app.routers import currency as currency_router
 from app.routers import customer as customer_router
 from app.routers import exchange_rate as exchange_rate_router
 from app.routers import goods_receipt as goods_receipt_router
+from app.routers import inventory as inventory_router
 from app.routers import invoice as invoice_router
 from app.routers import purchase_order as purchase_order_router
 from app.routers import sales_order as sales_order_router
 from app.routers import delivery_order as delivery_order_router
 from app.routers import sku as sku_router
+from app.routers import stock_adjustment as stock_adjustment_router
+from app.routers import stock_transfer as stock_transfer_router
 from app.routers import supplier as supplier_router
 from app.routers import tax_rate as tax_rate_router
 from app.routers import uom as uom_router
@@ -196,6 +199,9 @@ app.include_router(sales_order_router.router, prefix="/api/sales-orders", tags=[
 app.include_router(delivery_order_router.router, prefix="/api/delivery-orders", tags=["delivery-orders"])
 app.include_router(invoice_router.router, prefix="/api/invoices", tags=["invoices"])
 app.include_router(credit_note_router.router, prefix="/api/credit-notes", tags=["credit-notes"])
+app.include_router(stock_transfer_router.router, prefix="/api/stock-transfers", tags=["stock-transfers"])
+app.include_router(stock_adjustment_router.router, prefix="/api/stock-adjustments", tags=["stock-adjustments"])
+app.include_router(inventory_router.router, prefix="/api/inventory", tags=["inventory"])
 app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 
 

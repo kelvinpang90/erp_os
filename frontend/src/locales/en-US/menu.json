@@ -12,6 +12,9 @@
   "creditNotes": "Credit Notes",
   "customers": "Customers",
   "inventory": "Inventory",
+  "stockTransfers": "Stock Transfers",
+  "stockAdjustments": "Stock Adjustments",
+  "stockMovements": "Stock Movements",
   "settings": "Settings",
   "warehouses": "Warehouses",
   "logout": "Logout"

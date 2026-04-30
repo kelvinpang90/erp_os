@@ -12,6 +12,9 @@
   "creditNotes": "贷记单",
   "customers": "客户",
   "inventory": "库存",
+  "stockTransfers": "库存调拨",
+  "stockAdjustments": "库存调整",
+  "stockMovements": "库存流水",
   "settings": "设置",
   "warehouses": "仓库管理",
   "logout": "退出登录"

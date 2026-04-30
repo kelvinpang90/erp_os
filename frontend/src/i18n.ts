@@ -11,6 +11,9 @@ import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
 import enSalesOrder from './locales/en-US/sales_order.json'
+import enStockAdjustment from './locales/en-US/stock_adjustment.json'
+import enStockMovement from './locales/en-US/stock_movement.json'
+import enStockTransfer from './locales/en-US/stock_transfer.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
@@ -22,6 +25,9 @@ import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
 import zhSalesOrder from './locales/zh-CN/sales_order.json'
+import zhStockAdjustment from './locales/zh-CN/stock_adjustment.json'
+import zhStockMovement from './locales/zh-CN/stock_movement.json'
+import zhStockTransfer from './locales/zh-CN/stock_transfer.json'
 import zhSupplier from './locales/zh-CN/supplier.json'
 import zhWarehouse from './locales/zh-CN/warehouse.json'
 
@@ -42,6 +48,9 @@ i18n
         delivery_order: enDeliveryOrder,
         ocr: enOcr,
         einvoice: enEinvoice,
+        stock_transfer: enStockTransfer,
+        stock_adjustment: enStockAdjustment,
+        stock_movement: enStockMovement,
       },
       'zh-CN': {
         common: zhCommon,
@@ -55,6 +64,9 @@ i18n
         delivery_order: zhDeliveryOrder,
         ocr: zhOcr,
         einvoice: zhEinvoice,
+        stock_transfer: zhStockTransfer,
+        stock_adjustment: zhStockAdjustment,
+        stock_movement: zhStockMovement,
       },
     },
     fallbackLng: 'en-US',

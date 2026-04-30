@@ -808,19 +808,537 @@ async def apply_sales_return_reverse(
     return stock
 
 
-# ── Reserved for future windows ──────────────────────────────────────────────
+# ── Window 13: Stock Transfer + Stock Adjustment ─────────────────────────────
 
 
-async def apply_transfer_out(*args, **kwargs):  # pragma: no cover — W13
-    """Reserved for Window 13 (Stock Transfer)."""
-    raise NotImplementedError("apply_transfer_out is implemented in Window 13.")
+async def apply_transfer_ship_out(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    from_warehouse_id: int,
+    to_warehouse_id: int,
+    qty: Decimal,
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    batch_no: Optional[str] = None,
+    expiry_date=None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> tuple[Stock, Stock, Decimal]:
+    """Ship-out leg of a Stock Transfer (CONFIRMED → IN_TRANSIT).
+
+    Atomic effects within the current transaction:
+    1. From warehouse: on_hand -= qty (guarded so on_hand >= qty), version+=1.
+       avg_cost is intentionally NOT recomputed — outbound moves do not affect
+       weighted-average cost.
+    2. To warehouse: in_transit += qty, version+=1. (Get-or-create row.)
+    3. Insert one StockMovement row (TRANSFER_OUT, warehouse=From). The matching
+       TRANSFER_IN row is written by ``apply_transfer_receive`` when goods land.
+    4. Publish StockMovementOccurred event.
+
+    Returns:
+        Tuple ``(from_stock, to_stock, snapshot_avg_cost)`` — snapshot avg_cost
+        is the From warehouse's avg_cost at ship time, which the service layer
+        MUST persist into ``StockTransferLine.unit_cost_snapshot`` so the
+        receive leg can recompute the destination weighted-average correctly.
+
+    Raises:
+        BusinessRuleError / InsufficientStockError — when From has too little
+            on_hand or stocks were modified concurrently.
+        ValueError — qty out of range.
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+    if from_warehouse_id == to_warehouse_id:
+        raise ValueError("from_warehouse_id and to_warehouse_id must differ")
+
+    # 1) Lock-and-load From stock row.
+    stmt_from = select(Stock).where(
+        Stock.sku_id == sku_id,
+        Stock.warehouse_id == from_warehouse_id,
+    )
+    from_stock = (await session.execute(stmt_from)).scalar_one_or_none()
+    if from_stock is None:
+        raise InsufficientStockError(
+            message=(
+                f"No stock at from_warehouse={from_warehouse_id} for sku={sku_id}: "
+                "cannot ship transfer."
+            ),
+            detail={"sku_id": sku_id, "warehouse_id": from_warehouse_id},
+        )
+
+    now = _utc_naive()
+    expected_version = from_stock.version
+    snapshot_avg_cost = from_stock.avg_cost
+
+    # 2) Decrement From.on_hand atomically (guarded by version + capacity).
+    result = await session.execute(
+        update(Stock)
+        .where(
+            Stock.id == from_stock.id,
+            Stock.version == expected_version,
+            Stock.on_hand >= qty,
+        )
+        .values(
+            on_hand=Stock.on_hand - qty,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise InsufficientStockError(
+            message=(
+                f"Cannot ship {qty} of sku={sku_id} from warehouse={from_warehouse_id}: "
+                f"on_hand={from_stock.on_hand} or row was modified concurrently."
+            ),
+            detail={
+                "sku_id": sku_id,
+                "warehouse_id": from_warehouse_id,
+                "requested": str(qty),
+            },
+        )
+
+    # 3) Increment To.in_transit (get-or-create destination row).
+    to_stock = await _get_or_create_stock(
+        session,
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=to_warehouse_id,
+    )
+    await session.execute(
+        update(Stock)
+        .where(Stock.id == to_stock.id)
+        .values(
+            in_transit=Stock.in_transit + qty,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+
+    # 4) Audit movement (TRANSFER_OUT, warehouse=From).
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=from_warehouse_id,
+        movement_type=StockMovementType.TRANSFER_OUT,
+        quantity=qty,
+        unit_cost=snapshot_avg_cost,  # for COGS-style traceability
+        avg_cost_after=snapshot_avg_cost,  # WAC unchanged on outbound
+        source_document_type=StockMovementSourceType.TRANSFER,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        batch_no=batch_no,
+        expiry_date=expiry_date,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(from_stock)
+    await session.refresh(to_stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=from_warehouse_id,
+            movement_type=StockMovementType.TRANSFER_OUT.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.TRANSFER.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_transfer_shipped",
+        org_id=org_id,
+        sku_id=sku_id,
+        from_wh=from_warehouse_id,
+        to_wh=to_warehouse_id,
+        qty=str(qty),
+        snapshot_avg_cost=str(snapshot_avg_cost),
+        transfer_id=source_document_id,
+    )
+
+    return from_stock, to_stock, snapshot_avg_cost
 
 
-async def apply_transfer_in(*args, **kwargs):  # pragma: no cover — W13
-    """Reserved for Window 13 (Stock Transfer)."""
-    raise NotImplementedError("apply_transfer_in is implemented in Window 13.")
+async def apply_transfer_receive(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    to_warehouse_id: int,
+    qty: Decimal,
+    unit_cost_snapshot: Decimal,
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    batch_no: Optional[str] = None,
+    expiry_date=None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> tuple[Stock, Decimal]:
+    """Receive leg of a Stock Transfer (IN_TRANSIT → RECEIVED, possibly partial).
+
+    Atomic effects:
+    1. To warehouse: in_transit -= qty (guarded so in_transit >= qty),
+       on_hand += qty, version+=1.
+    2. Recompute weighted-average cost using the snapshot from ship time.
+    3. Insert StockMovement (TRANSFER_IN).
+    4. Publish StockMovementOccurred.
+
+    Args:
+        unit_cost_snapshot: From warehouse's avg_cost captured at ship time.
+            This is the value that ``apply_transfer_ship_out`` returned and the
+            service layer wrote into ``StockTransferLine.unit_cost_snapshot``.
+
+    Returns:
+        Tuple ``(stock, new_avg_cost)``.
+
+    Raises:
+        BusinessRuleError — concurrent modification or in_transit underflow.
+        ValueError — qty / unit_cost out of range.
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+    if unit_cost_snapshot < 0:
+        raise ValueError("unit_cost_snapshot must be >= 0")
+
+    stmt = select(Stock).where(
+        Stock.sku_id == sku_id,
+        Stock.warehouse_id == to_warehouse_id,
+    )
+    stock = (await session.execute(stmt)).scalar_one_or_none()
+    if stock is None:
+        raise BusinessRuleError(
+            message=(
+                f"No stock row found at to_warehouse={to_warehouse_id} for sku={sku_id}: "
+                "cannot receive transfer."
+            ),
+            error_code="STOCK_MISSING",
+        )
+
+    new_avg = compute_weighted_average(
+        current_qty=stock.on_hand,
+        current_avg_cost=stock.avg_cost,
+        incoming_qty=qty,
+        incoming_unit_cost=unit_cost_snapshot,
+    )
+
+    now = _utc_naive()
+    expected_version = stock.version
+
+    result = await session.execute(
+        update(Stock)
+        .where(
+            Stock.id == stock.id,
+            Stock.version == expected_version,
+            Stock.in_transit >= qty,
+        )
+        .values(
+            on_hand=Stock.on_hand + qty,
+            in_transit=Stock.in_transit - qty,
+            avg_cost=new_avg,
+            last_cost=unit_cost_snapshot,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise BusinessRuleError(
+            message=(
+                f"Cannot receive {qty} of sku={sku_id} at warehouse={to_warehouse_id}: "
+                f"in_transit={stock.in_transit} or stock was modified concurrently."
+            ),
+            error_code="STOCK_CONFLICT",
+        )
+
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=to_warehouse_id,
+        movement_type=StockMovementType.TRANSFER_IN,
+        quantity=qty,
+        unit_cost=unit_cost_snapshot,
+        avg_cost_after=new_avg,
+        source_document_type=StockMovementSourceType.TRANSFER,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        batch_no=batch_no,
+        expiry_date=expiry_date,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=to_warehouse_id,
+            movement_type=StockMovementType.TRANSFER_IN.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.TRANSFER.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_transfer_received",
+        org_id=org_id,
+        sku_id=sku_id,
+        to_wh=to_warehouse_id,
+        qty=str(qty),
+        unit_cost=str(unit_cost_snapshot),
+        new_avg_cost=str(new_avg),
+        transfer_id=source_document_id,
+    )
+
+    return stock, new_avg
 
 
-async def apply_adjustment(*args, **kwargs):  # pragma: no cover — W13
-    """Reserved for Window 13 (Stock Adjustment)."""
-    raise NotImplementedError("apply_adjustment is implemented in Window 13.")
+async def apply_adjustment_increase(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    warehouse_id: int,
+    qty: Decimal,
+    unit_cost: Optional[Decimal],
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    batch_no: Optional[str] = None,
+    expiry_date=None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> tuple[Stock, Decimal]:
+    """Apply an inbound stock adjustment (盘盈 / inventory gain).
+
+    Atomic effects:
+    1. on_hand += qty, version+=1.
+    2. avg_cost recomputed via weighted average. If ``unit_cost`` is None,
+       inherit the current avg_cost (no WAC drift) — typical for "physical
+       count discovered extra units of unknown origin".
+    3. Insert StockMovement (ADJUSTMENT_IN).
+    4. Publish StockMovementOccurred.
+
+    Args:
+        unit_cost: Optional per-unit cost for this gain. Defaults to current
+            avg_cost when None (preserves WAC).
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+    if unit_cost is not None and unit_cost < 0:
+        raise ValueError("unit_cost must be >= 0")
+
+    stock = await _get_or_create_stock(
+        session,
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+    )
+
+    effective_unit_cost = unit_cost if unit_cost is not None else stock.avg_cost
+    new_avg = compute_weighted_average(
+        current_qty=stock.on_hand,
+        current_avg_cost=stock.avg_cost,
+        incoming_qty=qty,
+        incoming_unit_cost=effective_unit_cost,
+    )
+
+    now = _utc_naive()
+    expected_version = stock.version
+
+    result = await session.execute(
+        update(Stock)
+        .where(Stock.id == stock.id, Stock.version == expected_version)
+        .values(
+            on_hand=Stock.on_hand + qty,
+            avg_cost=new_avg,
+            last_cost=effective_unit_cost,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise BusinessRuleError(
+            message=(
+                f"Stock for sku={sku_id} warehouse={warehouse_id} was modified "
+                "concurrently. Please retry."
+            ),
+            error_code="STOCK_CONFLICT",
+        )
+
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        movement_type=StockMovementType.ADJUSTMENT_IN,
+        quantity=qty,
+        unit_cost=effective_unit_cost,
+        avg_cost_after=new_avg,
+        source_document_type=StockMovementSourceType.ADJUSTMENT,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        batch_no=batch_no,
+        expiry_date=expiry_date,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=warehouse_id,
+            movement_type=StockMovementType.ADJUSTMENT_IN.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.ADJUSTMENT.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_adjustment_increase_applied",
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        qty=str(qty),
+        unit_cost=str(effective_unit_cost),
+        new_avg_cost=str(new_avg),
+        adjustment_id=source_document_id,
+    )
+
+    return stock, new_avg
+
+
+async def apply_adjustment_decrease(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    warehouse_id: int,
+    qty: Decimal,
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    batch_no: Optional[str] = None,
+    expiry_date=None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> tuple[Stock, Decimal]:
+    """Apply an outbound stock adjustment (盘亏 / inventory loss).
+
+    Atomic effects:
+    1. on_hand -= qty (guarded so on_hand >= qty), version+=1.
+    2. avg_cost is intentionally NOT recomputed — outbound moves don't affect
+       WAC. COGS = qty * avg_cost (snapshot for audit).
+    3. Insert StockMovement (ADJUSTMENT_OUT, unit_cost=current avg_cost).
+    4. Publish StockMovementOccurred.
+
+    Raises:
+        InsufficientStockError — on_hand < qty.
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+
+    stmt = select(Stock).where(
+        Stock.sku_id == sku_id,
+        Stock.warehouse_id == warehouse_id,
+    )
+    stock = (await session.execute(stmt)).scalar_one_or_none()
+    if stock is None:
+        raise InsufficientStockError(
+            message=(
+                f"No stock at warehouse={warehouse_id} for sku={sku_id}: "
+                "cannot record loss."
+            ),
+            detail={"sku_id": sku_id, "warehouse_id": warehouse_id},
+        )
+
+    now = _utc_naive()
+    expected_version = stock.version
+    snapshot_avg_cost = stock.avg_cost
+
+    result = await session.execute(
+        update(Stock)
+        .where(
+            Stock.id == stock.id,
+            Stock.version == expected_version,
+            Stock.on_hand >= qty,
+        )
+        .values(
+            on_hand=Stock.on_hand - qty,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise InsufficientStockError(
+            message=(
+                f"Cannot decrease {qty} of sku={sku_id} at warehouse={warehouse_id}: "
+                f"on_hand={stock.on_hand} or row was modified concurrently."
+            ),
+            detail={
+                "sku_id": sku_id,
+                "warehouse_id": warehouse_id,
+                "requested": str(qty),
+            },
+        )
+
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        movement_type=StockMovementType.ADJUSTMENT_OUT,
+        quantity=qty,
+        unit_cost=snapshot_avg_cost,
+        avg_cost_after=snapshot_avg_cost,  # WAC unchanged on outbound
+        source_document_type=StockMovementSourceType.ADJUSTMENT,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        batch_no=batch_no,
+        expiry_date=expiry_date,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=warehouse_id,
+            movement_type=StockMovementType.ADJUSTMENT_OUT.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.ADJUSTMENT.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_adjustment_decrease_applied",
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        qty=str(qty),
+        snapshot_avg_cost=str(snapshot_avg_cost),
+        adjustment_id=source_document_id,
+    )
+
+    return stock, snapshot_avg_cost
