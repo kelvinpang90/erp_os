@@ -1,0 +1,49 @@
+# Python build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+*.egg
+build
+dist
+
+# Virtual envs (use the image's interpreter)
+.venv
+venv
+env
+
+# Tests / coverage / type-check caches
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.tox
+htmlcov
+.coverage
+.coverage.*
+coverage.xml
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Local env / secrets
+.env
+.env.*.local
+.env.local
+
+# Source control
+.git
+.gitignore
+
+# Local uploads / sqlite scratch
+uploads
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+*.log

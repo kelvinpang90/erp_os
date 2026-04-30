@@ -1,0 +1,33 @@
+# Local install — Dockerfile re-runs `npm install` inside the image.
+# Sending these would balloon the build context to 400+MB and break on
+# Windows because some `.bin/*` entries are symlinks the BuildKit can't resolve.
+node_modules
+dist
+.vite
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Local env (use ARG / .env on the compose side instead)
+.env
+.env.*.local
+.env.local
+
+# Test / coverage
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Source control
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
