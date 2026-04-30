@@ -689,6 +689,125 @@ async def apply_sales_return(
     return stock, new_avg
 
 
+async def apply_sales_return_reverse(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    sku_id: int,
+    warehouse_id: int,
+    qty: Decimal,
+    source_document_id: int,
+    source_line_id: Optional[int] = None,
+    actor_user_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> Stock:
+    """Roll back an ``apply_sales_return`` previously applied (CN cancel).
+
+    Why this exists separately from ``apply_sales_out``:
+    ``apply_sales_out`` requires both ``reserved >= qty`` and ``on_hand >= qty``
+    because it's the second half of the SO → DO flow (reserve first, ship later).
+    A Credit Note's inbound never went through ``apply_reserve``, so the
+    reserved counter was never incremented. Calling apply_sales_out here would
+    fail with STOCK_CONFLICT every time.
+
+    This helper only requires ``on_hand >= qty``:
+
+    1. Atomic update Stock: on_hand -= qty, version += 1.
+       ``avg_cost`` is intentionally **not** recomputed — backing out the
+       receipt's effect on the weighted average exactly would need the
+       pre-inbound avg_cost; for a demo cancel that's overkill, and the
+       drift is bounded by the small qty being cancelled.
+    2. Audit row uses ``ADJUSTMENT_OUT`` with ``source_document_type=CN`` so the
+       (CN, ADJUSTMENT_OUT) tuple is unambiguous in the trail.
+    3. Publish ``StockMovementOccurred`` so cache/notifications fire.
+
+    Raises:
+        BusinessRuleError: optimistic-lock conflict OR insufficient on_hand
+            (someone consumed the returned goods before cancel — manual
+            intervention needed).
+        ValueError: qty out of range.
+    """
+    if qty <= 0:
+        raise ValueError("qty must be > 0")
+
+    stock = await _get_or_create_stock(
+        session,
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+    )
+
+    now = _utc_naive()
+    expected_version = stock.version
+    snapshot_avg_cost = stock.avg_cost
+
+    result = await session.execute(
+        update(Stock)
+        .where(
+            Stock.id == stock.id,
+            Stock.version == expected_version,
+            Stock.on_hand >= qty,
+        )
+        .values(
+            on_hand=Stock.on_hand - qty,
+            last_movement_at=now,
+            version=Stock.version + 1,
+        )
+    )
+    if result.rowcount == 0:
+        raise BusinessRuleError(
+            message=(
+                f"Cannot reverse CN inbound for sku={sku_id} warehouse={warehouse_id}: "
+                f"requested {qty} but stock was modified concurrently or on_hand "
+                "is now below the returned quantity."
+            ),
+            error_code="STOCK_CONFLICT",
+        )
+
+    movement = StockMovement(
+        organization_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        movement_type=StockMovementType.ADJUSTMENT_OUT,
+        quantity=qty,
+        unit_cost=snapshot_avg_cost,
+        avg_cost_after=snapshot_avg_cost,  # WAC unchanged on reversal
+        source_document_type=StockMovementSourceType.CN,
+        source_document_id=source_document_id,
+        source_line_id=source_line_id,
+        notes=notes,
+        actor_user_id=actor_user_id,
+        occurred_at=now,
+    )
+    session.add(movement)
+    await session.flush()
+    await session.refresh(stock)
+
+    await event_bus.publish(
+        StockMovementOccurred(
+            organization_id=org_id,
+            sku_id=sku_id,
+            warehouse_id=warehouse_id,
+            movement_type=StockMovementType.ADJUSTMENT_OUT.value,
+            quantity=qty,
+            source_document_type=StockMovementSourceType.CN.value,
+            source_document_id=source_document_id,
+        ),
+        session,
+    )
+
+    logger.info(
+        "stock_sales_return_reversed",
+        org_id=org_id,
+        sku_id=sku_id,
+        warehouse_id=warehouse_id,
+        qty=str(qty),
+        cn_id=source_document_id,
+    )
+
+    return stock
+
+
 # ── Reserved for future windows ──────────────────────────────────────────────
 
 

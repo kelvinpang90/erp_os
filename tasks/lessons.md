@@ -59,6 +59,18 @@
 **纠正**：解析前 `chunk.replace(/\r\n?/g, '\n')` 全部归一成 LF，再走 `\n\n` 切帧逻辑
 **预防**：写 SSE 客户端解析器**第一行**就归一行尾。SSE spec 明文允许 `\n\n` / `\r\r` / `\r\n\r\n` 三种分隔符，三种都要支持。后续 e-Invoice 预校验、Dashboard AI 日报如果用 SSE，复用同一个 `SSEUploader` 即可，不要再各写各的解析器
 
+## Window 12: e-Invoice AI 预校验 + Credit Note + Consolidated
+
+### [2026-04-30] CN cancel 不能复用 apply_sales_out
+
+**场景**：Credit Note DRAFT 取消时要回滚库存（把 `apply_sales_return` 入库的 qty 扣回去）
+**犯的错**：plan 阶段直接说 "调一次 `apply_sales_out` 把退货数量扣回去"。手测点 Cancel CN → 报 "Cannot ship 20.0000 of sku=1 ... insufficient on_hand/reserved"
+**根因**：`apply_sales_out` 的原子 SQL 是 `WHERE reserved >= qty AND on_hand >= qty`，因为它服务的正常路径是 SO confirm（`apply_reserve` 把 reserved +=qty）→ DO ship（同时扣 reserved + on_hand）。CN 退货入库走 `apply_sales_return` 只动 `on_hand`，根本没经过 `apply_reserve`，reserved=0 导致 SQL 永远失败
+**纠正**：新增 `inventory.apply_sales_return_reverse`，SQL 只要求 `on_hand >= qty`，不动 reserved；audit 用 `ADJUSTMENT_OUT + source_type=CN` 标识"撤销退货"
+**预防**：(a) 新增 inventory 写操作前画一遍 6 维库存的状态转移图，明确每个原子函数的入口前置条件；(b) 用 mock 写的 service 单测能跑过不代表逻辑对——`apply_sales_out` 在测试里被 AsyncMock 替代，根本没执行真实 SQL，永远不会暴露这个 bug。教训：service 测试 mock inventory 函数时，应该断言**调用的是哪个具体函数名**（用 `apply_sales_return_reverse` 而不是 `apply_sales_out`），让函数名本身做契约
+
+---
+
 ### [2026-04-28] PyCharm Docker Compose Interpreter 的 Debug 模式会劫持容器 entrypoint
 
 **场景**：用 PyCharm 配 Docker Compose Interpreter 跑 backend

@@ -354,7 +354,13 @@ async def test_cancel_cn_rolls_back_stock():
 
     with (
         patch.object(cn_service, "CreditNoteRepository", return_value=cn_repo),
-        patch.object(cn_service.inventory_svc, "apply_sales_out", new=rollback_mock),
+        # Bug fix: use apply_sales_return_reverse, NOT apply_sales_out.
+        # The latter required reserved >= qty which CN inbound never sets up.
+        patch.object(
+            cn_service.inventory_svc,
+            "apply_sales_return_reverse",
+            new=rollback_mock,
+        ),
         patch.object(cn_service.event_bus, "publish", new=publish_mock),
         patch.object(cn_service, "_to_detail", new=lambda x: x),
     ):

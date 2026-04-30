@@ -165,3 +165,95 @@ class TestApplySalesReturn:
                 unit_cost=Decimal("8"),
                 source_document_id=1,
             )
+
+
+@pytest.mark.asyncio
+class TestApplySalesReturnReverse:
+    """Bug fix: CN cancel needs to undo apply_sales_return without going
+    through apply_sales_out (which requires reserved >= qty — a precondition
+    CN inbound never establishes)."""
+
+    async def test_only_decrements_on_hand_no_reserved_required(self) -> None:
+        """The whole point: succeed even when reserved == 0."""
+        stock = _make_stock(
+            on_hand=Decimal("110"),     # 100 original + 10 from CN inbound
+            avg_cost=Decimal("9.8182"),
+            incoming=Decimal("0"),
+            version=4,
+        )
+        # ⚠️ reserved is 0 — apply_sales_out would have failed with STOCK_CONFLICT.
+        stock.reserved = Decimal("0")
+
+        session = make_mock_session()
+        update_result = MagicMock()
+        update_result.rowcount = 1
+        select_result = MagicMock()
+        select_result.scalar_one_or_none = MagicMock(return_value=stock)
+        session.execute = AsyncMock(side_effect=[select_result, update_result])
+
+        with patch.object(inventory_svc.event_bus, "publish", new=AsyncMock()) as pub:
+            result_stock = await inventory_svc.apply_sales_return_reverse(
+                session,
+                org_id=1,
+                sku_id=11,
+                warehouse_id=21,
+                qty=Decimal("10"),
+                source_document_id=4321,
+                source_line_id=8765,
+                actor_user_id=42,
+                notes="CN cancellation rollback (CN-2026-00003)",
+            )
+
+        assert result_stock is stock
+
+        # The audit row uses ADJUSTMENT_OUT + CN — the unique tuple that
+        # marks "this was a CN cancellation, not a sale".
+        adds = session.add.call_args_list
+        assert len(adds) == 1
+        movement = adds[0].args[0]
+        assert movement.movement_type == StockMovementType.ADJUSTMENT_OUT
+        assert movement.source_document_type == StockMovementSourceType.CN
+        assert movement.source_document_id == 4321
+        assert movement.quantity == Decimal("10")
+        assert "CN cancellation" in (movement.notes or "")
+
+        pub.assert_awaited_once()
+        event = pub.await_args.args[0]
+        assert event.movement_type == StockMovementType.ADJUSTMENT_OUT.value
+        assert event.source_document_type == StockMovementSourceType.CN.value
+
+    async def test_insufficient_on_hand_raises(self) -> None:
+        """If someone consumed the returned goods before cancel, the SQL
+        guard ``on_hand >= qty`` fails and we surface STOCK_CONFLICT."""
+        stock = _make_stock(on_hand=Decimal("3"), version=1)
+
+        session = make_mock_session()
+        select_result = MagicMock()
+        select_result.scalar_one_or_none = MagicMock(return_value=stock)
+        update_result = MagicMock()
+        update_result.rowcount = 0  # WHERE on_hand >= 10 unmet
+        session.execute = AsyncMock(side_effect=[select_result, update_result])
+
+        with patch.object(inventory_svc.event_bus, "publish", new=AsyncMock()):
+            with pytest.raises(BusinessRuleError) as exc:
+                await inventory_svc.apply_sales_return_reverse(
+                    session,
+                    org_id=1,
+                    sku_id=11,
+                    warehouse_id=21,
+                    qty=Decimal("10"),
+                    source_document_id=1,
+                )
+        assert exc.value.error_code == "STOCK_CONFLICT"
+
+    async def test_rejects_non_positive_qty(self) -> None:
+        session = make_mock_session()
+        with pytest.raises(ValueError):
+            await inventory_svc.apply_sales_return_reverse(
+                session,
+                org_id=1,
+                sku_id=11,
+                warehouse_id=21,
+                qty=Decimal("0"),
+                source_document_id=1,
+            )

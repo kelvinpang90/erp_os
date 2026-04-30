@@ -400,11 +400,11 @@ async def cancel_credit_note(
             error_code="INVOICE_WAREHOUSE_MISSING",
         )
 
-    # Roll the inbound back. We use apply_sales_out to symmetrically deduct the
-    # qty we previously added; this writes a SALES movement against CN id, which
-    # is loud in the audit trail (intentional — cancellations should be visible).
+    # Roll the inbound back. apply_sales_return_reverse is purpose-built for
+    # this — apply_sales_out would have failed because CN inbound never goes
+    # through apply_reserve, so reserved == 0 and the SQL guard wouldn't pass.
     for ln in cn.lines or []:
-        await inventory_svc.apply_sales_out(
+        await inventory_svc.apply_sales_return_reverse(
             session,
             org_id=org_id,
             sku_id=ln.sku_id,
