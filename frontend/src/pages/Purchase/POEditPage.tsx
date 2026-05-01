@@ -51,11 +51,20 @@ export default function POEditPage() {
     ? ((location.state as { ocrPrefill?: OCRPurchaseOrderResult } | null)?.ocrPrefill ?? null)
     : null
 
+  // Restock prefill payload (when arriving from /inventory/alerts via "Generate Restock PO").
+  // Each item is {sku_id, qty}; warehouse is optional and selects the destination.
+  const restockPrefill = isCreate
+    ? ((location.state as
+        | { restockPrefill?: { warehouse_id?: number; lines: { sku_id: number; qty: number }[] } }
+        | null)?.restockPrefill ?? null)
+    : null
+
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
   const [lines, setLines] = useState<LineRow[]>([])
   const [editableKeys, setEditableKeys] = useState<(string | number)[]>([])
   const [ocrApplied, setOcrApplied] = useState(false)
+  const [restockApplied, setRestockApplied] = useState(false)
 
   const [supplierOptions, setSupplierOptions] = useState<{ value: number; label: string }[]>([])
   const [warehouseOptions, setWarehouseOptions] = useState<{ value: number; label: string }[]>([])
@@ -428,6 +437,107 @@ export default function POEditPage() {
   }, [
     ocrPrefill,
     ocrApplied,
+    supplierOptions,
+    warehouseOptions,
+    uomOptions,
+    taxRateOptions,
+    message,
+    fetchStockForLine,
+  ])
+
+  // ── Restock prefill: SKU rows from /inventory/alerts ──────────────────
+  // Drops in the {sku_id, qty} list once the dropdown caches are warm. Tax
+  // rate / UOM / unit price come from the SKU server-side lookup so the user
+  // only has to pick a supplier and confirm.
+  useEffect(() => {
+    if (!restockPrefill || restockApplied) return
+    if (uomOptions.length === 0 || taxRateOptions.length === 0) return
+    if (warehouseOptions.length === 0) return
+
+    setRestockApplied(true)
+
+    const apply = async () => {
+      type ServerSku = {
+        id: number; code: string; name: string;
+        base_uom_id?: number;
+        unit_price_excl_tax?: string;
+        tax_rate_id?: number;
+        tax_rate?: { rate?: string };
+      }
+
+      const ids = Array.from(new Set(restockPrefill.lines.map((l) => l.sku_id)))
+      const skuById = new Map<number, ServerSku>()
+
+      await Promise.all(ids.map(async (sid) => {
+        try {
+          const res = await axiosInstance.get(`/skus/${sid}`)
+          skuById.set(sid, res.data as ServerSku)
+        } catch {
+          // SKU disappeared between alert load and PO open — skip silently.
+        }
+      }))
+
+      // Make sure resolved SKUs are in the dropdown so the row renders a label.
+      if (skuById.size > 0) {
+        setSkuOptions((prev) => {
+          const seen = new Set(prev.map((o) => o.value))
+          const additions = Array.from(skuById.values())
+            .filter((s) => !seen.has(s.id))
+            .map((s) => ({ value: s.id, label: `${s.code} — ${s.name}`, code: s.code }))
+          return additions.length > 0 ? [...prev, ...additions] : prev
+        })
+      }
+
+      const headerValues: Record<string, unknown> = {
+        currency: 'MYR',
+        exchange_rate: 1,
+        payment_terms_days: 30,
+      }
+      if (restockPrefill.warehouse_id) headerValues.warehouse_id = restockPrefill.warehouse_id
+      setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
+      formRef.current?.setFieldsValue(headerValues)
+
+      const newLines: LineRow[] = restockPrefill.lines.map((line, idx) => {
+        const sku = skuById.get(line.sku_id)
+        const taxRatePct = sku?.tax_rate?.rate ? parseFloat(sku.tax_rate.rate) : 0
+        return {
+          id: `restock-${idx}-${Date.now()}`,
+          sku_id: sku?.id ?? line.sku_id,
+          uom_id: sku?.base_uom_id,
+          qty_ordered: line.qty,
+          unit_price_excl_tax: sku?.unit_price_excl_tax
+            ? parseFloat(sku.unit_price_excl_tax)
+            : undefined,
+          tax_rate_id: sku?.tax_rate_id,
+          tax_rate_percent: taxRatePct,
+          discount_percent: 0,
+        }
+      })
+      setLines(newLines)
+      setEditableKeys(newLines.map((l) => l.id))
+
+      const wh = (formRef.current?.getFieldValue('warehouse_id') as number | undefined) ??
+        restockPrefill.warehouse_id
+      if (wh) {
+        queueMicrotask(() => {
+          for (const l of newLines) {
+            if (l.sku_id) void fetchStockForLine(l.sku_id, wh, l.id)
+          }
+        })
+      }
+
+      const missing = newLines.filter((l) => !skuById.has(l.sku_id ?? -1)).length
+      if (missing > 0) {
+        message.warning(`Restock prefilled. ${missing} SKU(s) could not be resolved.`)
+      } else {
+        message.success('Restock prefilled. Please pick a supplier and review.')
+      }
+    }
+
+    void apply()
+  }, [
+    restockPrefill,
+    restockApplied,
     supplierOptions,
     warehouseOptions,
     uomOptions,

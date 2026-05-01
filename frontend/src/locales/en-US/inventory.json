@@ -1,0 +1,52 @@
+{
+  "branchMatrix": {
+    "title": "Branch Inventory",
+    "subtitle": "SKU × Warehouse availability heatmap",
+    "searchPlaceholder": "Search SKU code or name",
+    "warehouseFilter": "Filter warehouses",
+    "legend": {
+      "title": "Color scale",
+      "abundant": "≥ 1.5× safety",
+      "healthy": "1× to 1.5× safety",
+      "warning": "0.5× to 1× safety",
+      "critical": "< 0.5× safety",
+      "depleted": "Out of stock",
+      "unmanaged": "No safety stock policy"
+    },
+    "columns": {
+      "sku": "SKU",
+      "name": "Name",
+      "safetyStock": "Safety stock"
+    },
+    "empty": "No SKUs match the current filters."
+  },
+  "alerts": {
+    "title": "Low Stock Alerts",
+    "subtitle": "SKUs whose available stock has fallen below the safety threshold",
+    "warehouseFilter": "All warehouses",
+    "columns": {
+      "sku": "SKU",
+      "warehouse": "Warehouse",
+      "available": "Available",
+      "safetyStock": "Safety",
+      "shortage": "Shortage",
+      "suggestedQty": "Suggested PO qty"
+    },
+    "actions": {
+      "generatePo": "Generate Restock PO",
+      "selectAtLeastOne": "Select at least one row to generate a PO."
+    },
+    "empty": "No low-stock items right now. Inventory is healthy."
+  },
+  "costTrend": {
+    "title": "Weighted-average cost over time",
+    "axisCost": "Avg cost",
+    "axisDate": "Movement date",
+    "tooltipQty": "Qty",
+    "tooltipMovementType": "Type",
+    "empty": "No cost-bearing movements yet."
+  },
+  "notification": {
+    "lowStock": "{{sku_code}} at {{warehouse_code}} is low: {{available}} available vs safety {{safety_stock}}."
+  }
+}

@@ -15,6 +15,8 @@
   "stockTransfers": "库存调拨",
   "stockAdjustments": "库存调整",
   "stockMovements": "库存流水",
+  "branchInventory": "多仓库存看板",
+  "lowStockAlerts": "低库存预警",
   "settings": "设置",
   "warehouses": "仓库管理",
   "logout": "退出登录"

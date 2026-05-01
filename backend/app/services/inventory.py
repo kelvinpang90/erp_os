@@ -21,7 +21,7 @@ from decimal import Decimal
 from typing import Optional
 
 import structlog
-from sqlalchemy import update
+from sqlalchemy import func, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -29,7 +29,16 @@ from app.core.exceptions import BusinessRuleError, InsufficientStockError
 from app.enums import StockMovementSourceType, StockMovementType
 from app.events import event_bus
 from app.events.types import StockMovementOccurred
+from app.models.organization import Warehouse
+from app.models.sku import SKU
 from app.models.stock import Stock, StockMovement
+from app.schemas.inventory import (
+    BranchInventoryMatrixResponse,
+    BranchInventoryRow,
+    LowStockAlert,
+    WarehouseHeader,
+    WarehouseStockCell,
+)
 from app.services.costing import compute_weighted_average
 
 logger = structlog.get_logger()
@@ -1342,3 +1351,197 @@ async def apply_adjustment_decrease(
     )
 
     return stock, snapshot_avg_cost
+
+
+# ── Window 14: Read-only analytics — branch matrix + low-stock alerts ────────
+
+
+async def get_branch_inventory_matrix(
+    session: AsyncSession,
+    *,
+    organization_id: int,
+    sku_query: Optional[str] = None,
+    warehouse_ids: Optional[list[int]] = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> BranchInventoryMatrixResponse:
+    """Build a SKU × Warehouse stock matrix for the heatmap UI.
+
+    Strategy: one query for the warehouse column-headers, one query for the
+    SKU rows (paginated), and one query for the (sku, warehouse) stock cells
+    constrained to the page's SKUs. Missing rows fill in as zero so the
+    heatmap renders evenly.
+
+    Args:
+        sku_query: optional substring filter on SKU code OR name (case-insensitive).
+        warehouse_ids: optional restriction to a subset of warehouses;
+            defaults to all active warehouses for the organisation.
+        limit/offset: SKU-row pagination (matrix can grow large).
+    """
+    # Column headers — active, non-deleted warehouses for this org.
+    wh_filters = [
+        Warehouse.organization_id == organization_id,
+        Warehouse.deleted_at.is_(None),
+        Warehouse.is_active.is_(True),
+    ]
+    if warehouse_ids:
+        wh_filters.append(Warehouse.id.in_(warehouse_ids))
+    wh_stmt = (
+        select(Warehouse)
+        .where(*wh_filters)
+        .order_by(Warehouse.code.asc())
+    )
+    warehouses = list((await session.execute(wh_stmt)).scalars().all())
+    headers = [
+        WarehouseHeader(id=w.id, code=w.code, name=w.name) for w in warehouses
+    ]
+    wh_id_set = {w.id for w in warehouses}
+    wh_lookup = {w.id: w for w in warehouses}
+
+    # SKU rows — paginated; safety_stock > 0 NOT enforced here (heatmap shows all).
+    sku_filters = [
+        SKU.organization_id == organization_id,
+        SKU.deleted_at.is_(None),
+        SKU.is_active.is_(True),
+    ]
+    if sku_query:
+        like = f"%{sku_query}%"
+        sku_filters.append(or_(SKU.code.ilike(like), SKU.name.ilike(like)))
+
+    count_stmt = select(func.count()).select_from(SKU).where(*sku_filters)
+    total_skus = (await session.execute(count_stmt)).scalar_one()
+
+    sku_stmt = (
+        select(SKU)
+        .where(*sku_filters)
+        .order_by(SKU.code.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+    skus = list((await session.execute(sku_stmt)).scalars().all())
+    sku_id_set = {s.id for s in skus}
+
+    # Stock cells — bounded to the current page of SKUs and selected warehouses.
+    cells_by_key: dict[tuple[int, int], Stock] = {}
+    if sku_id_set and wh_id_set:
+        stock_stmt = select(Stock).where(
+            Stock.organization_id == organization_id,
+            Stock.sku_id.in_(sku_id_set),
+            Stock.warehouse_id.in_(wh_id_set),
+        )
+        for stock in (await session.execute(stock_stmt)).scalars().all():
+            cells_by_key[(stock.sku_id, stock.warehouse_id)] = stock
+
+    zero = Decimal("0")
+    rows: list[BranchInventoryRow] = []
+    for sku in skus:
+        cells: list[WarehouseStockCell] = []
+        for wh in warehouses:
+            stock = cells_by_key.get((sku.id, wh.id))
+            if stock is None:
+                cells.append(
+                    WarehouseStockCell(
+                        warehouse_id=wh.id,
+                        warehouse_code=wh.code,
+                        warehouse_name=wh.name,
+                        on_hand=zero,
+                        reserved=zero,
+                        quality_hold=zero,
+                        available=zero,
+                        incoming=zero,
+                        in_transit=zero,
+                    )
+                )
+            else:
+                cells.append(
+                    WarehouseStockCell(
+                        warehouse_id=wh.id,
+                        warehouse_code=wh.code,
+                        warehouse_name=wh.name,
+                        on_hand=stock.on_hand,
+                        reserved=stock.reserved,
+                        quality_hold=stock.quality_hold,
+                        available=stock.available or zero,
+                        incoming=stock.incoming,
+                        in_transit=stock.in_transit,
+                    )
+                )
+
+        rows.append(
+            BranchInventoryRow(
+                sku_id=sku.id,
+                sku_code=sku.code,
+                sku_name=sku.name,
+                sku_name_zh=sku.name_zh,
+                safety_stock=sku.safety_stock,
+                reorder_point=sku.reorder_point,
+                reorder_qty=sku.reorder_qty,
+                warehouses=cells,
+            )
+        )
+
+    return BranchInventoryMatrixResponse(
+        warehouses=headers,
+        rows=rows,
+        total_skus=total_skus,
+    )
+
+
+async def get_low_stock_alerts(
+    session: AsyncSession,
+    *,
+    organization_id: int,
+    warehouse_id: Optional[int] = None,
+) -> list[LowStockAlert]:
+    """Return all (sku, warehouse) pairs where available < safety_stock.
+
+    Filters out SKUs with safety_stock = 0 (no policy means no alert).
+    Sorted by largest shortage first so the page surfaces the worst cases.
+    """
+    available_expr = Stock.on_hand - Stock.reserved - Stock.quality_hold
+    filters = [
+        Stock.organization_id == organization_id,
+        SKU.safety_stock > 0,
+        SKU.deleted_at.is_(None),
+        SKU.is_active.is_(True),
+        available_expr < SKU.safety_stock,
+        Warehouse.deleted_at.is_(None),
+        Warehouse.is_active.is_(True),
+    ]
+    if warehouse_id is not None:
+        filters.append(Stock.warehouse_id == warehouse_id)
+
+    stmt = (
+        select(Stock, SKU, Warehouse)
+        .join(SKU, SKU.id == Stock.sku_id)
+        .join(Warehouse, Warehouse.id == Stock.warehouse_id)
+        .where(*filters)
+        .order_by((SKU.safety_stock - available_expr).desc(), SKU.code.asc())
+    )
+
+    rows = (await session.execute(stmt)).all()
+    alerts: list[LowStockAlert] = []
+    for stock, sku, wh in rows:
+        available = stock.available if stock.available is not None else (
+            stock.on_hand - stock.reserved - stock.quality_hold
+        )
+        shortage = sku.safety_stock - available
+        suggested = sku.reorder_qty if sku.reorder_qty > shortage else shortage
+        alerts.append(
+            LowStockAlert(
+                sku_id=sku.id,
+                sku_code=sku.code,
+                sku_name=sku.name,
+                sku_name_zh=sku.name_zh,
+                warehouse_id=wh.id,
+                warehouse_code=wh.code,
+                warehouse_name=wh.name,
+                available=available,
+                safety_stock=sku.safety_stock,
+                reorder_point=sku.reorder_point,
+                reorder_qty=sku.reorder_qty,
+                shortage=shortage,
+                suggested_qty=suggested,
+            )
+        )
+    return alerts

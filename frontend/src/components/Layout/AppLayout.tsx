@@ -69,6 +69,8 @@ export default function AppLayout() {
       name: t('inventory'),
       icon: <AppstoreOutlined />,
       children: [
+        { path: '/inventory/branch-matrix', name: t('branchInventory') },
+        { path: '/inventory/alerts', name: t('lowStockAlerts') },
         { path: '/inventory/transfers', name: t('stockTransfers') },
         { path: '/inventory/adjustments', name: t('stockAdjustments') },
         { path: '/inventory/movements', name: t('stockMovements') },

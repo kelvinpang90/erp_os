@@ -19,11 +19,17 @@ from app.enums import RoleCode, StockMovementSourceType, StockMovementType
 from app.models.organization import User
 from app.models.stock import Stock, StockMovement
 from app.schemas.common import PaginatedResponse, PaginationParams
+from app.schemas.inventory import (
+    BranchInventoryMatrixResponse,
+    LowStockAlertListResponse,
+)
 from app.schemas.stock_movement import StockMovementResponse, StockSnapshotResponse
+from app.services import inventory as inventory_service
 
 router = APIRouter()
 
 _READ_ROLES = [RoleCode.ADMIN, RoleCode.MANAGER, RoleCode.PURCHASER, RoleCode.SALES]
+_RESTOCK_ROLES = [RoleCode.ADMIN, RoleCode.MANAGER, RoleCode.PURCHASER]
 
 
 def _to_response(movement: StockMovement) -> StockMovementResponse:
@@ -131,3 +137,48 @@ async def get_stock_snapshot(
             last_cost=None,
         )
     return StockSnapshotResponse.model_validate(stock)
+
+
+@router.get("/branch-matrix", response_model=BranchInventoryMatrixResponse)
+async def get_branch_inventory_matrix(
+    sku_query: Optional[str] = Query(None, description="SKU code/name substring"),
+    warehouse_id: Optional[list[int]] = Query(None, description="Filter to specific warehouses"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role(*_RESTOCK_ROLES)),
+) -> BranchInventoryMatrixResponse:
+    """SKU × Warehouse stock matrix for the heatmap UI.
+
+    Sales role is excluded — branch-level stock visibility is reserved for
+    operations / purchasing. Pagination is by SKU rows; warehouses are
+    always returned in full so the column header set stays stable across pages.
+    """
+    return await inventory_service.get_branch_inventory_matrix(
+        db,
+        organization_id=user.organization_id,
+        sku_query=sku_query,
+        warehouse_ids=warehouse_id,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+    )
+
+
+@router.get("/alerts/low-stock", response_model=LowStockAlertListResponse)
+async def list_low_stock_alerts(
+    warehouse_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role(*_RESTOCK_ROLES)),
+) -> LowStockAlertListResponse:
+    """List every (sku, warehouse) where available < safety_stock.
+
+    The Alert page consumes this; the bell-badge polls a derived count from
+    the notifications table (notify_on_low_stock handler emits one). This
+    endpoint is the source of truth for the page itself.
+    """
+    items = await inventory_service.get_low_stock_alerts(
+        db,
+        organization_id=user.organization_id,
+        warehouse_id=warehouse_id,
+    )
+    return LowStockAlertListResponse(items=items, total=len(items))

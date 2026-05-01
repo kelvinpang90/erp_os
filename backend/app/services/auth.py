@@ -220,6 +220,14 @@ _MENU_DEFINITIONS: list[dict] = [
                 "children": [],
             },
             {
+                "key": "inventory.branch-matrix",
+                "path": "/inventory/branch-matrix",
+                "icon": "",
+                "label": "menu.inventory.branch_matrix",
+                "roles": [RoleCode.ADMIN, RoleCode.MANAGER, RoleCode.PURCHASER],
+                "children": [],
+            },
+            {
                 "key": "inventory.alerts",
                 "path": "/inventory/alerts",
                 "icon": "",

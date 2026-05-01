@@ -1,0 +1,52 @@
+{
+  "branchMatrix": {
+    "title": "多仓库存看板",
+    "subtitle": "SKU × 仓库 可用量热力图",
+    "searchPlaceholder": "搜索 SKU 编码或名称",
+    "warehouseFilter": "筛选仓库",
+    "legend": {
+      "title": "颜色刻度",
+      "abundant": "≥ 1.5 倍安全库存",
+      "healthy": "1 ~ 1.5 倍安全库存",
+      "warning": "0.5 ~ 1 倍安全库存",
+      "critical": "< 0.5 倍安全库存",
+      "depleted": "已耗尽",
+      "unmanaged": "未设置安全库存"
+    },
+    "columns": {
+      "sku": "SKU",
+      "name": "名称",
+      "safetyStock": "安全库存"
+    },
+    "empty": "当前筛选条件下没有匹配的 SKU。"
+  },
+  "alerts": {
+    "title": "低库存预警",
+    "subtitle": "可用量已低于安全库存阈值的 SKU",
+    "warehouseFilter": "全部仓库",
+    "columns": {
+      "sku": "SKU",
+      "warehouse": "仓库",
+      "available": "可用量",
+      "safetyStock": "安全库存",
+      "shortage": "缺口",
+      "suggestedQty": "建议补货量"
+    },
+    "actions": {
+      "generatePo": "生成补货采购单",
+      "selectAtLeastOne": "请先勾选至少一行再生成 PO。"
+    },
+    "empty": "当前没有低库存预警,库存水位健康。"
+  },
+  "costTrend": {
+    "title": "加权平均成本变化",
+    "axisCost": "平均成本",
+    "axisDate": "流水日期",
+    "tooltipQty": "数量",
+    "tooltipMovementType": "类型",
+    "empty": "暂无影响成本的库存流水。"
+  },
+  "notification": {
+    "lowStock": "{{sku_code}} @ {{warehouse_code}} 库存偏低: 可用 {{available}} / 安全 {{safety_stock}}。"
+  }
+}

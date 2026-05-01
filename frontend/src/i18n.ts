@@ -7,6 +7,7 @@ import enCustomer from './locales/en-US/customer.json'
 import enDeliveryOrder from './locales/en-US/delivery_order.json'
 import enEinvoice from './locales/en-US/einvoice.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
+import enInventory from './locales/en-US/inventory.json'
 import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
@@ -21,6 +22,7 @@ import zhCustomer from './locales/zh-CN/customer.json'
 import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
 import zhEinvoice from './locales/zh-CN/einvoice.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
+import zhInventory from './locales/zh-CN/inventory.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
@@ -51,6 +53,7 @@ i18n
         stock_transfer: enStockTransfer,
         stock_adjustment: enStockAdjustment,
         stock_movement: enStockMovement,
+        inventory: enInventory,
       },
       'zh-CN': {
         common: zhCommon,
@@ -67,6 +70,7 @@ i18n
         stock_transfer: zhStockTransfer,
         stock_adjustment: zhStockAdjustment,
         stock_movement: zhStockMovement,
+        inventory: zhInventory,
       },
     },
     fallbackLng: 'en-US',

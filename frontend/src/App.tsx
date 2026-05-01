@@ -44,6 +44,8 @@ const AdjustmentListPage = lazy(() => import('./pages/Inventory/AdjustmentListPa
 const AdjustmentCreatePage = lazy(() => import('./pages/Inventory/AdjustmentCreatePage'))
 const AdjustmentDetailPage = lazy(() => import('./pages/Inventory/AdjustmentDetailPage'))
 const MovementListPage = lazy(() => import('./pages/Inventory/MovementListPage'))
+const BranchInventoryPage = lazy(() => import('./pages/Inventory/BranchInventoryPage'))
+const AlertPage = lazy(() => import('./pages/Inventory/AlertPage'))
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -108,6 +110,8 @@ function AppRoutes() {
         <Route path="/inventory/adjustments/new" element={<AdjustmentCreatePage />} />
         <Route path="/inventory/adjustments/:id" element={<AdjustmentDetailPage />} />
         <Route path="/inventory/movements" element={<MovementListPage />} />
+        <Route path="/inventory/branch-matrix" element={<BranchInventoryPage />} />
+        <Route path="/inventory/alerts" element={<AlertPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />
