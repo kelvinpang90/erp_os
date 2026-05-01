@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
+import StockStatusBadge, { type StockSnapshot } from '../../components/StockStatusBadge'
 import { getTaxRatePercent } from '../../utils/taxRate'
 import type { OCRPurchaseOrderResult } from './OCRUploadPage'
 
@@ -27,6 +28,7 @@ interface LineRow {
   tax_rate_id?: number
   tax_rate_percent?: number
   discount_percent?: number
+  current_stock?: StockSnapshot
 }
 
 const CURRENCY_OPTIONS = [
@@ -94,6 +96,41 @@ export default function POEditPage() {
     [fetchSkus]
   )
 
+  // Fetch on-hand/available/etc. for a single line at the given warehouse,
+  // and write it into the row's `current_stock` so the Stock column updates.
+  const fetchStockForLine = useCallback(
+    async (skuId: number, warehouseId: number, rowId: string | number) => {
+      if (!skuId || !warehouseId) return
+      try {
+        const res = await axiosInstance.get(
+          `/inventory/stocks?sku_id=${skuId}&warehouse_id=${warehouseId}`,
+        )
+        const snapshot = res.data as StockSnapshot
+        editableFormRef.current?.setRowData?.(rowId, { current_stock: snapshot })
+        setLines((prev) =>
+          prev.map((l) => (l.id === rowId ? { ...l, current_stock: snapshot } : l)),
+        )
+      } catch {
+        // silent — leave row's stock blank, user can still proceed
+      }
+    },
+    [],
+  )
+
+  // Refresh stock for every existing line — used when the warehouse changes
+  // or when an existing PO/lines have just been loaded.
+  const refreshAllStock = useCallback(
+    (warehouseId: number | undefined) => {
+      if (!warehouseId) return
+      for (const l of lines) {
+        const live = editableFormRef.current?.getRowData?.(l.id)
+        const skuId = (live?.sku_id ?? l.sku_id) as number | undefined
+        if (skuId) void fetchStockForLine(skuId, warehouseId, l.id)
+      }
+    },
+    [lines, fetchStockForLine],
+  )
+
   const handleSkuChange = useCallback(
     async (skuId: number, rowId: string | number) => {
       if (!skuId) return
@@ -114,8 +151,12 @@ export default function POEditPage() {
       } catch {
         // silently ignore — user can fill manually
       }
+      // Stock fetch is independent of the SKU detail call — even if /skus/:id
+      // fails the user might still want to see live stock.
+      const wh = formRef.current?.getFieldValue('warehouse_id') as number | undefined
+      if (wh) void fetchStockForLine(skuId, wh, rowId)
     },
-    [taxRateOptions]
+    [taxRateOptions, fetchStockForLine],
   )
 
   // Sync tax_rate_percent when the user changes only the Tax Rate dropdown
@@ -214,11 +255,21 @@ export default function POEditPage() {
           }))
           setLines(loadedLines)
           setEditableKeys(loadedLines.map((l) => l.id))
+          // Populate Stock column for each loaded line. Done in a microtask so
+          // setLines/setEditableKeys commit first and EditableProTable's row
+          // form refs are wired up before we try setRowData.
+          if (po.warehouse_id) {
+            queueMicrotask(() => {
+              for (const l of loadedLines) {
+                if (l.sku_id) void fetchStockForLine(l.sku_id, po.warehouse_id, l.id)
+              }
+            })
+          }
         })
         .catch(() => message.error('Failed to load purchase order'))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message, fetchSkus])
+  }, [id, isCreate, message, fetchSkus, fetchStockForLine])
 
   // ── OCR prefill: apply once reference dropdowns are populated ──────────
   // SKUs aren't matched against the local cache (which only has the first 50
@@ -349,6 +400,16 @@ export default function POEditPage() {
       setLines(newLines)
       setEditableKeys(newLines.map((l) => l.id))
 
+      // Populate Stock column for OCR-prefilled lines if warehouse is set.
+      const whAfterOcr = formRef.current?.getFieldValue('warehouse_id') as number | undefined
+      if (whAfterOcr) {
+        queueMicrotask(() => {
+          for (const l of newLines) {
+            if (l.sku_id) void fetchStockForLine(l.sku_id, whAfterOcr, l.id)
+          }
+        })
+      }
+
       // 6. Tell user what to review
       const missing: string[] = []
       if (ocrPrefill.supplier_name && supplierId === undefined) missing.push('supplier')
@@ -372,6 +433,7 @@ export default function POEditPage() {
     uomOptions,
     taxRateOptions,
     message,
+    fetchStockForLine,
   ])
 
   const lineColumns: ProColumns<LineRow>[] = [
@@ -398,6 +460,18 @@ export default function POEditPage() {
       fieldProps: { options: uomOptions },
       formItemProps: { rules: [{ required: true }] },
       width: 90,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'current_stock',
+      editable: false,
+      width: 140,
+      render: (_, row) =>
+        row.current_stock ? (
+          <StockStatusBadge stock={row.current_stock} compact />
+        ) : (
+          <Typography.Text type="secondary">—</Typography.Text>
+        ),
     },
     {
       title: 'Qty',
@@ -533,6 +607,9 @@ export default function POEditPage() {
             options={warehouseOptions}
             rules={[{ required: true }]}
             width="md"
+            fieldProps={{
+              onChange: (wh: number) => refreshAllStock(wh),
+            }}
           />
           <ProFormDatePicker name="business_date" label="Order Date" rules={[{ required: true }]} width="md" />
           <ProFormDatePicker name="expected_date" label="Expected Date" width="md" />

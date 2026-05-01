@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
+import StockStatusBadge, { type StockSnapshot } from '../../components/StockStatusBadge'
 import { getTaxRatePercent } from '../../utils/taxRate'
 
 interface LineRow {
@@ -26,6 +27,7 @@ interface LineRow {
   tax_rate_id?: number
   tax_rate_percent?: number
   discount_percent?: number
+  current_stock?: StockSnapshot
 }
 
 const CURRENCY_OPTIONS = [
@@ -85,6 +87,41 @@ export default function SOEditPage() {
     [fetchSkus]
   )
 
+  // Fetch on-hand/available/etc. for a single line at the given warehouse,
+  // and write it into the row's `current_stock` so the Stock column updates.
+  const fetchStockForLine = useCallback(
+    async (skuId: number, warehouseId: number, rowId: string | number) => {
+      if (!skuId || !warehouseId) return
+      try {
+        const res = await axiosInstance.get(
+          `/inventory/stocks?sku_id=${skuId}&warehouse_id=${warehouseId}`,
+        )
+        const snapshot = res.data as StockSnapshot
+        editableFormRef.current?.setRowData?.(rowId, { current_stock: snapshot })
+        setLines((prev) =>
+          prev.map((l) => (l.id === rowId ? { ...l, current_stock: snapshot } : l)),
+        )
+      } catch {
+        // silent — leave row's stock blank, user can still proceed
+      }
+    },
+    [],
+  )
+
+  // Refresh stock for every existing line — used when warehouse changes or
+  // when an existing SO has just been loaded.
+  const refreshAllStock = useCallback(
+    (warehouseId: number | undefined) => {
+      if (!warehouseId) return
+      for (const l of lines) {
+        const live = editableFormRef.current?.getRowData?.(l.id)
+        const skuId = (live?.sku_id ?? l.sku_id) as number | undefined
+        if (skuId) void fetchStockForLine(skuId, warehouseId, l.id)
+      }
+    },
+    [lines, fetchStockForLine],
+  )
+
   const handleSkuChange = useCallback(
     async (skuId: number, rowId: string | number) => {
       if (!skuId) return
@@ -105,8 +142,10 @@ export default function SOEditPage() {
       } catch {
         // user can fill manually
       }
+      const wh = formRef.current?.getFieldValue('warehouse_id') as number | undefined
+      if (wh) void fetchStockForLine(skuId, wh, rowId)
     },
-    [taxRateOptions]
+    [taxRateOptions, fetchStockForLine],
   )
 
   // When the user changes only the Tax Rate dropdown (no SKU change),
@@ -204,11 +243,18 @@ export default function SOEditPage() {
           }))
           setLines(loadedLines)
           setEditableKeys(loadedLines.map((l) => l.id))
+          if (so.warehouse_id) {
+            queueMicrotask(() => {
+              for (const l of loadedLines) {
+                if (l.sku_id) void fetchStockForLine(l.sku_id, so.warehouse_id, l.id)
+              }
+            })
+          }
         })
         .catch(() => message.error('Failed to load sales order'))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message, fetchSkus])
+  }, [id, isCreate, message, fetchSkus, fetchStockForLine])
 
   const lineColumns: ProColumns<LineRow>[] = [
     {
@@ -234,6 +280,18 @@ export default function SOEditPage() {
       fieldProps: { options: uomOptions },
       formItemProps: { rules: [{ required: true }] },
       width: 90,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'current_stock',
+      editable: false,
+      width: 140,
+      render: (_, row) =>
+        row.current_stock ? (
+          <StockStatusBadge stock={row.current_stock} compact />
+        ) : (
+          <Typography.Text type="secondary">—</Typography.Text>
+        ),
     },
     {
       title: 'Qty',
@@ -374,6 +432,9 @@ export default function SOEditPage() {
             options={warehouseOptions}
             rules={[{ required: true }]}
             width="md"
+            fieldProps={{
+              onChange: (wh: number) => refreshAllStock(wh),
+            }}
           />
           <ProFormDatePicker name="business_date" label="Order Date" rules={[{ required: true }]} width="md" />
           <ProFormDatePicker name="expected_ship_date" label="Expected Ship Date" width="md" />
