@@ -103,9 +103,11 @@ export default function MovementListPage() {
       valueEnum: Object.fromEntries(
         TYPE_KEYS.map((k) => [k, { text: t(`type_${k}`) }]),
       ),
-      render: (val) => (
-        <Tag color={MOVEMENT_COLOR[String(val)] ?? 'default'}>
-          {t(`type_${String(val)}`)}
+      // Read row.movement_type — the first arg is already a valueEnum-rendered
+      // React node (String(val) === "[object Object]" otherwise).
+      render: (_, row) => (
+        <Tag color={MOVEMENT_COLOR[row.movement_type] ?? 'default'}>
+          {t(`type_${row.movement_type}`)}
         </Tag>
       ),
     },
@@ -117,8 +119,8 @@ export default function MovementListPage() {
       valueEnum: Object.fromEntries(
         SOURCE_KEYS.map((k) => [k, { text: t(`source_${k}`) }]),
       ),
-      render: (val, row) =>
-        `${t(`source_${String(val)}`)} #${row.source_document_id}`,
+      render: (_, row) =>
+        `${t(`source_${row.source_document_type}`)} #${row.source_document_id}`,
     },
     {
       title: t('warehouse'),

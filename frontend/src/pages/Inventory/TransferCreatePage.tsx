@@ -1,14 +1,17 @@
+import { PlusOutlined } from '@ant-design/icons'
 import {
   EditableProTable,
   ProForm,
   ProFormDatePicker,
   ProFormSelect,
   ProFormTextArea,
+  type EditableFormInstance,
   type ProColumns,
+  type ProFormInstance,
 } from '@ant-design/pro-components'
-import { App, Card, Space, Typography } from 'antd'
+import { App, Button, Card, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
@@ -17,7 +20,10 @@ interface SkuOption {
   id: number
   code: string
   name: string
-  uom_id: number
+  // Backend SKUResponse exposes the unit-of-measure as `base_uom_id`.
+  // Naming it `uom_id` on the frontend would silently break the
+  // skuById.get(...)?.uom_id lookup at submit time → 422 from the API.
+  base_uom_id: number
 }
 
 interface WarehouseOption {
@@ -47,23 +53,34 @@ export default function TransferCreatePage() {
   const [lines, setLines] = useState<LineRow[]>([])
   const [editableKeys, setEditableKeys] = useState<(string | number)[]>([])
   const [submitting, setSubmitting] = useState(false)
+  // Used at submit time to read in-progress field values directly from the
+  // EditableProTable's form, since onValuesChange isn't always synchronous
+  // with our parent `lines` state.
+  const editableFormRef = useRef<EditableFormInstance<LineRow>>()
+  // Header form ref so the submit button placed at the bottom of the page
+  // (outside the form card) can trigger validation + submit.
+  const formRef = useRef<ProFormInstance>()
 
   useEffect(() => {
-    Promise.all([
+    // allSettled so one slow / failed call doesn't blank the other dropdown.
+    // Backend caps page_size at 100 — sending more triggers a 422 and previously
+    // killed BOTH dropdowns under Promise.all.
+    Promise.allSettled([
       axiosInstance.get('/warehouses?page_size=100'),
-      axiosInstance.get('/skus?page_size=200'),
-    ])
-      .then(([wh, sk]) => {
-        setWarehouses(wh.data.items)
-        setSkus(sk.data.items)
-      })
-      .catch(() => message.error('Failed to load reference data.'))
+      axiosInstance.get('/skus?page_size=100'),
+    ]).then(([wh, sk]) => {
+      let anyFailed = false
+      if (wh.status === 'fulfilled') setWarehouses(wh.value.data.items)
+      else anyFailed = true
+      if (sk.status === 'fulfilled') setSkus(sk.value.data.items)
+      else anyFailed = true
+      if (anyFailed) message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+    })
   }, [message])
 
   const skuOptions = skus.map((s) => ({
     value: s.id,
     label: `${s.code} — ${s.name}`,
-    uom_id: s.uom_id,
   }))
 
   const warehouseOptions = warehouses.map((w) => ({ value: w.id, label: w.name }))
@@ -73,22 +90,16 @@ export default function TransferCreatePage() {
       title: t('sku'),
       dataIndex: 'sku_id',
       valueType: 'select',
-      fieldProps: (_: unknown, { rowIndex }: { rowIndex: number }) => ({
+      // No row-state side-effects here — uom_id is recovered via sku_id lookup
+      // at submit time, so the form can fully own the field's lifecycle. The
+      // earlier rowIndex-based setLines clobbered other rows when adding a
+      // second line.
+      fieldProps: {
         options: skuOptions,
         showSearch: true,
         filterOption: (input: string, option?: { label?: string }) =>
           (option?.label ?? '').toLowerCase().includes(input.toLowerCase()),
-        onChange: (val: number) => {
-          const sku = skus.find((s) => s.id === val)
-          if (sku) {
-            setLines((prev) => {
-              const next = [...prev]
-              next[rowIndex] = { ...next[rowIndex], sku_id: val, uom_id: sku.uom_id }
-              return next
-            })
-          }
-        },
-      }),
+      },
       formItemProps: { rules: [{ required: true, message: t('sku') }] },
       width: 280,
     },
@@ -102,23 +113,17 @@ export default function TransferCreatePage() {
     },
     { title: t('batch_no'), dataIndex: 'batch_no', width: 110 },
     { title: t('expiry_date'), dataIndex: 'expiry_date', valueType: 'date', width: 130 },
-    {
-      title: t('actions'),
-      valueType: 'option',
-      width: 100,
-      render: (_, row, _idx, action) => [
-        <a key="edit" onClick={() => action?.startEditable?.(row.id)}>
-          {t('edit')}
-        </a>,
-        <a
-          key="delete"
-          onClick={() => setLines((prev) => prev.filter((l) => l.id !== row.id))}
-        >
-          {t('cancel', { defaultValue: 'Delete' })}
-        </a>,
-      ],
-    },
+    // The Delete action lives in `editable.actionRender` instead of a column,
+    // because EditableProTable swaps `valueType: 'option'` columns for the
+    // editable.actionRender output while a row is in edit mode — a custom
+    // render() in the column would never appear for our always-editing rows.
   ]
+
+  const handleAddLine = () => {
+    const id = newRowKey()
+    setLines((prev) => [...prev, { id }])
+    setEditableKeys((prev) => [...prev, id])
+  }
 
   const onSubmit = async (values: {
     from_warehouse_id: number
@@ -131,8 +136,17 @@ export default function TransferCreatePage() {
       message.error(t('same_warehouse_error'))
       return false
     }
-    const validLines = lines.filter(
-      (l) => l.sku_id && l.uom_id && l.qty_sent !== undefined && Number(l.qty_sent) > 0,
+    // Pull live form values for every editable row — EditableProTable's
+    // onValuesChange isn't reliably synchronous with our parent state, so
+    // reading the row state alone misses fields the user just typed.
+    const liveRows: LineRow[] = lines.map((l) => {
+      const live = editableFormRef.current?.getRowData?.(l.id)
+      return live ? { ...l, ...live, id: l.id } : l
+    })
+    // uom_id resolved via sku_id lookup (form may not carry it).
+    const skuById = new Map(skus.map((s) => [s.id, s]))
+    const validLines = liveRows.filter(
+      (l) => l.sku_id && l.qty_sent !== undefined && Number(l.qty_sent) > 0,
     )
     if (validLines.length === 0) {
       message.error(t('no_lines_error'))
@@ -149,7 +163,7 @@ export default function TransferCreatePage() {
         remarks: values.remarks,
         lines: validLines.map((l) => ({
           sku_id: l.sku_id!,
-          uom_id: l.uom_id!,
+          uom_id: skuById.get(l.sku_id!)?.base_uom_id ?? l.uom_id!,
           qty_sent: l.qty_sent!,
           batch_no: l.batch_no || undefined,
           expiry_date: l.expiry_date || undefined,
@@ -160,8 +174,18 @@ export default function TransferCreatePage() {
       navigate(`/inventory/transfers/${res.data.id}`)
       return true
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to create transfer')
+      const data = (err as { response?: { data?: { message?: string; detail?: unknown } } })?.response?.data
+      // Surface FastAPI 422 field-level errors so the user knows which line/field
+      // failed instead of just the generic "Request validation failed".
+      const errors = (data?.detail as { errors?: Array<{ loc: unknown[]; msg: string }> } | undefined)?.errors
+      if (errors && errors.length > 0) {
+        const first = errors[0]
+        message.error(`${data?.message ?? 'Validation failed'} — ${first.loc.join('.')}: ${first.msg}`)
+      } else {
+        message.error(data?.message ?? 'Failed to create transfer')
+      }
+      // eslint-disable-next-line no-console
+      console.error('[TransferCreate] submit failed', { payload, response: data })
       return false
     } finally {
       setSubmitting(false)
@@ -172,13 +196,14 @@ export default function TransferCreatePage() {
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
       <Card title={t('create')}>
         <ProForm
+          formRef={formRef}
           layout="horizontal"
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 14 }}
-          submitter={{
-            searchConfig: { resetText: t('cancel'), submitText: t('create') },
-            submitButtonProps: { loading: submitting },
-          }}
+          // Submit button is rendered at the bottom of the page (after Lines)
+          // instead of inside the form card, so users can review lines before
+          // submitting.
+          submitter={false}
           initialValues={{ business_date: dayjs().format('YYYY-MM-DD') }}
           onFinish={onSubmit}
         >
@@ -207,29 +232,57 @@ export default function TransferCreatePage() {
         </ProForm>
       </Card>
 
-      <Card title={t('lines')}>
+      <Card
+        title={t('lines')}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAddLine}>
+            {t('add_line')}
+          </Button>
+        }
+      >
         <EditableProTable<LineRow>
           rowKey="id"
           value={lines}
           onChange={(v) => setLines(v as LineRow[])}
           columns={lineColumns}
-          recordCreatorProps={{
-            position: 'bottom',
-            record: () => ({ id: newRowKey() }),
-            creatorButtonText: t('add_line'),
-          }}
+          editableFormRef={editableFormRef}
+          // recordCreatorProps disabled — rows are added via the explicit
+          // "+ Add Line" button above so they enter `lines` immediately and
+          // onValuesChange can mutate an existing row, not a phantom one.
+          recordCreatorProps={false}
           editable={{
             type: 'multiple',
             editableKeys,
             onChange: (keys) => setEditableKeys(keys as (string | number)[]),
             onValuesChange: (_record, allValues) => setLines(allValues as LineRow[]),
-            actionRender: () => [],
+            actionRender: (row) => [
+              <a
+                key="delete"
+                onClick={() => {
+                  setLines((prev) => prev.filter((l) => l.id !== row.id))
+                  setEditableKeys((prev) => prev.filter((k) => k !== row.id))
+                }}
+              >
+                {t('delete', { ns: 'common', defaultValue: 'Delete' })}
+              </a>,
+            ],
           }}
         />
         <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
           {t('summary')}: {lines.length} line(s)
         </Typography.Paragraph>
       </Card>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 0' }}>
+        <Button
+          type="primary"
+          size="large"
+          loading={submitting}
+          onClick={() => formRef.current?.submit()}
+        >
+          {t('create')}
+        </Button>
+      </div>
     </Space>
   )
 }

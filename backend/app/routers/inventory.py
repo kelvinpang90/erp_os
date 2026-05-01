@@ -12,12 +12,14 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from decimal import Decimal
+
 from app.core.deps import get_db, require_role
 from app.enums import RoleCode, StockMovementSourceType, StockMovementType
 from app.models.organization import User
-from app.models.stock import StockMovement
+from app.models.stock import Stock, StockMovement
 from app.schemas.common import PaginatedResponse, PaginationParams
-from app.schemas.stock_movement import StockMovementResponse
+from app.schemas.stock_movement import StockMovementResponse, StockSnapshotResponse
 
 router = APIRouter()
 
@@ -90,3 +92,42 @@ async def list_stock_movements(
         page=pagination.page,
         page_size=pagination.page_size,
     )
+
+
+@router.get("/stocks", response_model=StockSnapshotResponse)
+async def get_stock_snapshot(
+    sku_id: int = Query(..., description="SKU id"),
+    warehouse_id: int = Query(..., description="Warehouse id"),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role(*_READ_ROLES)),
+) -> StockSnapshotResponse:
+    """Current 6-axis stock for one (sku, warehouse) pair.
+
+    The Stock Adjustment create page calls this when the user picks a SKU so
+    it can pre-fill `qty_before` (the on-hand book value) — preventing typos
+    from polluting the physical-count vs. book-value diff.
+
+    No row in the stocks table is treated as zero across the board, NOT 404,
+    so a brand-new SKU/warehouse combination still renders cleanly in the UI.
+    """
+    stmt = select(Stock).where(
+        Stock.organization_id == user.organization_id,
+        Stock.sku_id == sku_id,
+        Stock.warehouse_id == warehouse_id,
+    )
+    stock = (await db.execute(stmt)).scalar_one_or_none()
+    if stock is None:
+        zero = Decimal("0")
+        return StockSnapshotResponse(
+            sku_id=sku_id,
+            warehouse_id=warehouse_id,
+            on_hand=zero,
+            reserved=zero,
+            quality_hold=zero,
+            available=zero,
+            incoming=zero,
+            in_transit=zero,
+            avg_cost=zero,
+            last_cost=None,
+        )
+    return StockSnapshotResponse.model_validate(stock)

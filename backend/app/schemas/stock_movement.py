@@ -1,4 +1,4 @@
-"""Read-only Pydantic schemas for Stock Movement listing (Window 13)."""
+"""Read-only Pydantic schemas for Stock Movement + Stock snapshot (Window 13)."""
 
 from __future__ import annotations
 
@@ -36,5 +36,28 @@ class StockMovementResponse(BaseModel):
     notes: Optional[str]
     actor_user_id: Optional[int]
     occurred_at: datetime
+
+    model_config = _decimal_cfg
+
+
+class StockSnapshotResponse(BaseModel):
+    """Current 6-axis stock for one (sku, warehouse) pair.
+
+    Returned by GET /api/inventory/stocks. The Stock Adjustment create page
+    uses this to pre-fill `qty_before` so users only enter the physical-count
+    `qty_after`. Returns zero values when no Stock row exists yet (so the
+    UI can still show 0 / 0 instead of 404).
+    """
+
+    sku_id: int
+    warehouse_id: int
+    on_hand: Decimal
+    reserved: Decimal
+    quality_hold: Decimal
+    available: Decimal
+    incoming: Decimal
+    in_transit: Decimal
+    avg_cost: Decimal
+    last_cost: Optional[Decimal] = None
 
     model_config = _decimal_cfg

@@ -12,6 +12,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+    // Windows + Docker bind mount: inotify events don't propagate, so the
+    // default chokidar watcher misses every file change. Polling is the only
+    // reliable way to make HMR fire when editing files from the host.
+    watch: {
+      usePolling: true,
+      interval: 300,
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL ?? 'http://backend:8000',
