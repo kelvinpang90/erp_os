@@ -20,5 +20,10 @@
   "reports": "Reports",
   "settings": "Settings",
   "warehouses": "Warehouses",
-  "logout": "Logout"
+  "logout": "Logout",
+  "switchRole": "Switch Demo Role",
+  "switchRolePlaceholder": "Role switching will be available in Window 17.",
+  "notifications": "Notifications",
+  "notificationsPlaceholder": "Notification center will be available in Window 17.",
+  "demoMode": "Demo Mode"
 }

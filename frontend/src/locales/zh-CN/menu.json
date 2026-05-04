@@ -20,5 +20,10 @@
   "reports": "报表中心",
   "settings": "设置",
   "warehouses": "仓库管理",
-  "logout": "退出登录"
+  "logout": "退出登录",
+  "switchRole": "切换演示角色",
+  "switchRolePlaceholder": "角色切换功能将在 Window 17 上线。",
+  "notifications": "通知",
+  "notificationsPlaceholder": "通知中心将在 Window 17 上线。",
+  "demoMode": "演示模式"
 }

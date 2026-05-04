@@ -23,5 +23,12 @@
   "deleteConfirm": "Are you sure you want to delete this record?",
   "deleteSuccess": "Deleted successfully",
   "saveSuccess": "Saved successfully",
-  "operationFailed": "Operation failed"
+  "operationFailed": "Operation failed",
+  "errorPages": {
+    "notFound": "The page you're looking for doesn't exist.",
+    "forbidden": "You don't have permission to access this page.",
+    "serverError": "Something went wrong. Please try again.",
+    "backHome": "Back to Home",
+    "retry": "Retry"
+  }
 }

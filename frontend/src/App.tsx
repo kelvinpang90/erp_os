@@ -1,8 +1,15 @@
 import { App as AntApp, ConfigProvider } from 'antd'
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/Layout/AppLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
+import { useThemeStore } from './stores/themeStore'
+import { lightTheme } from './theme/light'
+import { darkTheme } from './theme/dark'
+
+const NotFoundPage = lazy(() => import('./pages/ErrorPages/NotFoundPage'))
+const ForbiddenPage = lazy(() => import('./pages/ErrorPages/ForbiddenPage'))
 
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const SKUListPage = lazy(() => import('./pages/SKU/ListPage'))
@@ -110,21 +117,25 @@ function AppRoutes() {
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />
         <Route path="/settings/warehouses/:id/edit" element={<WarehouseEditPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   )
 }
 
 export default function App() {
+  const mode = useThemeStore((s) => s.mode)
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#1677ff' } }}>
+    <ConfigProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
       <AntApp>
-        <BrowserRouter>
-          <Suspense fallback={<div style={{ padding: 40 }}>Loading...</div>}>
-            <AppRoutes />
-          </Suspense>
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Suspense fallback={<div style={{ padding: 40 }}>Loading...</div>}>
+              <AppRoutes />
+            </Suspense>
+          </BrowserRouter>
+        </ErrorBoundary>
       </AntApp>
     </ConfigProvider>
   )

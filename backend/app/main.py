@@ -125,10 +125,14 @@ def _error_body(
     error_code: str,
     message: str,
     detail: dict | None = None,
+    i18n_key: str | None = None,
+    i18n_args: dict | None = None,
 ) -> dict[str, Any]:
     return {
         "error_code": error_code,
         "message": message,
+        "i18n_key": i18n_key or f"errors.{error_code.lower()}",
+        "i18n_args": i18n_args or {},
         "request_id": get_request_id(),
         "timestamp": datetime.now(UTC).isoformat(),
         "detail": detail,
@@ -145,7 +149,9 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     )
     return JSONResponse(
         status_code=exc.http_status,
-        content=_error_body(exc.error_code, exc.message, exc.detail),
+        content=_error_body(
+            exc.error_code, exc.message, exc.detail, exc.i18n_key, exc.i18n_args
+        ),
     )
 
 

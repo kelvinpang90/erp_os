@@ -2,7 +2,9 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
+import enAuth from './locales/en-US/auth.json'
 import enCommon from './locales/en-US/common.json'
+import enErrors from './locales/en-US/errors.json'
 import enCustomer from './locales/en-US/customer.json'
 import enDashboard from './locales/en-US/dashboard.json'
 import enDeliveryOrder from './locales/en-US/delivery_order.json'
@@ -19,7 +21,9 @@ import enStockMovement from './locales/en-US/stock_movement.json'
 import enStockTransfer from './locales/en-US/stock_transfer.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
+import zhAuth from './locales/zh-CN/auth.json'
 import zhCommon from './locales/zh-CN/common.json'
+import zhErrors from './locales/zh-CN/errors.json'
 import zhCustomer from './locales/zh-CN/customer.json'
 import zhDashboard from './locales/zh-CN/dashboard.json'
 import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
@@ -43,7 +47,9 @@ i18n
   .init({
     resources: {
       'en-US': {
+        auth: enAuth,
         common: enCommon,
+        errors: enErrors,
         menu: enMenu,
         dashboard: enDashboard,
         reports: enReports,
@@ -62,7 +68,9 @@ i18n
         inventory: enInventory,
       },
       'zh-CN': {
+        auth: zhAuth,
         common: zhCommon,
+        errors: zhErrors,
         menu: zhMenu,
         dashboard: zhDashboard,
         reports: zhReports,

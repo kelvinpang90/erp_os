@@ -23,10 +23,16 @@ class AppException(Exception):
         message: str | None = None,
         error_code: str | None = None,
         detail: dict[str, Any] | None = None,
+        i18n_key: str | None = None,
+        i18n_args: dict[str, Any] | None = None,
     ) -> None:
         self.message = message or self.default_message
         self.error_code = error_code or self.default_error_code
         self.detail = detail
+        # Auto-derive i18n_key from error_code if not given:
+        # "INSUFFICIENT_STOCK" -> "errors.insufficient_stock"
+        self.i18n_key = i18n_key or f"errors.{self.error_code.lower()}"
+        self.i18n_args = i18n_args or {}
         super().__init__(self.message)
 
     def __repr__(self) -> str:

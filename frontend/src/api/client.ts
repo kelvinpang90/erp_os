@@ -1,4 +1,5 @@
-import axios, { type AxiosRequestConfig } from 'axios'
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
+import type { ApiErrorBody } from '../utils/errorCodes'
 
 export const axiosInstance = axios.create({
   baseURL: '/api',
@@ -13,10 +14,13 @@ axiosInstance.interceptors.request.use((config) => {
 
 axiosInstance.interceptors.response.use(
   (res) => res,
-  (error) => {
+  (error: AxiosError<ApiErrorBody>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token')
-      window.location.href = '/login'
+      const skipRedirect = error.config?.url?.includes('/auth/login')
+      if (!skipRedirect) {
+        localStorage.removeItem('access_token')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   },

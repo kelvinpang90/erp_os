@@ -1,0 +1,20 @@
+{
+  "authentication_required": "Please sign in to continue.",
+  "invalid_credentials": "Email or password is incorrect.",
+  "token_expired": "Your session has expired. Please sign in again.",
+  "token_invalid": "The provided token is invalid.",
+  "account_locked": "Your account has been temporarily locked due to too many failed attempts.",
+  "too_many_attempts": "Too many failed login attempts. Your account is locked for 5 minutes.",
+  "permission_denied": "You do not have permission to perform this action.",
+  "not_found": "The requested resource was not found.",
+  "conflict": "A conflict occurred with existing data.",
+  "business_rule_violation": "The operation violates a business rule.",
+  "validation_error": "Input validation failed.",
+  "insufficient_stock": "Insufficient stock available.",
+  "invalid_status_transition": "This status transition is not allowed.",
+  "rate_limit_exceeded": "Too many requests. Please slow down and try again.",
+  "ai_feature_disabled": "This AI feature is currently disabled.",
+  "internal_error": "An unexpected error occurred. Please try again.",
+  "network_error": "Network error. Please check your connection.",
+  "unknown": "Operation failed."
+}
