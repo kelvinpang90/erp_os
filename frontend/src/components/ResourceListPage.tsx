@@ -1,7 +1,7 @@
 import { PlusOutlined } from '@ant-design/icons'
 import { ActionType, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
-import { Button } from 'antd'
+import { Button, Grid } from 'antd'
 import { useRef, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -41,6 +41,8 @@ export default function ResourceListPage<T extends object>({
   const { t } = useTranslation('common')
   const internalActionRef = useRef<ActionType>()
   const actionRef = externalActionRef ?? internalActionRef
+  const screens = Grid.useBreakpoint()
+  const isMobile = !screens.md
 
   return (
     <ProTable<T>
@@ -80,7 +82,13 @@ export default function ResourceListPage<T extends object>({
           </Button>
         ),
       ]}
-      search={{ labelWidth: 'auto' }}
+      search={
+        isMobile
+          ? { labelWidth: 'auto', defaultCollapsed: true, span: 24, layout: 'vertical' }
+          : { labelWidth: 'auto' }
+      }
+      scroll={isMobile ? { x: 'max-content' } : undefined}
+      cardProps={{ bodyStyle: { padding: isMobile ? 8 : 16 } }}
     />
   )
 }

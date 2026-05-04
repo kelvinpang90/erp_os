@@ -6,7 +6,7 @@ import {
   SunOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons'
-import { Avatar, Badge, Drawer, Dropdown, Empty, Modal, Space, Tag } from 'antd'
+import { Avatar, Badge, Drawer, Dropdown, Empty, Grid, Modal, Space, Tag } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
@@ -19,6 +19,8 @@ export default function TopBar() {
   const toggleTheme = useThemeStore((s) => s.toggle)
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [roleSwitchOpen, setRoleSwitchOpen] = useState(false)
+  const screens = Grid.useBreakpoint()
+  const isMobile = !screens.md
 
   const currentLang = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en-US'
   const isAdmin = user?.email === 'admin@demo.my'
@@ -45,9 +47,9 @@ export default function TopBar() {
   ]
 
   return (
-    <Space size="middle" align="center">
-      {demoMode && (
-        <Tag color="success" style={{ margin: 0 }}>
+    <Space size={isMobile ? 4 : 'middle'} align="center" wrap={false}>
+      {demoMode && !isMobile && (
+        <Tag color="success" style={{ margin: 0, whiteSpace: 'nowrap' }}>
           🟢 {t('demoMode')}
         </Tag>
       )}
@@ -55,7 +57,11 @@ export default function TopBar() {
       <Dropdown menu={{ items: langItems, selectedKeys: [currentLang] }}>
         <span style={topBarItemStyle}>
           <GlobalOutlined />
-          <span style={{ fontSize: 13 }}>{currentLang === 'zh-CN' ? '中文' : 'EN'}</span>
+          {!isMobile && (
+            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
+              {currentLang === 'zh-CN' ? '中文' : 'EN'}
+            </span>
+          )}
         </span>
       </Dropdown>
 
@@ -70,9 +76,13 @@ export default function TopBar() {
       </Badge>
 
       <Dropdown menu={{ items: avatarItems }} placement="bottomRight">
-        <Space size={6} style={{ cursor: 'pointer', padding: '0 8px' }}>
+        <Space size={6} style={{ cursor: 'pointer', padding: '0 6px', flexWrap: 'nowrap' }}>
           <Avatar size="small">{(user?.full_name ?? user?.email ?? 'U').charAt(0).toUpperCase()}</Avatar>
-          <span style={{ fontSize: 13 }}>{user?.full_name ?? user?.email ?? 'User'}</span>
+          {!isMobile && (
+            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
+              {user?.full_name ?? user?.email ?? 'User'}
+            </span>
+          )}
         </Space>
       </Dropdown>
 
