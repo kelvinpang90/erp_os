@@ -1,5 +1,8 @@
 import { App as AntApp, ConfigProvider } from 'antd'
+import enUS from 'antd/locale/en_US'
+import zhCN from 'antd/locale/zh_CN'
 import { lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/Layout/AppLayout'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -126,8 +129,10 @@ function AppRoutes() {
 
 export default function App() {
   const mode = useThemeStore((s) => s.mode)
+  const { i18n } = useTranslation()
+  const antdLocale = i18n.language?.startsWith('zh') ? zhCN : enUS
   return (
-    <ConfigProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
+    <ConfigProvider theme={mode === 'dark' ? darkTheme : lightTheme} locale={antdLocale}>
       <AntApp>
         <ErrorBoundary>
           <BrowserRouter>

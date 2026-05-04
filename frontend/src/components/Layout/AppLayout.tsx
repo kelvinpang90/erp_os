@@ -99,7 +99,8 @@ export default function AppLayout() {
     <ProLayout
       title="ERP OS"
       logo={null}
-      layout="mix"
+      layout={isMobile ? 'top' : 'mix'}
+      siderWidth={isMobile ? 0 : 208}
       breakpoint="lg"
       defaultCollapsed={isMobile}
       menuDataRender={() => menuItems}
