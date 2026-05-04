@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined } from '@ant-design/icons'
-import { App, Button, Card, Form, InputNumber, Skeleton, Space, Table, Typography } from 'antd'
+import { App, Button, Card, InputNumber, Skeleton, Space, Table, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'

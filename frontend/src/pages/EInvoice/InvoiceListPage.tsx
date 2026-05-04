@@ -98,7 +98,7 @@ export default function InvoiceListPage() {
         title={t('einvoice:title')}
         columns={[
           ...getInvoiceColumns((key, opts) =>
-            t(`einvoice:${key}`, (opts ?? {}) as never) as string,
+            t(`einvoice:${key}`, (opts ?? {}) as never) as unknown as string,
           ),
           {
             title: t('common:actions'),

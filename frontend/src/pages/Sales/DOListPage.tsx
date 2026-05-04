@@ -28,7 +28,7 @@ export default function DOListPage() {
       title={t('delivery_order:title')}
       columns={[
         ...getDoColumns((key, opts) =>
-          t(`delivery_order:${key}`, (opts ?? {}) as never) as string,
+          t(`delivery_order:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('delivery_order:actions'),

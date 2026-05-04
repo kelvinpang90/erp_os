@@ -29,8 +29,8 @@ export default function SupplierListPage() {
       title={t('supplier:title')}
       columns={[
         ...getSupplierColumns(
-          (key, opts) => t(`supplier:${key}`, (opts ?? {}) as never) as string,
-          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as string,
+          (key, opts) => t(`supplier:${key}`, (opts ?? {}) as never) as unknown as string,
+          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('common:actions'),

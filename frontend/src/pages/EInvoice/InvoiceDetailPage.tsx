@@ -81,7 +81,7 @@ export default function InvoiceDetailPage() {
   const navigate = useNavigate()
   const { t } = useTranslation(['einvoice', 'common'])
   const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
-    t(`einvoice:${key}`, (opts ?? {}) as never) as string
+    t(`einvoice:${key}`, (opts ?? {}) as never) as unknown as string
   const [inv, setInv] = useState<InvoiceDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)

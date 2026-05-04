@@ -150,7 +150,7 @@ export default function MovementListPage() {
       width: 110,
       align: 'right',
       hideInSearch: true,
-      render: (val: string | undefined) => val ?? '—',
+      render: (_dom, record: MovementRow) => record.unit_cost ?? '—',
     },
     {
       title: t('avg_cost_after'),
@@ -158,7 +158,7 @@ export default function MovementListPage() {
       width: 130,
       align: 'right',
       hideInSearch: true,
-      render: (val: string | undefined) => val ?? '—',
+      render: (_dom, record: MovementRow) => record.avg_cost_after ?? '—',
     },
     {
       title: t('filter.date_from'),

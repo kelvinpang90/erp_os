@@ -15,14 +15,6 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
-interface POSummary {
-  id: number
-  document_no: string
-  status: string
-  warehouse_id: number
-  business_date: string
-}
-
 interface POLineFromAPI {
   id: number
   line_no: number

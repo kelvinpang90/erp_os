@@ -29,7 +29,7 @@ export default function POListPage() {
       title={t('purchase_order:title')}
       columns={[
         ...getPoColumns((key, opts) =>
-          t(`purchase_order:${key}`, (opts ?? {}) as never) as string,
+          t(`purchase_order:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('common:actions'),

@@ -72,7 +72,7 @@ export default function CreditNoteDetailPage() {
   const navigate = useNavigate()
   const { t } = useTranslation(['einvoice', 'common'])
   const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
-    t(`einvoice:${key}`, (opts ?? {}) as never) as string
+    t(`einvoice:${key}`, (opts ?? {}) as never) as unknown as string
   const [cn, setCn] = useState<CreditNoteDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)

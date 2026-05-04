@@ -8,6 +8,7 @@ import {
   TagsOutlined,
 } from '@ant-design/icons'
 import { ProLayout } from '@ant-design/pro-components'
+import { Grid } from 'antd'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../stores/authStore'
@@ -25,6 +26,8 @@ export default function AppLayout() {
   const location = useLocation()
   const { t } = useTranslation('menu')
   const backendMenu = useAuthStore((s) => s.menu)
+  const screens = Grid.useBreakpoint()
+  const isMobile = !screens.lg
 
   const allMenuItems = [
     {
@@ -97,6 +100,8 @@ export default function AppLayout() {
       title="ERP OS"
       logo={null}
       layout="mix"
+      breakpoint="lg"
+      defaultCollapsed={isMobile}
       menuDataRender={() => menuItems}
       location={{ pathname: location.pathname }}
       menuItemRender={(item, dom) => (
@@ -106,6 +111,7 @@ export default function AppLayout() {
       )}
       actionsRender={() => [<TopBar key="topbar" />]}
       avatarProps={{ render: () => null }}
+      contentStyle={{ padding: isMobile ? 12 : 24 }}
     >
       <Outlet />
     </ProLayout>

@@ -31,8 +31,8 @@ export default function CustomerListPage() {
       title={t('customer:title')}
       columns={[
         ...getCustomerColumns(
-          (key, opts) => t(`customer:${key}`, (opts ?? {}) as never) as string,
-          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as string,
+          (key, opts) => t(`customer:${key}`, (opts ?? {}) as never) as unknown as string,
+          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('common:actions'),

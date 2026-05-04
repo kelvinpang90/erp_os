@@ -30,7 +30,7 @@ export default function CreditNoteListPage() {
       title={t('einvoice:creditNote.listTitle')}
       columns={[
         ...getCreditNoteColumns((key, opts) =>
-          t(`einvoice:${key}`, (opts ?? {}) as never) as string,
+          t(`einvoice:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('common:actions'),

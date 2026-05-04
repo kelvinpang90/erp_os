@@ -58,7 +58,7 @@ export default function CreditNoteCreatePage() {
   const navigate = useNavigate()
   const { t } = useTranslation(['einvoice', 'common'])
   const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
-    t(`einvoice:${key}`, (opts ?? {}) as never) as string
+    t(`einvoice:${key}`, (opts ?? {}) as never) as unknown as string
   const [form] = Form.useForm()
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null)
   const [loading, setLoading] = useState(true)

@@ -91,6 +91,29 @@
 
 ---
 
+## Window 16: UI 打磨 + i18n 全量补齐
+
+### [2026-05-04] react-i18next typed t() 默认返回 TFunctionDetailedResult，subagent 大量 `as string` 都 build fail
+
+**场景**：W16 三个并行 subagent 把 ~285 处硬编码文案 t() 化，几乎所有 columns 工厂里都写了 `(key, opts) => t(`ns:${key}`, opts as never) as string`
+**犯的错**：react-i18next 14+ 的 `t()` 默认返回类型是 `TFunctionDetailedResult<$SpecialObject, never>` 联合，`as string` cast 触发 TS2352 "may be a mistake"。一打 build 一片红
+**纠正**：(a) 短期：bulk sed 把 `) as string` 改成 `) as unknown as string` 强转过关；(b) 长期：在 `frontend/src/i18next.d.ts` 加 module augmentation 设置 `CustomTypeOptions: { returnNull: false, returnEmptyString: true, returnObjects: false }`；未来 `t()` 直接返回 string
+**预防**：给 i18n subagent 的 prompt 里明确"`t()` 返回 string，不需要 cast"。或窗口开始前先把 i18next.d.ts 配好再放 subagent
+
+### [2026-05-04] subagent 在 catch 块引用 try 块的 const → TS18004
+
+**场景**：i18n subagent 改 TransferCreatePage / AdjustmentCreatePage 时把 `console.error` 留在 catch 块里，shorthand 引用了 try 块的 `const payload`
+**犯的错**：JS 块作用域 const 出 try 块就不可见。subagent 没注意，TS 抛 TS18004 "no value exists in scope for the shorthand property"
+**纠正**：把 console.error 引用从 `payload` 改成 `values`(catch 外可见的函数参数)
+**预防**：subagent 改完后必须 `npm run build` 才算完成。给 prompt 加一句"如果引用 try 块的局部变量，要么提到 try 外，要么换用 catch 可见的变量"
+
+### [2026-05-04] Worktree 没 node_modules / pytest，验证流程要适配
+
+**场景**：W16 在 `.claude/worktrees/window-16` 开发，Step 8 验证时 worktree 既没 `node_modules` 也没 Python 虚拟环境
+**犯的错**：以为 worktree 共享主仓的依赖。实际 worktree 是独立 working dir，需要自己跑 `npm install`(2min, 781 packages)；后端测试更尴尬，worktree/主仓/docker container 都没 pytest
+**纠正**：(前端) worktree 单独跑 `npm install`；(后端) `docker exec -u root erp_backend pip install pytest pytest-asyncio` 后 `docker cp` worktree 文件进容器跑测试，测完再 cp 主仓文件还原
+**预防**：把 pytest 加到 backend Dockerfile 始终装(requirements-dev.txt 已有, dev profile 应安装)。短期先把 setup 步骤补到 CLAUDE.md Part 14 Window 工作流
+
 ## 通用教训
 
 （每完成一个 Phase 提炼一次）

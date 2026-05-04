@@ -28,7 +28,7 @@ export default function GRListPage() {
       title={t('goods_receipt:title')}
       columns={[
         ...getGrColumns((key, opts) =>
-          t(`goods_receipt:${key}`, (opts ?? {}) as never) as string,
+          t(`goods_receipt:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('goods_receipt:actions'),

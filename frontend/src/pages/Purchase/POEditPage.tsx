@@ -382,7 +382,7 @@ export default function POEditPage() {
       if (ocrPrefill.remarks) headerValues.remarks = ocrPrefill.remarks
 
       setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
-      formRef.current?.setFieldsValue(headerValues)
+      formRef.current?.setFieldsValue(headerValues as Record<string, unknown> as never)
 
       // 5. Lines — prefer SKU's own UOM/tax/price when we have the SKU; fall
       //    back to whatever OCR returned if the SKU wasn't found.
@@ -495,7 +495,7 @@ export default function POEditPage() {
       }
       if (restockPrefill.warehouse_id) headerValues.warehouse_id = restockPrefill.warehouse_id
       setInitialValues((prev) => ({ ...(prev ?? {}), ...headerValues }))
-      formRef.current?.setFieldsValue(headerValues)
+      formRef.current?.setFieldsValue(headerValues as Record<string, unknown> as never)
 
       const newLines: LineRow[] = restockPrefill.lines.map((line, idx) => {
         const sku = skuById.get(line.sku_id)

@@ -10,6 +10,8 @@ interface POLine {
   id: number
   line_no: number
   sku_id: number
+  sku_code?: string
+  sku_name?: string
   uom_id: number
   description?: string
   qty_ordered: string
@@ -117,13 +119,13 @@ export default function PODetailPage() {
   const fmt = (val: string) =>
     `${po.currency} ${parseFloat(val).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-  const lineColumns = [
+  const lineColumns: import('antd/es/table').ColumnsType<POLine> = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
       title: t('sku'),
       dataIndex: 'sku_code',
       width: 260,
-      render: (_: unknown, record: { sku_code?: string; sku_name?: string }) =>
+      render: (_: unknown, record: POLine) =>
         record.sku_code ? `${record.sku_code} — ${record.sku_name}` : '-',
     },
     { title: t('description'), dataIndex: 'description', ellipsis: true },

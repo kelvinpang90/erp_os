@@ -27,7 +27,7 @@ export default function SOListPage() {
       title={t('sales_order:title')}
       columns={[
         ...getSoColumns((key, opts) =>
-          t(`sales_order:${key}`, (opts ?? {}) as never) as string,
+          t(`sales_order:${key}`, (opts ?? {}) as never) as unknown as string,
         ),
         {
           title: t('sales_order:actions'),

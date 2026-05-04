@@ -794,7 +794,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 | 13 Stock Movements | ✅ 完成 | 2026-04-30 | 2026-04-30 | ~80 | 177/177 单测全绿（新增 20: 8 transfer state + 6 adjustment + 6 inventory atomic）；inventory.py 新 4 个 apply_* 函数；StockTransfer 4 状态机（DRAFT→CONFIRMED→IN_TRANSIT→RECEIVED）支持部分收货 + unit_cost_snapshot 跨阶段传递；StockAdjustment 统一录单（盘盈/盘亏混合行 by qty_diff sign），Manager/Admin 才能 confirm；Movement 只读列表带 6 维筛选；前端 9 页面 + StockStatusBadge + 3 i18n 命名空间双语；Migration 不需新建（initial_schema 已建表）；audit handler 推迟 W17 |
 | 14 Branch Inventory | ✅ 完成 | 2026-05-02 | 2026-05-02 | ~70 | inventory matrix + low-stock alerts API；notify_on_low_stock handler 带 1h 去重；前端热力图 + AlertPage 多选 → POEditPage restockPrefill 跳转预填；SKU DetailPage 成本趋势 Tab 懒加载；inventory i18n 双语；test_low_stock_notification 4 case 全绿 |
 | 15 Dashboard + Reports | ✅ 完成 | 2026-05-04 | 2026-05-04 | ~80 | 230/230 单测全绿(新增 24:8 dashboard service + 5 cache invalidation + 11 reports);AI 日报采用懒触发 + Admin 手动刷新(零 Celery 依赖,推迟 W18 Beat);KPI/trends Redis DB1 5min 缓存,事件驱动失效(StockMovement/DocStatus/EInvoiceValidated);10 张报表 endpoint 全工作(已端到端验证 sales-trend + warehouse-distribution);Dashboard 5 KPI + AI 摘要卡(staleness 三色)+ 4 趋势图;Reports 中心 10 卡片网格(7d/30d/90d 切换);dashboard + reports 双语 i18n;cache_hit 第二次请求验证为 True |
-| 16 UI + i18n | ⏳ | | | | |
+| 16 UI + i18n | ✅ 完成 | 2026-05-04 | 2026-05-04 | ~95 | 主题系统(light/dark + zustand) + TopBar 4 入口(占位通知/角色) + LoginPage 双栏品牌+表单+四角色卡 + 403/404/500 + ErrorBoundary + 错误码前后端 i18n(AppException 自动 i18n_key + errors.json 双语) + ResponsiveModal + AppLayout breakpoint + i18n 全量补齐(54 文件 / ~320 keys / 3 subagent 并行) + sku 命名空间新建; 206/206 单测全绿; npm build 通过 |
 | 17 审计 + Dev Tools | ⏳ | | | | |
 | 18 CI/CD + 部署 | ⏳ | | | | |
 | 19 E2E | ⏳ | | | | |
