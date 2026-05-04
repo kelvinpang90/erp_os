@@ -28,12 +28,30 @@
   "select_po_placeholder": "选择 CONFIRMED 或 PARTIAL_RECEIVED 状态的采购单…",
   "search_placeholder": "搜索收货单号、送货单号或备注",
   "summary": "收货汇总",
+  "summaryTotal": "本次收货总数",
+  "totalQty": "总数量",
+  "totalCost": "总金额",
   "no_lines_to_receive": "此采购单已无可收货行。",
   "validation_qty_required": "本次收货数量必填且大于 0",
   "validation_qty_exceed_max": "本次收货数量超过上限（剩余数量 + 容差）",
   "validation_qty_warning_over_remaining": "本次收货数量超过订购剩余（在容差范围内，将被接受）",
   "validation_select_po_first": "请先选择采购单",
   "validation_at_least_one_line": "至少有一行需要填写收货数量",
+  "buttons": {
+    "view": "查看",
+    "po": "采购单",
+    "viewPo": "查看采购单"
+  },
+  "columns": {
+    "deliveryNote": "送货单号",
+    "created": "创建时间"
+  },
+  "messages": {
+    "notFound": "未找到该收货单。",
+    "loadPoFailed": "加载采购单失败",
+    "created": "{{docNo}} 已创建，库存已更新。",
+    "createFailed": "创建收货单失败"
+  },
   "errors": {
     "GR_OVER_RECEIPT_EXCEEDED": "本次收货数量超过该采购行允许的超收容差。",
     "GR_LINE_ALREADY_FULL": "该采购行已全部收货完毕。",

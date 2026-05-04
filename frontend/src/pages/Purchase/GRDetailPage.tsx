@@ -46,7 +46,7 @@ interface GRDetail {
 export default function GRDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation('goods_receipt')
+  const { t } = useTranslation(['goods_receipt', 'common'])
   const [gr, setGR] = useState<GRDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -56,11 +56,11 @@ export default function GRDetailPage() {
       .get(`/goods-receipts/${id}`)
       .then((res) => setGR(res.data))
       .catch(() => {
-        message.error('Goods receipt not found.')
+        message.error(t('messages.notFound'))
         navigate('/purchase/goods-receipts')
       })
       .finally(() => setLoading(false))
-  }, [id, navigate])
+  }, [id, navigate, t])
 
   if (loading)
     return (
@@ -161,7 +161,7 @@ export default function GRDetailPage() {
           <Button
             onClick={() => navigate(`/purchase/orders/${gr.purchase_order_id}`)}
           >
-            View PO
+            {t('buttons.viewPo')}
           </Button>
         }
       >
@@ -181,7 +181,7 @@ export default function GRDetailPage() {
           <ProDescriptions.Item label={t('received_by')}>
             {gr.received_by_name || (gr.received_by ? `User #${gr.received_by}` : '—')}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Created At">
+          <ProDescriptions.Item label={t('common:createdAt')}>
             {new Date(gr.created_at).toLocaleString('en-MY')}
           </ProDescriptions.Item>
           {gr.remarks && (
@@ -203,7 +203,7 @@ export default function GRDetailPage() {
           summary={() => (
             <Table.Summary.Row>
               <Table.Summary.Cell index={0} colSpan={3} align="right">
-                <Typography.Text strong>Total Qty Received:</Typography.Text>
+                <Typography.Text strong>{t('summaryTotal')}:</Typography.Text>
               </Table.Summary.Cell>
               <Table.Summary.Cell index={1} align="right">
                 <Typography.Text strong>

@@ -1,7 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import ResourceListPage from '../../components/ResourceListPage'
 import { axiosInstance } from '../../api/client'
-import { skuColumns, type SKURow } from './columns'
+import { buildSkuColumns, type SKURow } from './columns'
 
 async function fetchSKUs(params: {
   current?: number
@@ -24,23 +25,24 @@ async function fetchSKUs(params: {
 
 export default function SKUListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation('sku')
 
   return (
     <ResourceListPage<SKURow>
-      title="SKU Management"
+      title={t('title')}
       columns={[
-        ...skuColumns,
+        ...buildSkuColumns(t),
         {
-          title: 'Action',
+          title: t('actions.action'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/skus/${row.id}`)}>
-              View
+              {t('actions.view')}
             </a>,
             <a key="edit" onClick={() => navigate(`/skus/${row.id}/edit`)}>
-              Edit
+              {t('actions.edit')}
             </a>,
           ],
         },

@@ -1,0 +1,83 @@
+{
+  "title": "商品管理",
+  "create": "新建商品",
+  "edit": "编辑商品",
+  "actions": {
+    "view": "查看",
+    "edit": "编辑",
+    "action": "操作"
+  },
+  "tabs": {
+    "overview": "概览",
+    "costTrend": "成本趋势"
+  },
+  "columns": {
+    "code": "编码",
+    "name": "名称",
+    "barcode": "条码",
+    "priceExclTax": "价格（不含税）",
+    "safetyStock": "安全库存",
+    "costing": "成本方法",
+    "status": "状态",
+    "active": "启用",
+    "inactive": "停用",
+    "created": "创建时间"
+  },
+  "form": {
+    "code": "商品编码",
+    "codePlaceholder": "留空则自动生成",
+    "barcode": "条码",
+    "nameEn": "名称（英文）",
+    "nameZh": "名称（中文）",
+    "description": "描述",
+    "baseUom": "基础单位",
+    "taxRate": "税率",
+    "costingMethod": "成本核算方法",
+    "unitPriceExclTax": "单价（不含税）",
+    "unitPriceInclTax": "单价（含税）",
+    "safetyStock": "安全库存",
+    "reorderPoint": "补货点",
+    "reorderQty": "补货数量",
+    "trackBatch": "追踪批号",
+    "trackExpiry": "追踪有效期",
+    "trackSerial": "追踪序列号",
+    "active": "启用"
+  },
+  "costingMethod": {
+    "weightedAverage": "加权平均",
+    "fifo": "先进先出",
+    "specific": "个别认定"
+  },
+  "detail": {
+    "status": "状态",
+    "active": "启用",
+    "inactive": "停用",
+    "code": "编码",
+    "name": "名称",
+    "nameZh": "中文名称",
+    "barcode": "条码",
+    "brand": "品牌",
+    "category": "分类",
+    "baseUom": "基础单位",
+    "taxRate": "税率",
+    "priceExclTax": "价格（不含税）",
+    "priceInclTax": "价格（含税）",
+    "costingMethod": "成本核算方法",
+    "lastCost": "最近成本",
+    "safetyStock": "安全库存",
+    "reorderPoint": "补货点",
+    "reorderQty": "补货数量",
+    "tracking": "追踪",
+    "batch": "批号",
+    "expiry": "有效期",
+    "serial": "序列号",
+    "created": "创建时间",
+    "updated": "更新时间"
+  },
+  "messages": {
+    "loadFailed": "加载商品失败",
+    "created": "商品创建成功",
+    "updated": "商品更新成功",
+    "operationFailed": "操作失败"
+  }
+}

@@ -28,12 +28,30 @@
   "select_po_placeholder": "Pick a CONFIRMED or PARTIAL_RECEIVED purchase order…",
   "search_placeholder": "Search by GR number, delivery note, or remarks",
   "summary": "Receipt Summary",
+  "summaryTotal": "Total Qty Received",
+  "totalQty": "Total Qty",
+  "totalCost": "Total Cost",
   "no_lines_to_receive": "This purchase order has no lines remaining to receive.",
   "validation_qty_required": "Qty Received is required and must be greater than 0",
   "validation_qty_exceed_max": "Qty Received exceeds maximum allowed (remaining + tolerance)",
   "validation_qty_warning_over_remaining": "Qty Received exceeds ordered remaining (within tolerance — will be accepted)",
   "validation_select_po_first": "Please select a purchase order first",
   "validation_at_least_one_line": "At least one line must have a positive received qty",
+  "buttons": {
+    "view": "View",
+    "po": "PO",
+    "viewPo": "View PO"
+  },
+  "columns": {
+    "deliveryNote": "Delivery Note",
+    "created": "Created"
+  },
+  "messages": {
+    "notFound": "Goods receipt not found.",
+    "loadPoFailed": "Failed to load purchase order",
+    "created": "{{docNo}} created. Stock updated.",
+    "createFailed": "Failed to create goods receipt"
+  },
   "errors": {
     "GR_OVER_RECEIPT_EXCEEDED": "Qty received exceeds the over-receipt tolerance for this PO line.",
     "GR_LINE_ALREADY_FULL": "This PO line has already been fully received.",

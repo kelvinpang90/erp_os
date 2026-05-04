@@ -15,10 +15,11 @@ import {
   message,
 } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import CountdownTimer from './CountdownTimer'
-import { STATUS_COLOR, STATUS_LABEL } from './InvoiceColumns'
+import { STATUS_COLOR, statusLabel } from './InvoiceColumns'
 import PrecheckModal from './PrecheckModal'
 
 interface InvoiceLine {
@@ -78,6 +79,9 @@ interface InvoiceDetail {
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation(['einvoice', 'common'])
+  const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
+    t(`einvoice:${key}`, (opts ?? {}) as never) as string
   const [inv, setInv] = useState<InvoiceDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -99,13 +103,13 @@ export default function InvoiceDetailPage() {
 
   const handleReject = async () => {
     if (!id || rejectReason.trim().length < 3) {
-      message.warning('Rejection reason must be at least 3 characters.')
+      message.warning(t('einvoice:messages.rejectReasonMin'))
       return
     }
     setActionLoading(true)
     try {
       await axiosInstance.post(`/invoices/${id}/reject`, { reason: rejectReason })
-      message.success('Invoice rejected by buyer.')
+      message.success(t('einvoice:messages.rejected'))
       setRejectModal(false)
       setRejectReason('')
       loadInvoice()
@@ -118,7 +122,7 @@ export default function InvoiceDetailPage() {
         ?.map((e) => `${(e.loc ?? []).filter((p) => p !== 'body').join('.')}: ${e.msg ?? ''}`)
         .filter(Boolean)
         .join('; ')
-      message.error(fieldErrors || data?.message || 'Failed to reject invoice.')
+      message.error(fieldErrors || data?.message || t('einvoice:messages.rejectFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -143,19 +147,19 @@ export default function InvoiceDetailPage() {
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
-      title: 'SKU',
+      title: t('einvoice:sku'),
       dataIndex: 'sku_code',
       width: 240,
       render: (_: unknown, row: InvoiceLine) =>
         row.sku_code ? `${row.sku_code} — ${row.sku_name}` : '-',
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
-    { title: 'MSIC', dataIndex: 'msic_code', width: 90, render: (v: string | null) => v ?? '—' },
-    { title: 'Qty', dataIndex: 'qty', width: 90, align: 'right' as const },
-    { title: 'Unit Price', dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
-    { title: 'Tax %', dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
+    { title: t('einvoice:description'), dataIndex: 'description', ellipsis: true },
+    { title: t('einvoice:msic_code'), dataIndex: 'msic_code', width: 90, render: (v: string | null) => v ?? '—' },
+    { title: t('einvoice:qty'), dataIndex: 'qty', width: 90, align: 'right' as const },
+    { title: t('einvoice:columns.unitPrice'), dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
+    { title: t('einvoice:columns.taxPct'), dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
     {
-      title: 'Line Total (incl. tax)',
+      title: t('einvoice:line_total_incl_tax'),
       dataIndex: 'line_total_incl_tax',
       width: 160,
       align: 'right' as const,
@@ -187,7 +191,7 @@ export default function InvoiceDetailPage() {
             />
             <Typography.Text strong>{inv.document_no}</Typography.Text>
             <Tag color={STATUS_COLOR[inv.status] ?? 'default'}>
-              {STATUS_LABEL[inv.status] ?? inv.status}
+              {statusLabel(tEinvoice, inv.status)}
             </Tag>
             {inv.uin && <Tag color="purple">UIN: {inv.uin}</Tag>}
           </Space>
@@ -200,7 +204,7 @@ export default function InvoiceDetailPage() {
                 loading={actionLoading}
                 onClick={() => setPrecheckOpen(true)}
               >
-                Run Precheck &amp; Submit
+                {t('einvoice:buttons.runPrecheckSubmit')}
               </Button>
             )}
             {isCreditable && (
@@ -209,22 +213,22 @@ export default function InvoiceDetailPage() {
                   navigate(`/sales/credit-notes/new?invoice_id=${inv.id}`)
                 }
               >
-                Issue Credit Note
+                {t('einvoice:buttons.issueCreditNote')}
               </Button>
             )}
             {isRejectable && (
               <Button danger onClick={() => setRejectModal(true)}>
-                Reject as Buyer
+                {t('einvoice:reject_as_buyer')}
               </Button>
             )}
-            <Button onClick={loadInvoice}>Refresh</Button>
+            <Button onClick={loadInvoice}>{t('einvoice:refresh')}</Button>
           </Space>
         }
       >
         <Row gutter={24}>
           <Col span={isValidated ? 16 : 24}>
             <ProDescriptions column={2}>
-              <ProDescriptions.Item label="Sales Order">
+              <ProDescriptions.Item label={t('einvoice:sales_order')}>
                 {inv.sales_order_no ? (
                   <a onClick={() => navigate(`/sales/orders/${inv.sales_order_id}`)}>
                     {inv.sales_order_no}
@@ -233,37 +237,37 @@ export default function InvoiceDetailPage() {
                   '—'
                 )}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Customer">
+              <ProDescriptions.Item label={t('einvoice:customer')}>
                 {inv.customer_name || `#${inv.customer_id}`}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Warehouse">
+              <ProDescriptions.Item label={t('einvoice:warehouse')}>
                 {inv.warehouse_name || (inv.warehouse_id ? `#${inv.warehouse_id}` : '—')}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Type">{inv.invoice_type}</ProDescriptions.Item>
-              <ProDescriptions.Item label="Business Date">
+              <ProDescriptions.Item label={t('einvoice:type')}>{inv.invoice_type}</ProDescriptions.Item>
+              <ProDescriptions.Item label={t('einvoice:business_date')}>
                 {inv.business_date}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Due Date">{inv.due_date ?? '—'}</ProDescriptions.Item>
-              <ProDescriptions.Item label="Currency">
+              <ProDescriptions.Item label={t('einvoice:due_date')}>{inv.due_date ?? '—'}</ProDescriptions.Item>
+              <ProDescriptions.Item label={t('einvoice:currency')}>
                 {inv.currency} (rate {parseFloat(inv.exchange_rate).toFixed(4)})
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Submitted At">
+              <ProDescriptions.Item label={t('einvoice:submitted_at')}>
                 {inv.submitted_at
                   ? new Date(inv.submitted_at).toLocaleString('en-MY')
                   : '—'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Validated At">
+              <ProDescriptions.Item label={t('einvoice:validated_at')}>
                 {inv.validated_at
                   ? new Date(inv.validated_at).toLocaleString('en-MY')
                   : '—'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Finalized At">
+              <ProDescriptions.Item label={t('einvoice:finalized_at')}>
                 {inv.finalized_at
                   ? new Date(inv.finalized_at).toLocaleString('en-MY')
                   : '—'}
               </ProDescriptions.Item>
               {inv.rejected_at && (
-                <ProDescriptions.Item label="Rejected" span={2}>
+                <ProDescriptions.Item label={t('einvoice:columns.rejected')} span={2}>
                   <Typography.Text type="danger">
                     {new Date(inv.rejected_at).toLocaleString('en-MY')} by{' '}
                     {inv.rejected_by ?? '—'}: {inv.rejection_reason}
@@ -271,7 +275,7 @@ export default function InvoiceDetailPage() {
                 </ProDescriptions.Item>
               )}
               {inv.remarks && (
-                <ProDescriptions.Item label="Remarks" span={2}>
+                <ProDescriptions.Item label={t('einvoice:remarks')} span={2}>
                   {inv.remarks}
                 </ProDescriptions.Item>
               )}
@@ -298,7 +302,7 @@ export default function InvoiceDetailPage() {
                       }}
                     />
                     <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
-                      QR code (mock URL)
+                      {t('einvoice:qrCodeMock')}
                     </div>
                   </div>
                 )}
@@ -317,20 +321,20 @@ export default function InvoiceDetailPage() {
         <Alert
           type="info"
           showIcon
-          message="DRAFT — not yet sent to LHDN"
-          description="Click 'Submit to MyInvois' to obtain a UIN. The mock adapter responds synchronously and the invoice will move to VALIDATED."
+          message={t('einvoice:draft_hint')}
+          description={t('einvoice:draft_hint_desc')}
         />
       )}
       {inv.status === 'FINAL' && (
         <Alert
           type="success"
           showIcon
-          message="FINAL — opposition window has closed"
-          description="This invoice is now a legal tax document. Modifications must go through a Credit Note (Window 12)."
+          message={t('einvoice:final_hint')}
+          description={t('einvoice:final_hint_desc')}
         />
       )}
 
-      <Card title="Invoice Lines">
+      <Card title={t('einvoice:lines')}>
         <Row gutter={16}>
           <Col span={24}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -379,15 +383,15 @@ export default function InvoiceDetailPage() {
         </Row>
         <Row gutter={16} justify="end" style={{ marginTop: 16 }}>
           <Col>
-            <Typography.Text type="secondary">Subtotal (excl. tax):</Typography.Text>{' '}
+            <Typography.Text type="secondary">{t('einvoice:subtotal_excl_tax')}:</Typography.Text>{' '}
             <Typography.Text>{fmt(inv.subtotal_excl_tax)}</Typography.Text>
           </Col>
           <Col>
-            <Typography.Text type="secondary">Tax:</Typography.Text>{' '}
+            <Typography.Text type="secondary">{t('einvoice:tax_amount')}:</Typography.Text>{' '}
             <Typography.Text>{fmt(inv.tax_amount)}</Typography.Text>
           </Col>
           <Col>
-            <Typography.Text strong>Total (incl. tax):</Typography.Text>{' '}
+            <Typography.Text strong>{t('einvoice:total_incl_tax')}:</Typography.Text>{' '}
             <Typography.Text strong>{fmt(inv.total_incl_tax)}</Typography.Text>
           </Col>
         </Row>
@@ -401,7 +405,7 @@ export default function InvoiceDetailPage() {
       />
 
       <Modal
-        title="Reject Invoice (as Buyer)"
+        title={t('einvoice:reject_modal_title')}
         open={rejectModal}
         onOk={handleReject}
         onCancel={() => {
@@ -410,18 +414,16 @@ export default function InvoiceDetailPage() {
         }}
         confirmLoading={actionLoading}
         okButtonProps={{ danger: true }}
-        okText="Reject"
+        okText={t('einvoice:buttons.reject')}
       >
         <Typography.Paragraph>
-          Reject this invoice on behalf of the buyer. Allowed only inside the 72h
-          opposition window (72s in DEMO_MODE). Reason will be sent to LHDN
-          (minimum 3 characters).
+          {t('einvoice:reject_modal_desc')}
         </Typography.Paragraph>
         <Input.TextArea
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
           rows={3}
-          placeholder="e.g. Wrong amount on line 2"
+          placeholder={t('einvoice:reject_placeholder')}
           maxLength={1000}
           showCount
         />

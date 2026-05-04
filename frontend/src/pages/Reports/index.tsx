@@ -172,8 +172,8 @@ export default function ReportsPage() {
 
   const skuColumns = useMemo<ColumnsType<TopEntityRow>>(
     () => [
-      { title: 'Code', dataIndex: 'code', key: 'code' },
-      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { title: t('labels.code'), dataIndex: 'code', key: 'code' },
+      { title: t('labels.name'), dataIndex: 'name', key: 'name' },
       { title: t('labels.qty'), dataIndex: 'qty', key: 'qty', align: 'right' },
       { title: t('labels.amount_short'), dataIndex: 'amount', key: 'amount', align: 'right' },
     ],
@@ -181,8 +181,8 @@ export default function ReportsPage() {
   )
   const supplierColumns = useMemo<ColumnsType<TopEntityRow>>(
     () => [
-      { title: 'Code', dataIndex: 'code', key: 'code' },
-      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { title: t('labels.code'), dataIndex: 'code', key: 'code' },
+      { title: t('labels.name'), dataIndex: 'name', key: 'name' },
       { title: t('labels.po_count'), dataIndex: 'qty', key: 'qty', align: 'right' },
       { title: t('labels.amount_short'), dataIndex: 'amount', key: 'amount', align: 'right' },
     ],
@@ -190,8 +190,8 @@ export default function ReportsPage() {
   )
   const customerColumns = useMemo<ColumnsType<TopEntityRow>>(
     () => [
-      { title: 'Code', dataIndex: 'code', key: 'code' },
-      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { title: t('labels.code'), dataIndex: 'code', key: 'code' },
+      { title: t('labels.name'), dataIndex: 'name', key: 'name' },
       { title: t('labels.so_count'), dataIndex: 'qty', key: 'qty', align: 'right' },
       { title: t('labels.amount_short'), dataIndex: 'amount', key: 'amount', align: 'right' },
     ],
@@ -199,8 +199,8 @@ export default function ReportsPage() {
   )
   const turnoverColumns = useMemo<ColumnsType<InvTurnoverRow>>(
     () => [
-      { title: 'SKU', dataIndex: 'sku_code', key: 'sku_code' },
-      { title: 'Name', dataIndex: 'sku_name', key: 'sku_name' },
+      { title: t('labels.sku'), dataIndex: 'sku_code', key: 'sku_code' },
+      { title: t('labels.name'), dataIndex: 'sku_name', key: 'sku_name' },
       { title: t('labels.cogs'), dataIndex: 'cogs', key: 'cogs', align: 'right' },
       { title: t('labels.inventory_value'), dataIndex: 'avg_inventory_value', key: 'inv', align: 'right' },
       { title: t('labels.turnover'), dataIndex: 'turnover_ratio', key: 'ratio', align: 'right' },
@@ -209,7 +209,7 @@ export default function ReportsPage() {
   )
   const featureColumns = useMemo<ColumnsType<FeatureCostRow>>(
     () => [
-      { title: 'Feature', dataIndex: 'feature', key: 'feature' },
+      { title: t('labels.feature'), dataIndex: 'feature', key: 'feature' },
       { title: t('labels.calls'), dataIndex: 'calls', key: 'calls', align: 'right' },
       { title: t('labels.cost_usd'), dataIndex: 'cost_usd', key: 'cost', align: 'right' },
     ],

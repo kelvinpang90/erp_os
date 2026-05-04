@@ -27,11 +27,29 @@
   "select_so_placeholder": "选择 CONFIRMED 或 PARTIAL_SHIPPED 状态的销售单…",
   "search_placeholder": "搜索发货单号、运单号或备注",
   "summary": "发货汇总",
+  "summaryTotal": "本次发货总数",
+  "totalQty": "总数量",
   "no_lines_to_ship": "此销售单已无可发货行。",
   "validation_qty_required": "本次发货数量必填且大于 0",
   "validation_qty_exceed_remaining": "本次发货数量不能超过剩余数量（不允许超发）。",
   "validation_select_so_first": "请先选择销售单",
   "validation_at_least_one_line": "至少有一行需要填写发货数量",
+  "buttons": {
+    "view": "查看",
+    "so": "销售单",
+    "viewSo": "查看销售单"
+  },
+  "columns": {
+    "tracking": "运单号",
+    "created": "创建时间"
+  },
+  "messages": {
+    "notFound": "未找到该发货单。",
+    "loadSoFailed": "加载销售单失败",
+    "created": "{{docNo}} 已创建，库存已更新。",
+    "createFailed": "创建发货单失败",
+    "overShipLine": "第 {{lineNo}} 行：发货数量不能超过剩余 {{remaining}}。"
+  },
   "shipping_method_options": {
     "COURIER": "快递",
     "OWN_FLEET": "自有车队",

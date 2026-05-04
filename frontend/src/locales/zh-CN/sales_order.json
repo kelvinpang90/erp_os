@@ -53,6 +53,40 @@
   "search_placeholder": "搜索单号或备注",
   "add_line": "添加明细",
   "summary": "金额汇总",
+  "buttons": {
+    "view": "查看"
+  },
+  "columns": {
+    "terms": "账期",
+    "created": "创建时间",
+    "stock": "库存",
+    "qty": "数量",
+    "unitPrice": "单价",
+    "taxPct": "税率%"
+  },
+  "sections": {
+    "orderDetails": "订单信息",
+    "payment": "付款信息"
+  },
+  "placeholders": {
+    "searching": "搜索中…",
+    "noSku": "未找到匹配的 SKU",
+    "cancelReason": "例如：客户改变主意"
+  },
+  "messages": {
+    "confirmed": "销售单已确认，库存已预留。",
+    "confirmFailed": "确认销售单失败。",
+    "cancelled": "销售单已取消，预留库存已释放。",
+    "cancelFailed": "取消销售单失败。",
+    "cancelReasonRequired": "请填写取消原因。",
+    "loadFailed": "加载销售单失败",
+    "created": "销售单已创建。",
+    "updated": "销售单已更新。",
+    "atLeastOneLine": "请至少添加一行明细。",
+    "referenceDataFailed": "部分基础数据加载失败，如下拉框为空请刷新页面。",
+    "invoiceGenerated": "发票 {{docNo}} 已生成。",
+    "invoiceGenerateFailed": "生成发票失败。"
+  },
   "errors": {
     "INSUFFICIENT_STOCK": "可用库存不足，请减少数量或先补货。",
     "SO_NO_LINES": "空销售单不能确认。",

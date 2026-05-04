@@ -17,6 +17,7 @@ import {
   message,
 } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 
 interface PrecheckItem {
@@ -45,48 +46,33 @@ interface Props {
   onSubmitted: () => void
 }
 
-const SEVERITY_TAG: Record<string, { color: string; label: string }> = {
-  INFO: { color: 'blue', label: 'INFO' },
-  WARN: { color: 'orange', label: 'WARN' },
-  ERROR: { color: 'red', label: 'ERROR' },
+const SEVERITY_COLOR: Record<string, string> = {
+  INFO: 'blue',
+  WARN: 'orange',
+  ERROR: 'red',
 }
 
-const ITEM_LABELS: Record<string, string> = {
-  // Hard
-  SELLER_TIN_FORMAT: 'Seller TIN format',
-  BUYER_TIN_PRESENT_OR_B2C: 'Buyer TIN required (B2B) / optional (B2C)',
-  MSIC_CODE_PRESENT: 'MSIC code on header + every line',
-  SST_TAX_AMOUNT_CONSISTENT: 'SST tax math consistent',
-  SST_RATE_VALID: 'Valid SST rates (0% / 6% / 10%)',
-  LINE_TOTAL_CONSISTENT: 'Line subtotal sums to header',
-  CURRENCY_RATE_PRESENT: 'Foreign-currency exchange rate set',
-  // Soft (LLM)
-  BUYER_NAME_VS_TYPE_LOOKS_CONSISTENT: 'Buyer name pattern matches B2B/B2C',
-  LINE_DESCRIPTION_QUALITY: 'Line descriptions are specific',
-  BUSINESS_DATE_REASONABLE: 'Business date is reasonable',
-}
+type Translator = (key: string, opts?: Record<string, unknown>) => string
 
-function statusBanner(status: string): { type: 'success' | 'warning' | 'error'; title: string; desc: string } {
+function statusBanner(t: Translator, status: string): { type: 'success' | 'warning' | 'error'; title: string; desc: string } {
   if (status === 'PASS') {
     return {
       type: 'success',
-      title: 'Ready to Submit',
-      desc: 'All checks passed. Click Submit to send this invoice to MyInvois.',
+      title: t('precheck.banner.passTitle'),
+      desc: t('precheck.banner.passDesc'),
     }
   }
   if (status === 'WARN') {
     return {
       type: 'warning',
-      title: 'Warnings — review before submitting',
-      desc:
-        'Some soft checks raised warnings. You can still submit, but consider fixing the flagged items first.',
+      title: t('precheck.banner.warnTitle'),
+      desc: t('precheck.banner.warnDesc'),
     }
   }
   return {
     type: 'error',
-    title: 'Hard rule failures detected',
-    desc:
-      'One or more hard rules failed. Submitting now is likely to be rejected by LHDN. Acknowledge the risk to force-submit.',
+    title: t('precheck.banner.failTitle'),
+    desc: t('precheck.banner.failDesc'),
   }
 }
 
@@ -104,6 +90,7 @@ function passedIcon(item: PrecheckItem) {
 }
 
 export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }: Props) {
+  const { t } = useTranslation('einvoice')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<PrecheckResult | null>(null)
@@ -123,7 +110,7 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
       .catch((err: unknown) => {
         const msg =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          'Precheck failed.'
+          t('precheck.failed')
         setError(msg)
       })
       .finally(() => setLoading(false))
@@ -134,32 +121,32 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
     setSubmitting(true)
     try {
       await axiosInstance.post(`/invoices/${invoiceId}/submit`)
-      message.success('Invoice submitted to MyInvois. UIN issued.')
+      message.success(t('messages.submitted'))
       onSubmitted()
       onClose()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to submit invoice.')
+      message.error(msg ?? t('messages.submitFailed'))
     } finally {
       setSubmitting(false)
     }
   }
 
   const overall = result?.overall_status ?? 'PASS'
-  const banner = statusBanner(overall)
+  const banner = statusBanner(t, overall)
   const submitDisabled =
     submitting || !result || (overall === 'FAIL' && !acknowledged)
   const submitLabel =
     overall === 'PASS'
-      ? 'Submit to MyInvois'
+      ? t('submit_to_myinvois')
       : overall === 'WARN'
-        ? 'Continue Submit'
-        : 'Force Submit'
+        ? t('precheck.buttons.continueSubmit')
+        : t('precheck.buttons.forceSubmit')
   const submitDanger = overall === 'FAIL'
 
   return (
     <Modal
-      title="e-Invoice Precheck"
+      title={t('precheck.modalTitle')}
       open={open}
       onCancel={onClose}
       width={720}
@@ -167,7 +154,7 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
       footer={
         <Space>
           <Button onClick={onClose} disabled={submitting}>
-            Cancel
+            {t('precheck.buttons.cancel')}
           </Button>
           <Button
             type="primary"
@@ -185,7 +172,7 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
         <div style={{ textAlign: 'center', padding: 40 }}>
           <Spin />
           <div style={{ marginTop: 12, color: '#888' }}>
-            Running compliance checklist…
+            {t('precheck.running')}
           </div>
         </div>
       )}
@@ -205,11 +192,11 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
             <Alert
               type="info"
               showIcon
-              message="AI check unavailable — only hard rules applied"
+              message={t('precheck.aiUnavailable')}
               description={
                 result.ai_error
-                  ? `Reason: ${result.ai_error}. The 3 soft semantic checks were skipped.`
-                  : 'The 3 soft semantic checks were skipped.'
+                  ? t('precheck.aiUnavailableReason', { reason: result.ai_error })
+                  : t('precheck.aiUnavailableDefault')
               }
             />
           )}
@@ -218,8 +205,9 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
             size="small"
             dataSource={result.items}
             renderItem={(item) => {
-              const label = ITEM_LABELS[item.code] ?? item.code
-              const sev = SEVERITY_TAG[item.severity] ?? { color: 'default', label: item.severity }
+              const label = t(`precheck.items.${item.code}`, { defaultValue: item.code })
+              const sevColor = SEVERITY_COLOR[item.severity] ?? 'default'
+              const sevLabel = t(`precheck.severity.${item.severity}`, { defaultValue: item.severity })
               return (
                 <List.Item key={item.code}>
                   <Space align="start" style={{ width: '100%' }}>
@@ -228,9 +216,9 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
                       <Space>
                         <Typography.Text strong>{label}</Typography.Text>
                         <Tag color={item.category === 'hard' ? 'geekblue' : 'purple'}>
-                          {item.category}
+                          {t(`precheck.category.${item.category}`, { defaultValue: item.category })}
                         </Tag>
-                        {!item.passed && <Tag color={sev.color}>{sev.label}</Tag>}
+                        {!item.passed && <Tag color={sevColor}>{sevLabel}</Tag>}
                       </Space>
                       <div style={{ color: item.passed ? '#888' : '#333', marginTop: 4 }}>
                         {item.message}
@@ -252,7 +240,7 @@ export default function PrecheckModal({ open, invoiceId, onClose, onSubmitted }:
               checked={acknowledged}
               onChange={(e) => setAcknowledged(e.target.checked)}
             >
-              I acknowledge the risks above and want to force-submit anyway.
+              {t('precheck.acknowledge')}
             </Checkbox>
           )}
         </Space>

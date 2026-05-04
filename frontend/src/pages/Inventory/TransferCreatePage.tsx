@@ -74,9 +74,9 @@ export default function TransferCreatePage() {
       else anyFailed = true
       if (sk.status === 'fulfilled') setSkus(sk.value.data.items)
       else anyFailed = true
-      if (anyFailed) message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+      if (anyFailed) message.warning(t('messages.ref_data_partial'))
     })
-  }, [message])
+  }, [message, t])
 
   const skuOptions = skus.map((s) => ({
     value: s.id,
@@ -180,9 +180,9 @@ export default function TransferCreatePage() {
       const errors = (data?.detail as { errors?: Array<{ loc: unknown[]; msg: string }> } | undefined)?.errors
       if (errors && errors.length > 0) {
         const first = errors[0]
-        message.error(`${data?.message ?? 'Validation failed'} — ${first.loc.join('.')}: ${first.msg}`)
+        message.error(`${data?.message ?? t('messages.validation_failed')} — ${first.loc.join('.')}: ${first.msg}`)
       } else {
-        message.error(data?.message ?? 'Failed to create transfer')
+        message.error(data?.message ?? t('messages.create_failed'))
       }
       // eslint-disable-next-line no-console
       console.error('[TransferCreate] submit failed', { payload, response: data })
@@ -269,7 +269,7 @@ export default function TransferCreatePage() {
           }}
         />
         <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
-          {t('summary')}: {lines.length} line(s)
+          {t('summary_lines', { count: lines.length })}
         </Typography.Paragraph>
       </Card>
 

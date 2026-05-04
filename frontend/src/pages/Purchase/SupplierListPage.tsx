@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { supplierColumns, type SupplierRow } from './SupplierColumns'
+import { getSupplierColumns, type SupplierRow } from './SupplierColumns'
 
 async function fetchSuppliers(params: {
   current?: number
@@ -21,23 +22,27 @@ async function fetchSuppliers(params: {
 
 export default function SupplierListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['supplier', 'common'])
 
   return (
     <ResourceListPage<SupplierRow>
-      title="Suppliers"
+      title={t('supplier:title')}
       columns={[
-        ...supplierColumns,
+        ...getSupplierColumns(
+          (key, opts) => t(`supplier:${key}`, (opts ?? {}) as never) as string,
+          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('common:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/purchase/suppliers/${row.id}`)}>
-              View
+              {t('supplier:buttons.view')}
             </a>,
             <a key="edit" onClick={() => navigate(`/purchase/suppliers/${row.id}/edit`)}>
-              Edit
+              {t('common:edit')}
             </a>,
           ],
         },

@@ -28,5 +28,21 @@
   "city": "City",
   "state": "State",
   "postcode": "Postcode",
-  "search_placeholder": "Search by code, name, email..."
+  "search_placeholder": "Search by code, name, email...",
+  "buttons": {
+    "view": "View"
+  },
+  "columns": {
+    "type": "Type",
+    "contact": "Contact"
+  },
+  "sections": {
+    "contact": "Contact",
+    "payment": "Payment"
+  },
+  "messages": {
+    "loadFailed": "Failed to load customer",
+    "createSuccess": "Customer created successfully",
+    "updateSuccess": "Customer updated successfully"
+  }
 }

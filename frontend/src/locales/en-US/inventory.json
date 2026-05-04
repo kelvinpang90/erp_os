@@ -48,5 +48,13 @@
   },
   "notification": {
     "lowStock": "{{sku_code}} at {{warehouse_code}} is low: {{available}} available vs safety {{safety_stock}}."
+  },
+  "stockBadge": {
+    "onHand": "On Hand",
+    "reserved": "Reserved",
+    "qualityHold": "QualityHold",
+    "available": "Available",
+    "incoming": "Incoming",
+    "inTransit": "InTransit"
   }
 }

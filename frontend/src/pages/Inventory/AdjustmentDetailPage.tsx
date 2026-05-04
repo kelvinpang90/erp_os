@@ -104,7 +104,7 @@ export default function AdjustmentDetailPage() {
       load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to cancel')
+      message.error(msg ?? t('messages.cancel_failed'))
     } finally {
       setActionLoading(false)
     }

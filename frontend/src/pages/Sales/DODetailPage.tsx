@@ -2,6 +2,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons'
 import { ProDescriptions } from '@ant-design/pro-components'
 import { Button, Card, Space, Spin, Table, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
@@ -44,6 +45,7 @@ interface DODetail {
 export default function DODetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation(['delivery_order', 'common'])
   const [doc, setDoc] = useState<DODetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -53,11 +55,11 @@ export default function DODetailPage() {
       .get(`/delivery-orders/${id}`)
       .then((res) => setDoc(res.data))
       .catch(() => {
-        message.error('Delivery order not found.')
+        message.error(t('messages.notFound'))
         navigate('/sales/delivery')
       })
       .finally(() => setLoading(false))
-  }, [id, navigate])
+  }, [id, navigate, t])
 
   if (loading)
     return (
@@ -82,40 +84,40 @@ export default function DODetailPage() {
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_code',
       width: 260,
       render: (_: unknown, row: DOLine) =>
         row.sku_code ? `${row.sku_code} — ${row.sku_name}` : '-',
     },
     {
-      title: 'Qty Ordered',
+      title: t('qty_ordered'),
       dataIndex: 'qty_ordered',
       width: 110,
       align: 'right' as const,
       render: (val: string) => fmt(val),
     },
     {
-      title: 'Qty Shipped',
+      title: t('qty_shipped'),
       dataIndex: 'qty_shipped',
       width: 110,
       align: 'right' as const,
       render: (val: string) => fmt(val),
     },
     {
-      title: 'Batch No',
+      title: t('batch_no'),
       dataIndex: 'batch_no',
       width: 120,
       render: (val: string | null) => val ?? '—',
     },
     {
-      title: 'Expiry Date',
+      title: t('expiry_date'),
       dataIndex: 'expiry_date',
       width: 120,
       render: (val: string | null) => val ?? '—',
     },
     {
-      title: 'Serial No',
+      title: t('serial_no'),
       dataIndex: 'serial_no',
       width: 140,
       render: (val: string | null) => val ?? '—',
@@ -137,41 +139,41 @@ export default function DODetailPage() {
         }
         extra={
           <Button onClick={() => navigate(`/sales/orders/${doc.sales_order_id}`)}>
-            View SO
+            {t('buttons.viewSo')}
           </Button>
         }
       >
         <ProDescriptions column={3}>
-          <ProDescriptions.Item label="Sales Order">
+          <ProDescriptions.Item label={t('sales_order')}>
             {doc.sales_order_no}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Delivery Date">
+          <ProDescriptions.Item label={t('delivery_date')}>
             {doc.delivery_date}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Warehouse">
+          <ProDescriptions.Item label={t('warehouse')}>
             {doc.warehouse_name || `#${doc.warehouse_id}`}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Shipping Method">
+          <ProDescriptions.Item label={t('shipping_method')}>
             {doc.shipping_method ?? '—'}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Tracking No.">
+          <ProDescriptions.Item label={t('tracking_no')}>
             {doc.tracking_no ?? '—'}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Delivered By">
+          <ProDescriptions.Item label={t('delivered_by')}>
             {doc.delivered_by_name || (doc.delivered_by ? `User #${doc.delivered_by}` : '—')}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Created At">
+          <ProDescriptions.Item label={t('common:createdAt')}>
             {new Date(doc.created_at).toLocaleString('en-MY')}
           </ProDescriptions.Item>
           {doc.remarks && (
-            <ProDescriptions.Item label="Remarks" span={3}>
+            <ProDescriptions.Item label={t('remarks')} span={3}>
               {doc.remarks}
             </ProDescriptions.Item>
           )}
         </ProDescriptions>
       </Card>
 
-      <Card title="Lines">
+      <Card title={t('lines')}>
         <Table
           dataSource={doc.lines}
           columns={lineColumns}
@@ -182,7 +184,7 @@ export default function DODetailPage() {
           summary={() => (
             <Table.Summary.Row>
               <Table.Summary.Cell index={0} colSpan={3} align="right">
-                <Typography.Text strong>Total Qty Shipped:</Typography.Text>
+                <Typography.Text strong>{t('summaryTotal')}:</Typography.Text>
               </Table.Summary.Cell>
               <Table.Summary.Cell index={1} align="right">
                 <Typography.Text strong>

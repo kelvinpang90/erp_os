@@ -53,6 +53,40 @@
   "search_placeholder": "Search by SO number or remarks",
   "add_line": "Add Line",
   "summary": "Order Summary",
+  "buttons": {
+    "view": "View"
+  },
+  "columns": {
+    "terms": "Terms",
+    "created": "Created",
+    "stock": "Stock",
+    "qty": "Qty",
+    "unitPrice": "Unit Price",
+    "taxPct": "Tax %"
+  },
+  "sections": {
+    "orderDetails": "Order Details",
+    "payment": "Payment"
+  },
+  "placeholders": {
+    "searching": "Searching...",
+    "noSku": "No SKU found",
+    "cancelReason": "e.g. Customer changed mind"
+  },
+  "messages": {
+    "confirmed": "Sales order confirmed. Stock reserved.",
+    "confirmFailed": "Failed to confirm sales order.",
+    "cancelled": "Sales order cancelled. Reserved stock released.",
+    "cancelFailed": "Failed to cancel sales order.",
+    "cancelReasonRequired": "Please enter a cancellation reason.",
+    "loadFailed": "Failed to load sales order",
+    "created": "Sales order created.",
+    "updated": "Sales order updated.",
+    "atLeastOneLine": "Please add at least one order line.",
+    "referenceDataFailed": "Some reference data failed to load. Please refresh if dropdowns are empty.",
+    "invoiceGenerated": "Invoice {{docNo}} generated.",
+    "invoiceGenerateFailed": "Failed to generate invoice."
+  },
   "errors": {
     "INSUFFICIENT_STOCK": "Insufficient stock available for one or more lines. Please reduce the quantity or restock first.",
     "SO_NO_LINES": "Cannot confirm a sales order with no lines.",

@@ -12,6 +12,7 @@
   "exchange_rate": "Exchange Rate",
   "uin": "UIN",
   "qr_code": "QR Code",
+  "qrCodeMock": "QR code (mock URL)",
   "submitted_at": "Submitted At",
   "validated_at": "Validated At",
   "finalized_at": "Finalized At",
@@ -47,7 +48,7 @@
   "final_hint": "FINAL — opposition window has closed",
   "final_hint_desc": "This invoice is now a legal tax document. Modifications must go through a Credit Note.",
   "reject_modal_title": "Reject Invoice (as Buyer)",
-  "reject_modal_desc": "Reject on behalf of the buyer. Allowed only inside the 72h opposition window (72s in DEMO_MODE).",
+  "reject_modal_desc": "Reject on behalf of the buyer. Allowed only inside the 72h opposition window (72s in DEMO_MODE). Reason will be sent to LHDN (minimum 3 characters).",
   "reject_placeholder": "e.g. Wrong amount on line 2",
   "search_placeholder": "Search by invoice number or UIN",
   "status_DRAFT": "Draft",
@@ -56,6 +57,136 @@
   "status_FINAL": "Final",
   "status_REJECTED": "Rejected",
   "status_CANCELLED": "Cancelled",
+  "buttons": {
+    "view": "View",
+    "so": "SO",
+    "invoice": "Invoice",
+    "reject": "Reject",
+    "runPrecheckSubmit": "Run Precheck & Submit",
+    "issueCreditNote": "Issue Credit Note",
+    "generateMonthlyConsolidated": "Generate Monthly Consolidated"
+  },
+  "columns": {
+    "so": "SO",
+    "total": "Total",
+    "validated": "Validated",
+    "unitPrice": "Unit Price",
+    "taxPct": "Tax %",
+    "rejected": "Rejected"
+  },
+  "consolidated": {
+    "modalTitle": "Generate Monthly Consolidated B2C Invoices",
+    "okText": "Generate",
+    "year": "Year",
+    "month": "Month",
+    "description": "Roll up every B2C customer's shipped Sales Orders for the chosen month into one Draft Consolidated Invoice each. SOs already individually invoiced or already rolled-up are skipped automatically."
+  },
+  "messages": {
+    "submitted": "Invoice submitted to MyInvois. UIN issued.",
+    "submitFailed": "Failed to submit invoice.",
+    "rejected": "Invoice rejected by buyer.",
+    "rejectFailed": "Failed to reject invoice.",
+    "rejectReasonMin": "Rejection reason must be at least 3 characters.",
+    "finalizeScanComplete": "Finalize scan complete: {{count}} invoice(s) advanced to FINAL (window = {{seconds}}s).",
+    "finalizeScanFailed": "Failed to run finalize scan.",
+    "consolidatedNoneFound": "No eligible B2C sales orders found for {{month}}.",
+    "consolidatedGenerated": "Generated {{count}} Consolidated Invoice(s) covering {{customers}} customer(s) for {{month}}.",
+    "consolidatedFailed": "Failed to generate consolidated invoices."
+  },
+  "countdown": {
+    "elapsedHint": "Opposition window has elapsed — click <b>Run Finalize Scan</b> or refresh to advance to FINAL."
+  },
+  "precheck": {
+    "modalTitle": "e-Invoice Precheck",
+    "running": "Running compliance checklist…",
+    "failed": "Precheck failed.",
+    "aiUnavailable": "AI check unavailable — only hard rules applied",
+    "aiUnavailableReason": "Reason: {{reason}}. The 3 soft semantic checks were skipped.",
+    "aiUnavailableDefault": "The 3 soft semantic checks were skipped.",
+    "acknowledge": "I acknowledge the risks above and want to force-submit anyway.",
+    "buttons": {
+      "cancel": "Cancel",
+      "continueSubmit": "Continue Submit",
+      "forceSubmit": "Force Submit"
+    },
+    "banner": {
+      "passTitle": "Ready to Submit",
+      "passDesc": "All checks passed. Click Submit to send this invoice to MyInvois.",
+      "warnTitle": "Warnings — review before submitting",
+      "warnDesc": "Some soft checks raised warnings. You can still submit, but consider fixing the flagged items first.",
+      "failTitle": "Hard rule failures detected",
+      "failDesc": "One or more hard rules failed. Submitting now is likely to be rejected by LHDN. Acknowledge the risk to force-submit."
+    },
+    "category": {
+      "hard": "hard",
+      "soft": "soft"
+    },
+    "severity": {
+      "INFO": "INFO",
+      "WARN": "WARN",
+      "ERROR": "ERROR"
+    },
+    "items": {
+      "SELLER_TIN_FORMAT": "Seller TIN format",
+      "BUYER_TIN_PRESENT_OR_B2C": "Buyer TIN required (B2B) / optional (B2C)",
+      "MSIC_CODE_PRESENT": "MSIC code on header + every line",
+      "SST_TAX_AMOUNT_CONSISTENT": "SST tax math consistent",
+      "SST_RATE_VALID": "Valid SST rates (0% / 6% / 10%)",
+      "LINE_TOTAL_CONSISTENT": "Line subtotal sums to header",
+      "CURRENCY_RATE_PRESENT": "Foreign-currency exchange rate set",
+      "BUYER_NAME_VS_TYPE_LOOKS_CONSISTENT": "Buyer name pattern matches B2B/B2C",
+      "LINE_DESCRIPTION_QUALITY": "Line descriptions are specific",
+      "BUSINESS_DATE_REASONABLE": "Business date is reasonable"
+    }
+  },
+  "creditNote": {
+    "listTitle": "Credit Notes",
+    "linesTitle": "Credit Note Lines",
+    "linesToCredit": "Lines to credit",
+    "totalCredit": "Total Credit (incl. tax)",
+    "titleFor": "New Credit Note for {{docNo}}",
+    "notCreditable": "Invoice status is {{status}} — only VALIDATED or FINAL invoices can be credited.",
+    "draftHintDesc": "Click 'Submit to MyInvois' to obtain a UIN. Cancelling at this point will roll back stock automatically.",
+    "buttons": {
+      "createDraft": "Create Credit Note (Draft)",
+      "cancel": "Cancel CN"
+    },
+    "columns": {
+      "cnNo": "CN No",
+      "invoiceNo": "Invoice No",
+      "reason": "Reason",
+      "total": "Total",
+      "skuDesc": "SKU / Description",
+      "invoiced": "Invoiced",
+      "returnQty": "Return Qty"
+    },
+    "fields": {
+      "reason": "Reason",
+      "reasonDetail": "Reason detail",
+      "originalInvoice": "Original Invoice",
+      "detail": "Detail"
+    },
+    "placeholders": {
+      "reasonDescription": "Optional — specifics of why this CN is being raised",
+      "remarks": "Optional internal notes"
+    },
+    "reasons": {
+      "RETURN": "Return",
+      "DISCOUNT_ADJUSTMENT": "Discount Adjustment",
+      "PRICE_CORRECTION": "Price Correction",
+      "WRITE_OFF": "Write-Off",
+      "OTHER": "Other"
+    },
+    "messages": {
+      "atLeastOneLine": "Enter a return quantity on at least one line.",
+      "created": "Credit Note {{docNo}} created.",
+      "createFailed": "Failed to create credit note.",
+      "submitted": "Credit Note submitted to MyInvois. UIN issued.",
+      "submitFailed": "Failed to submit credit note.",
+      "cancelled": "Credit Note cancelled. Stock has been rolled back.",
+      "cancelFailed": "Failed to cancel credit note."
+    }
+  },
   "errors": {
     "INVOICE_NOT_FOUND": "Invoice not found.",
     "INVOICE_INVALID_STATUS": "Invoice is not in a valid status for this action.",

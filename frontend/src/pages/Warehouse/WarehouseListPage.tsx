@@ -1,10 +1,11 @@
 import { useRef } from 'react'
 import { App, Popconfirm } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { ActionType } from '@ant-design/pro-components'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { warehouseColumns, type WarehouseRow } from './WarehouseColumns'
+import { buildWarehouseColumns, type WarehouseRow } from './WarehouseColumns'
 
 async function fetchWarehouses(params: {
   current?: number
@@ -21,59 +22,60 @@ async function fetchWarehouses(params: {
 export default function WarehouseListPage() {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { t } = useTranslation('warehouse')
   const actionRef = useRef<ActionType>()
 
   const handleDelete = async (id: number) => {
     try {
       await axiosInstance.delete(`/warehouses/${id}`)
-      message.success('Warehouse deleted')
+      message.success(t('delete_success'))
       actionRef.current?.reload()
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error_code?: string; message?: string } } }
       if (apiErr?.response?.data?.error_code === 'WAREHOUSE_MAIN_DELETE_FORBIDDEN') {
-        message.error('Main warehouse cannot be deleted')
+        message.error(t('cannot_delete_main'))
       } else {
-        message.error(apiErr?.response?.data?.message ?? 'Delete failed')
+        message.error(apiErr?.response?.data?.message ?? t('delete_failed'))
       }
     }
   }
 
   return (
     <ResourceListPage<WarehouseRow>
-      title="Warehouses"
+      title={t('title')}
       actionRef={actionRef}
       columns={[
-        ...warehouseColumns,
+        ...buildWarehouseColumns(t),
         {
-          title: 'Include Inactive',
+          title: t('include_inactive'),
           dataIndex: 'include_inactive',
           hideInTable: true,
           valueType: 'select',
           valueEnum: {
-            true: { text: 'Yes' },
+            true: { text: t('yes') },
           },
-          fieldProps: { allowClear: true, placeholder: 'Active only' },
+          fieldProps: { allowClear: true, placeholder: t('active_only') },
         },
         {
-          title: 'Action',
+          title: t('action'),
           valueType: 'option',
           fixed: 'right',
           width: 160,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/settings/warehouses/${row.id}`)}>
-              View
+              {t('view')}
             </a>,
             <a key="edit" onClick={() => navigate(`/settings/warehouses/${row.id}/edit`)}>
-              Edit
+              {t('edit')}
             </a>,
             <Popconfirm
               key="delete"
-              title="Delete this warehouse?"
+              title={t('delete_confirm')}
               onConfirm={() => handleDelete(row.id)}
-              okText="Delete"
+              okText={t('delete')}
               okButtonProps={{ danger: true }}
             >
-              <a style={{ color: '#ff4d4f' }}>Delete</a>
+              <a style={{ color: '#ff4d4f' }}>{t('delete')}</a>
             </Popconfirm>,
           ],
         },

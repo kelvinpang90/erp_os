@@ -12,6 +12,7 @@ import {
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import StockStatusBadge, { type StockSnapshot } from '../../components/StockStatusBadge'
@@ -42,6 +43,7 @@ export default function SOEditPage() {
   const isCreate = !id
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { t } = useTranslation(['sales_order', 'common'])
 
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
@@ -205,7 +207,7 @@ export default function SOEditPage() {
       } else { anyFailed = true }
 
       if (anyFailed) {
-        message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+        message.warning(t('messages.referenceDataFailed'))
       }
     })
 
@@ -251,14 +253,14 @@ export default function SOEditPage() {
             })
           }
         })
-        .catch(() => message.error('Failed to load sales order'))
+        .catch(() => message.error(t('messages.loadFailed')))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message, fetchSkus, fetchStockForLine])
+  }, [id, isCreate, message, fetchSkus, fetchStockForLine, t])
 
   const lineColumns: ProColumns<LineRow>[] = [
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_id',
       valueType: 'select',
       fieldProps: {
@@ -268,13 +270,13 @@ export default function SOEditPage() {
         filterOption: false,
         onSearch: handleSkuSearch,
         loading: skuLoading,
-        notFoundContent: skuLoading ? 'Searching…' : 'No SKU found',
+        notFoundContent: skuLoading ? t('placeholders.searching') : t('placeholders.noSku'),
       },
       formItemProps: { rules: [{ required: true }] },
       width: 240,
     },
     {
-      title: 'UOM',
+      title: t('uom'),
       dataIndex: 'uom_id',
       valueType: 'select',
       fieldProps: { options: uomOptions },
@@ -282,7 +284,7 @@ export default function SOEditPage() {
       width: 90,
     },
     {
-      title: 'Stock',
+      title: t('columns.stock'),
       dataIndex: 'current_stock',
       editable: false,
       width: 140,
@@ -294,7 +296,7 @@ export default function SOEditPage() {
         ),
     },
     {
-      title: 'Qty',
+      title: t('columns.qty'),
       dataIndex: 'qty_ordered',
       valueType: 'digit',
       fieldProps: { min: 0.0001, precision: 4 },
@@ -302,7 +304,7 @@ export default function SOEditPage() {
       width: 100,
     },
     {
-      title: 'Unit Price',
+      title: t('columns.unitPrice'),
       dataIndex: 'unit_price_excl_tax',
       valueType: 'digit',
       fieldProps: { min: 0, precision: 4 },
@@ -310,7 +312,7 @@ export default function SOEditPage() {
       width: 120,
     },
     {
-      title: 'Tax Rate',
+      title: t('tax_rate'),
       dataIndex: 'tax_rate_id',
       valueType: 'select',
       fieldProps: { options: taxRateOptions },
@@ -318,14 +320,14 @@ export default function SOEditPage() {
       width: 140,
     },
     {
-      title: 'Disc %',
+      title: t('discount_percent'),
       dataIndex: 'discount_percent',
       valueType: 'digit',
       fieldProps: { min: 0, max: 100, precision: 2 },
       width: 90,
     },
     {
-      title: 'Description',
+      title: t('description'),
       dataIndex: 'description',
       width: 180,
     },
@@ -364,7 +366,7 @@ export default function SOEditPage() {
 
     const filledLines = lines.filter((l) => l.sku_id != null)
     if (filledLines.length === 0) {
-      message.error('Please add at least one order line.')
+      message.error(t('messages.atLeastOneLine'))
       return
     }
 
@@ -389,15 +391,15 @@ export default function SOEditPage() {
     try {
       if (isCreate) {
         await axiosInstance.post('/sales-orders', payload)
-        message.success('Sales order created.')
+        message.success(t('messages.created'))
       } else {
         await axiosInstance.patch(`/sales-orders/${id}`, payload)
-        message.success('Sales order updated.')
+        message.success(t('messages.updated'))
       }
       navigate('/sales/orders')
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { message?: string; detail?: unknown } } })?.response?.data
-      const msg = errData?.message ?? 'Operation failed'
+      const msg = errData?.message ?? t('common:operationFailed')
       message.error(msg)
     }
   }
@@ -405,7 +407,7 @@ export default function SOEditPage() {
   if (loading) return <Skeleton active />
 
   return (
-    <Card title={isCreate ? 'New Sales Order' : 'Edit Sales Order'}>
+    <Card title={isCreate ? t('create') : t('edit')}>
       <ProForm
         formRef={formRef}
         initialValues={initialValues ?? {
@@ -417,10 +419,10 @@ export default function SOEditPage() {
         onFinish={handleSubmit}
         onReset={() => navigate('/sales/orders')}
       >
-        <ProForm.Group title="Order Details">
+        <ProForm.Group title={t('sections.orderDetails')}>
           <ProFormSelect
             name="customer_id"
-            label="Customer"
+            label={t('customer')}
             options={customerOptions}
             rules={[{ required: true }]}
             fieldProps={{ showSearch: true }}
@@ -428,7 +430,7 @@ export default function SOEditPage() {
           />
           <ProFormSelect
             name="warehouse_id"
-            label="Warehouse"
+            label={t('warehouse')}
             options={warehouseOptions}
             rules={[{ required: true }]}
             width="md"
@@ -436,21 +438,21 @@ export default function SOEditPage() {
               onChange: (wh: number) => refreshAllStock(wh),
             }}
           />
-          <ProFormDatePicker name="business_date" label="Order Date" rules={[{ required: true }]} width="md" />
-          <ProFormDatePicker name="expected_ship_date" label="Expected Ship Date" width="md" />
+          <ProFormDatePicker name="business_date" label={t('business_date')} rules={[{ required: true }]} width="md" />
+          <ProFormDatePicker name="expected_ship_date" label={t('expected_ship_date')} width="md" />
         </ProForm.Group>
 
-        <ProForm.Group title="Payment">
-          <ProFormSelect name="currency" label="Currency" options={CURRENCY_OPTIONS} width="sm" />
-          <ProFormDigit name="exchange_rate" label="Exchange Rate" min={0.000001} fieldProps={{ precision: 8 }} width="sm" />
-          <ProFormDigit name="payment_terms_days" label="Payment Terms (Days)" min={0} width="sm" />
-          <ProFormDigit name="shipping_amount" label="Shipping Amount" min={0} fieldProps={{ precision: 2 }} width="sm" />
+        <ProForm.Group title={t('sections.payment')}>
+          <ProFormSelect name="currency" label={t('currency')} options={CURRENCY_OPTIONS} width="sm" />
+          <ProFormDigit name="exchange_rate" label={t('exchange_rate')} min={0.000001} fieldProps={{ precision: 8 }} width="sm" />
+          <ProFormDigit name="payment_terms_days" label={t('payment_terms_days')} min={0} width="sm" />
+          <ProFormDigit name="shipping_amount" label={t('shipping_amount')} min={0} fieldProps={{ precision: 2 }} width="sm" />
         </ProForm.Group>
 
-        <ProFormTextArea name="shipping_address" label="Shipping Address" fieldProps={{ rows: 2 }} />
-        <ProFormTextArea name="remarks" label="Remarks" fieldProps={{ rows: 2 }} />
+        <ProFormTextArea name="shipping_address" label={t('shipping_address')} fieldProps={{ rows: 2 }} />
+        <ProFormTextArea name="remarks" label={t('remarks')} fieldProps={{ rows: 2 }} />
 
-        <Card title="Order Lines" size="small" style={{ marginBottom: 24 }}>
+        <Card title={t('lines')} size="small" style={{ marginBottom: 24 }}>
           <EditableProTable<LineRow>
             rowKey="id"
             editableFormRef={editableFormRef}
@@ -478,7 +480,7 @@ export default function SOEditPage() {
             recordCreatorProps={{
               newRecordType: 'dataSource',
               record: () => ({ id: `new-${Date.now()}` }),
-              creatorButtonText: '+ Add Line',
+              creatorButtonText: `+ ${t('add_line')}`,
             }}
             scroll={{ x: 1100 }}
             size="small"
@@ -486,13 +488,13 @@ export default function SOEditPage() {
           <Row justify="end" style={{ marginTop: 12 }}>
             <Space size="large">
               <Typography.Text type="secondary">
-                Subtotal: MYR {totals.subtotal.toFixed(2)}
+                {t('subtotal_excl_tax')}: MYR {totals.subtotal.toFixed(2)}
               </Typography.Text>
               <Typography.Text type="secondary">
-                Tax: MYR {totals.tax.toFixed(2)}
+                {t('tax_amount')}: MYR {totals.tax.toFixed(2)}
               </Typography.Text>
               <Typography.Text strong>
-                Total: MYR {totals.total.toFixed(2)}
+                {t('total_incl_tax')}: MYR {totals.total.toFixed(2)}
               </Typography.Text>
             </Space>
           </Row>

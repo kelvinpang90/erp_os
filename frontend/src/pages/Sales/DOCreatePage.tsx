@@ -11,6 +11,7 @@ import {
 import { App, Alert, Card, Skeleton, Space, Tag, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
@@ -53,17 +54,18 @@ interface DOLineRow {
 
 const SHIPPABLE_SO_STATUSES = ['CONFIRMED', 'PARTIAL_SHIPPED']
 
-const SHIPPING_METHOD_OPTIONS = [
-  { value: 'COURIER', label: 'Courier' },
-  { value: 'OWN_FLEET', label: 'Own Fleet' },
-  { value: 'CUSTOMER_PICKUP', label: 'Customer Pickup' },
-  { value: 'THIRD_PARTY', label: 'Third Party Logistics' },
-]
-
 export default function DOCreatePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { message } = App.useApp()
+  const { t } = useTranslation(['delivery_order', 'common'])
+
+  const SHIPPING_METHOD_OPTIONS = [
+    { value: 'COURIER', label: t('shipping_method_options.COURIER') },
+    { value: 'OWN_FLEET', label: t('shipping_method_options.OWN_FLEET') },
+    { value: 'CUSTOMER_PICKUP', label: t('shipping_method_options.CUSTOMER_PICKUP') },
+    { value: 'THIRD_PARTY', label: t('shipping_method_options.THIRD_PARTY') },
+  ]
 
   const initialSoId = searchParams.get('so_id')
   const [selectedSoId, setSelectedSoId] = useState<number | null>(
@@ -111,7 +113,7 @@ export default function DOCreatePage() {
       .then((res) => {
         const detail: SODetail = res.data
         if (!SHIPPABLE_SO_STATUSES.includes(detail.status)) {
-          message.warning('Selected SO is not shippable (must be CONFIRMED or PARTIAL_SHIPPED).')
+          message.warning(t('errors.SO_NOT_SHIPPABLE'))
           setSO(null)
           setLines([])
           setEditableKeys([])
@@ -141,26 +143,26 @@ export default function DOCreatePage() {
         setLines(rows)
         setEditableKeys(rows.map((r) => r.id))
       })
-      .catch(() => message.error('Failed to load sales order'))
+      .catch(() => message.error(t('messages.loadSoFailed')))
       .finally(() => setSoLoading(false))
-  }, [selectedSoId, message])
+  }, [selectedSoId, message, t])
 
   const lineColumns: ProColumns<DOLineRow>[] = [
     {
-      title: '#',
+      title: t('line_no'),
       dataIndex: 'line_no',
       width: 50,
       editable: false,
     },
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_code',
       width: 240,
       editable: false,
       render: (_, row) => (row.sku_code ? `${row.sku_code} — ${row.sku_name}` : '-'),
     },
     {
-      title: 'Qty Ordered',
+      title: t('qty_ordered'),
       dataIndex: 'qty_ordered',
       width: 100,
       align: 'right',
@@ -168,7 +170,7 @@ export default function DOCreatePage() {
       render: (val) => Number(val).toLocaleString('en-MY'),
     },
     {
-      title: 'Already Shipped',
+      title: t('qty_already_shipped'),
       dataIndex: 'qty_already_shipped',
       width: 130,
       align: 'right',
@@ -176,7 +178,7 @@ export default function DOCreatePage() {
       render: (val) => Number(val).toLocaleString('en-MY'),
     },
     {
-      title: 'Remaining',
+      title: t('qty_remaining'),
       dataIndex: 'qty_remaining',
       width: 100,
       align: 'right',
@@ -186,7 +188,7 @@ export default function DOCreatePage() {
       ),
     },
     {
-      title: 'Qty to Ship',
+      title: t('qty_shipped'),
       dataIndex: 'qty_shipped',
       valueType: 'digit',
       width: 130,
@@ -194,13 +196,13 @@ export default function DOCreatePage() {
       fieldProps: { min: 0, precision: 4 },
       formItemProps: {
         rules: [
-          { required: true, message: 'Quantity is required' },
+          { required: true, message: t('validation_qty_required') },
           {
             validator: async (_rule: unknown, value: unknown) => {
               if (value === undefined || value === null) return
               const num = Number(value)
               if (Number.isNaN(num) || num <= 0) {
-                throw new Error('Quantity must be > 0')
+                throw new Error(t('validation_qty_required'))
               }
             },
           },
@@ -208,18 +210,18 @@ export default function DOCreatePage() {
       },
     },
     {
-      title: 'Batch No',
+      title: t('batch_no'),
       dataIndex: 'batch_no',
       width: 120,
     },
     {
-      title: 'Expiry Date',
+      title: t('expiry_date'),
       dataIndex: 'expiry_date',
       valueType: 'date',
       width: 140,
     },
     {
-      title: 'Serial No',
+      title: t('serial_no'),
       dataIndex: 'serial_no',
       width: 140,
     },
@@ -235,7 +237,7 @@ export default function DOCreatePage() {
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     if (!selectedSoId || !so) {
-      message.error('Please select a sales order first.')
+      message.error(t('validation_select_so_first'))
       return
     }
     const fmtDate = (v: unknown) =>
@@ -245,7 +247,7 @@ export default function DOCreatePage() {
       (l) => l.qty_shipped !== undefined && Number(l.qty_shipped) > 0,
     )
     if (filledLines.length === 0) {
-      message.error('Please specify quantity for at least one line.')
+      message.error(t('validation_at_least_one_line'))
       return
     }
 
@@ -255,7 +257,7 @@ export default function DOCreatePage() {
     )
     if (overShip) {
       message.error(
-        `Line ${overShip.line_no}: cannot ship more than remaining ${overShip.qty_remaining}.`,
+        t('messages.overShipLine', { lineNo: overShip.line_no, remaining: overShip.qty_remaining }),
       )
       return
     }
@@ -277,21 +279,21 @@ export default function DOCreatePage() {
 
     try {
       const res = await axiosInstance.post('/delivery-orders', payload)
-      message.success(`${res.data.document_no} created. Stock updated.`)
+      message.success(t('messages.created', { docNo: res.data.document_no }))
       navigate(`/sales/delivery/${res.data.id}`)
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { message?: string; error_code?: string } } })
         ?.response?.data
-      message.error(errData?.message ?? 'Failed to create delivery order')
+      message.error(errData?.message ?? t('messages.createFailed'))
     }
   }
 
   return (
-    <Card title="Create Delivery Order">
+    <Card title={t('create_for_so')}>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <ProFormSelect
-          label="Sales Order"
-          placeholder="Select a confirmed sales order"
+          label={t('select_so')}
+          placeholder={t('select_so_placeholder')}
           options={soOptions}
           fieldProps={{
             value: selectedSoId ?? undefined,
@@ -315,8 +317,8 @@ export default function DOCreatePage() {
             onReset={() => navigate('/sales/delivery')}
             submitter={{
               searchConfig: {
-                submitText: 'Create',
-                resetText: 'Cancel',
+                submitText: t('common:create'),
+                resetText: t('common:cancel'),
               },
             }}
           >
@@ -326,38 +328,38 @@ export default function DOCreatePage() {
               style={{ marginBottom: 16 }}
               message={
                 <Space>
-                  <span>Sales Order: <strong>{so.document_no}</strong></span>
+                  <span>{t('sales_order')}: <strong>{so.document_no}</strong></span>
                   <Tag color={so.status === 'CONFIRMED' ? 'blue' : 'gold'}>
                     {so.status.replace(/_/g, ' ')}
                   </Tag>
-                  <span>Warehouse: #{so.warehouse_id}</span>
+                  <span>{t('warehouse')}: #{so.warehouse_id}</span>
                 </Space>
               }
             />
 
             {lines.length === 0 ? (
-              <Alert type="warning" showIcon message="All SO lines are already fully shipped." />
+              <Alert type="warning" showIcon message={t('no_lines_to_ship')} />
             ) : (
               <>
                 <ProForm.Group>
                   <ProFormDatePicker
                     name="delivery_date"
-                    label="Delivery Date"
+                    label={t('delivery_date')}
                     rules={[{ required: true }]}
                     width="md"
                   />
                   <ProFormSelect
                     name="shipping_method"
-                    label="Shipping Method"
+                    label={t('shipping_method')}
                     options={SHIPPING_METHOD_OPTIONS}
                     width="md"
                   />
-                  <ProFormText name="tracking_no" label="Tracking No." width="md" />
+                  <ProFormText name="tracking_no" label={t('tracking_no')} width="md" />
                 </ProForm.Group>
 
-                <ProFormTextArea name="remarks" label="Remarks" fieldProps={{ rows: 2 }} />
+                <ProFormTextArea name="remarks" label={t('remarks')} fieldProps={{ rows: 2 }} />
 
-                <Card title="Lines" size="small" style={{ marginBottom: 24 }}>
+                <Card title={t('lines')} size="small" style={{ marginBottom: 24 }}>
                   <EditableProTable<DOLineRow>
                     rowKey="id"
                     editableFormRef={editableFormRef}
@@ -379,7 +381,7 @@ export default function DOCreatePage() {
                   />
                   <Space size="large" style={{ marginTop: 12, justifyContent: 'flex-end', width: '100%' }}>
                     <Typography.Text strong>
-                      Total Qty: {totalsHint.total.toLocaleString('en-MY', { maximumFractionDigits: 4 })}
+                      {t('totalQty')}: {totalsHint.total.toLocaleString('en-MY', { maximumFractionDigits: 4 })}
                     </Typography.Text>
                   </Space>
                 </Card>
@@ -387,7 +389,7 @@ export default function DOCreatePage() {
             )}
           </ProForm>
         ) : (
-          <Alert type="info" showIcon message="Please select a sales order first." />
+          <Alert type="info" showIcon message={t('validation_select_so_first')} />
         )}
       </Space>
     </Card>

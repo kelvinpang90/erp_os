@@ -1,0 +1,83 @@
+{
+  "title": "SKU Management",
+  "create": "Create SKU",
+  "edit": "Edit SKU",
+  "actions": {
+    "view": "View",
+    "edit": "Edit",
+    "action": "Action"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "costTrend": "Cost Trend"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "barcode": "Barcode",
+    "priceExclTax": "Price (excl. tax)",
+    "safetyStock": "Safety Stock",
+    "costing": "Costing",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "created": "Created"
+  },
+  "form": {
+    "code": "SKU Code",
+    "codePlaceholder": "Auto-generated if empty",
+    "barcode": "Barcode",
+    "nameEn": "Name (EN)",
+    "nameZh": "Name (ZH)",
+    "description": "Description",
+    "baseUom": "Base UOM",
+    "taxRate": "Tax Rate",
+    "costingMethod": "Costing Method",
+    "unitPriceExclTax": "Unit Price (excl. tax)",
+    "unitPriceInclTax": "Unit Price (incl. tax)",
+    "safetyStock": "Safety Stock",
+    "reorderPoint": "Reorder Point",
+    "reorderQty": "Reorder Qty",
+    "trackBatch": "Track Batch",
+    "trackExpiry": "Track Expiry",
+    "trackSerial": "Track Serial",
+    "active": "Active"
+  },
+  "costingMethod": {
+    "weightedAverage": "Weighted Average",
+    "fifo": "FIFO",
+    "specific": "Specific Identification"
+  },
+  "detail": {
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "code": "Code",
+    "name": "Name",
+    "nameZh": "Name (ZH)",
+    "barcode": "Barcode",
+    "brand": "Brand",
+    "category": "Category",
+    "baseUom": "Base UOM",
+    "taxRate": "Tax Rate",
+    "priceExclTax": "Price (excl. tax)",
+    "priceInclTax": "Price (incl. tax)",
+    "costingMethod": "Costing Method",
+    "lastCost": "Last Cost",
+    "safetyStock": "Safety Stock",
+    "reorderPoint": "Reorder Point",
+    "reorderQty": "Reorder Qty",
+    "tracking": "Tracking",
+    "batch": "Batch",
+    "expiry": "Expiry",
+    "serial": "Serial",
+    "created": "Created",
+    "updated": "Updated"
+  },
+  "messages": {
+    "loadFailed": "Failed to load SKU",
+    "created": "SKU created successfully",
+    "updated": "SKU updated successfully",
+    "operationFailed": "Operation failed"
+  }
+}

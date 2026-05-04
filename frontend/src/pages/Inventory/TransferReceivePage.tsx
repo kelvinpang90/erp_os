@@ -38,7 +38,7 @@ export default function TransferReceivePage() {
       .get(`/stock-transfers/${id}`)
       .then((res) => {
         if (res.data.status !== 'IN_TRANSIT') {
-          message.error('Only IN_TRANSIT transfers can be received.')
+          message.error(t('messages.only_in_transit_receivable'))
           navigate(`/inventory/transfers/${id}`)
           return
         }
@@ -46,7 +46,7 @@ export default function TransferReceivePage() {
       })
       .catch(() => navigate('/inventory/transfers'))
       .finally(() => setLoading(false))
-  }, [id, navigate, message])
+  }, [id, navigate, message, t])
 
   const handleSubmit = async () => {
     if (!id || !transfer) return
@@ -65,7 +65,7 @@ export default function TransferReceivePage() {
       navigate(`/inventory/transfers/${id}`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to receive')
+      message.error(msg ?? t('messages.receive_failed'))
     } finally {
       setSubmitting(false)
     }
@@ -103,7 +103,7 @@ export default function TransferReceivePage() {
         (parseFloat(record.qty_sent) - parseFloat(record.qty_received)).toLocaleString(),
     },
     {
-      title: 'Receive Now',
+      title: t('receive_now'),
       width: 140,
       render: (_: unknown, record: TransferLine) => {
         const remaining = parseFloat(record.qty_sent) - parseFloat(record.qty_received)

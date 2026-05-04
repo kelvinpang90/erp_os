@@ -33,7 +33,7 @@ export default function TransferEditPage() {
       .get(`/stock-transfers/${id}`)
       .then((res) => {
         if (res.data.status !== 'DRAFT') {
-          message.error('Only DRAFT transfers can be edited.')
+          message.error(t('messages.only_draft_editable'))
           navigate(`/inventory/transfers/${id}`)
           return
         }
@@ -41,7 +41,7 @@ export default function TransferEditPage() {
       })
       .catch(() => navigate('/inventory/transfers'))
       .finally(() => setLoading(false))
-  }, [id, navigate, message])
+  }, [id, navigate, message, t])
 
   const onSubmit = async (values: { expected_arrival_date?: string; remarks?: string }) => {
     if (!id) return false
@@ -56,7 +56,7 @@ export default function TransferEditPage() {
       return true
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to update')
+      message.error(msg ?? t('messages.update_failed'))
       return false
     } finally {
       setSubmitting(false)

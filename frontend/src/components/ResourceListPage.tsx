@@ -3,6 +3,7 @@ import { ActionType, ProTable } from '@ant-design/pro-components'
 import type { ProColumns } from '@ant-design/pro-components'
 import { Button } from 'antd'
 import { useRef, type RefObject } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 interface PaginatedResponse<T> {
@@ -37,6 +38,7 @@ export default function ResourceListPage<T extends object>({
   actionRef: externalActionRef,
 }: ResourceListPageProps<T>) {
   const navigate = useNavigate()
+  const { t } = useTranslation('common')
   const internalActionRef = useRef<ActionType>()
   const actionRef = externalActionRef ?? internalActionRef
 
@@ -74,7 +76,7 @@ export default function ResourceListPage<T extends object>({
             icon={<PlusOutlined />}
             onClick={() => navigate(createPath)}
           >
-            Create
+            {t('create')}
           </Button>
         ),
       ]}

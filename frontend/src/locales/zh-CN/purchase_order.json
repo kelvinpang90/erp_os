@@ -44,5 +44,42 @@
   "status_CANCELLED": "已取消",
   "search_placeholder": "搜索单号或备注",
   "add_line": "添加明细",
-  "summary": "金额汇总"
+  "summary": "金额汇总",
+  "buttons": {
+    "view": "查看",
+    "createGoodsReceipt": "创建收货单"
+  },
+  "columns": {
+    "terms": "账期",
+    "created": "创建时间",
+    "stock": "库存",
+    "qty": "数量",
+    "unitPrice": "单价",
+    "taxPct": "税率%"
+  },
+  "sections": {
+    "orderDetails": "订单信息",
+    "payment": "付款信息"
+  },
+  "placeholders": {
+    "searching": "搜索中…",
+    "noSku": "未找到匹配的 SKU",
+    "cancelReason": "例如：供应商无法供货"
+  },
+  "messages": {
+    "confirmed": "采购单已确认，在途库存已更新。",
+    "confirmFailed": "确认采购单失败。",
+    "cancelled": "采购单已取消。",
+    "cancelFailed": "取消采购单失败。",
+    "cancelReasonRequired": "请填写取消原因。",
+    "loadFailed": "加载采购单失败",
+    "created": "采购单已创建。",
+    "updated": "采购单已更新。",
+    "atLeastOneLine": "请至少添加一行明细。",
+    "referenceDataFailed": "部分基础数据加载失败，如下拉框为空请刷新页面。",
+    "ocrPrefilledMissing": "OCR 已预填，请核对未匹配字段：{{fields}}。",
+    "ocrPrefilled": "OCR 已预填（置信度：{{confidence}}），请核对后保存。",
+    "restockPrefilledMissing": "补货明细已预填，有 {{count}} 个 SKU 未能解析。",
+    "restockPrefilled": "补货明细已预填，请选择供应商并核对。"
+  }
 }

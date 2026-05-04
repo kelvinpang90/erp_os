@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { customerColumns, type CustomerRow } from './CustomerColumns'
+import { getCustomerColumns, type CustomerRow } from './CustomerColumns'
 
 async function fetchCustomers(params: {
   current?: number
@@ -23,23 +24,27 @@ async function fetchCustomers(params: {
 
 export default function CustomerListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['customer', 'common'])
 
   return (
     <ResourceListPage<CustomerRow>
-      title="Customers"
+      title={t('customer:title')}
       columns={[
-        ...customerColumns,
+        ...getCustomerColumns(
+          (key, opts) => t(`customer:${key}`, (opts ?? {}) as never) as string,
+          (key, opts) => t(`common:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('common:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/sales/customers/${row.id}`)}>
-              View
+              {t('customer:buttons.view')}
             </a>,
             <a key="edit" onClick={() => navigate(`/sales/customers/${row.id}/edit`)}>
-              Edit
+              {t('common:edit')}
             </a>,
           ],
         },

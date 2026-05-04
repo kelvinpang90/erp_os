@@ -29,5 +29,22 @@
   "total_pos": "采购单总数",
   "total_amount": "采购总金额",
   "last_po_date": "最近采购日期",
-  "search_placeholder": "搜索编码、名称、邮件..."
+  "search_placeholder": "搜索编码、名称、邮件...",
+  "buttons": {
+    "view": "查看"
+  },
+  "columns": {
+    "contact": "联系人",
+    "terms": "账期"
+  },
+  "sections": {
+    "contact": "联系方式",
+    "businessRegistration": "工商登记",
+    "payment": "付款信息"
+  },
+  "messages": {
+    "loadFailed": "加载供应商失败",
+    "createSuccess": "供应商创建成功",
+    "updateSuccess": "供应商更新成功"
+  }
 }

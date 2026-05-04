@@ -2,6 +2,7 @@ import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { ProDescriptions } from '@ant-design/pro-components'
 import { Button, Card, Col, Modal, Row, Space, Spin, Table, Tag, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
@@ -56,6 +57,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default function PODetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation(['purchase_order', 'common'])
   const [po, setPO] = useState<PODetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [cancelModal, setCancelModal] = useState(false)
@@ -79,11 +81,11 @@ export default function PODetailPage() {
     setActionLoading(true)
     try {
       await axiosInstance.post(`/purchase-orders/${id}/confirm`)
-      message.success('Purchase order confirmed. Stock incoming updated.')
+      message.success(t('messages.confirmed'))
       loadPO()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to confirm purchase order.')
+      message.error(msg ?? t('messages.confirmFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -91,19 +93,19 @@ export default function PODetailPage() {
 
   const handleCancel = async () => {
     if (!id || !cancelReason.trim()) {
-      message.warning('Please enter a cancellation reason.')
+      message.warning(t('messages.cancelReasonRequired'))
       return
     }
     setActionLoading(true)
     try {
       await axiosInstance.post(`/purchase-orders/${id}/cancel`, { cancel_reason: cancelReason })
-      message.success('Purchase order cancelled.')
+      message.success(t('messages.cancelled'))
       setCancelModal(false)
       setCancelReason('')
       loadPO()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to cancel purchase order.')
+      message.error(msg ?? t('messages.cancelFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -118,20 +120,20 @@ export default function PODetailPage() {
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_code',
       width: 260,
       render: (_: unknown, record: { sku_code?: string; sku_name?: string }) =>
         record.sku_code ? `${record.sku_code} — ${record.sku_name}` : '-',
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
-    { title: 'Qty Ordered', dataIndex: 'qty_ordered', width: 110, align: 'right' as const },
-    { title: 'Qty Received', dataIndex: 'qty_received', width: 110, align: 'right' as const },
-    { title: 'Unit Price', dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
-    { title: 'Tax %', dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
-    { title: 'Disc %', dataIndex: 'discount_percent', width: 70, align: 'right' as const },
+    { title: t('description'), dataIndex: 'description', ellipsis: true },
+    { title: t('qty_ordered'), dataIndex: 'qty_ordered', width: 110, align: 'right' as const },
+    { title: t('qty_received'), dataIndex: 'qty_received', width: 110, align: 'right' as const },
+    { title: t('columns.unitPrice'), dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
+    { title: t('columns.taxPct'), dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
+    { title: t('discount_percent'), dataIndex: 'discount_percent', width: 70, align: 'right' as const },
     {
-      title: 'Line Total (incl. tax)',
+      title: t('line_total_incl_tax'),
       dataIndex: 'line_total_incl_tax',
       width: 160,
       align: 'right' as const,
@@ -155,10 +157,10 @@ export default function PODetailPage() {
             {po.status === 'DRAFT' && (
               <>
                 <Button onClick={() => navigate(`/purchase/orders/${id}/edit`)} icon={<EditOutlined />}>
-                  Edit
+                  {t('common:edit')}
                 </Button>
                 <Button type="primary" loading={actionLoading} onClick={handleConfirm}>
-                  Confirm PO
+                  {t('confirm')}
                 </Button>
               </>
             )}
@@ -167,36 +169,36 @@ export default function PODetailPage() {
                 type="primary"
                 onClick={() => navigate(`/purchase/goods-receipts/create?po_id=${id}`)}
               >
-                Create Goods Receipt
+                {t('buttons.createGoodsReceipt')}
               </Button>
             )}
             {(po.status === 'DRAFT' || po.status === 'CONFIRMED') && (
               <Button danger onClick={() => setCancelModal(true)}>
-                Cancel PO
+                {t('cancel')}
               </Button>
             )}
           </Space>
         }
       >
         <ProDescriptions column={3}>
-          <ProDescriptions.Item label="Supplier">
+          <ProDescriptions.Item label={t('supplier')}>
             {po.supplier_name || `#${po.supplier_id}`}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Warehouse">
+          <ProDescriptions.Item label={t('warehouse')}>
             {po.warehouse_name || `#${po.warehouse_id}`}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Order Date">{po.business_date}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Expected Date">{po.expected_date ?? '—'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Currency">{po.currency}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Payment Terms">{po.payment_terms_days} days</ProDescriptions.Item>
-          {po.remarks && <ProDescriptions.Item label="Remarks" span={3}>{po.remarks}</ProDescriptions.Item>}
-          {po.cancel_reason && <ProDescriptions.Item label="Cancel Reason" span={3}>{po.cancel_reason}</ProDescriptions.Item>}
-          {po.confirmed_at && <ProDescriptions.Item label="Confirmed At">{new Date(po.confirmed_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
-          {po.cancelled_at && <ProDescriptions.Item label="Cancelled At">{new Date(po.cancelled_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
+          <ProDescriptions.Item label={t('business_date')}>{po.business_date}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('expected_date')}>{po.expected_date ?? '—'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('currency')}>{po.currency}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('payment_terms_days')}>{po.payment_terms_days}</ProDescriptions.Item>
+          {po.remarks && <ProDescriptions.Item label={t('remarks')} span={3}>{po.remarks}</ProDescriptions.Item>}
+          {po.cancel_reason && <ProDescriptions.Item label={t('cancel_reason')} span={3}>{po.cancel_reason}</ProDescriptions.Item>}
+          {po.confirmed_at && <ProDescriptions.Item label={t('confirmed_at')}>{new Date(po.confirmed_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
+          {po.cancelled_at && <ProDescriptions.Item label={t('cancelled_at')}>{new Date(po.cancelled_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
         </ProDescriptions>
       </Card>
 
-      <Card title="Order Lines">
+      <Card title={t('lines')}>
         <Table
           dataSource={po.lines}
           columns={lineColumns}
@@ -206,28 +208,28 @@ export default function PODetailPage() {
           scroll={{ x: 900 }}
         />
         <Row gutter={16} justify="end" style={{ marginTop: 16 }}>
-          <Col><Typography.Text type="secondary">Subtotal (excl. tax):</Typography.Text> <Typography.Text>{fmt(po.subtotal_excl_tax)}</Typography.Text></Col>
-          <Col><Typography.Text type="secondary">Tax:</Typography.Text> <Typography.Text>{fmt(po.tax_amount)}</Typography.Text></Col>
-          <Col><Typography.Text strong>Total (incl. tax):</Typography.Text> <Typography.Text strong>{fmt(po.total_incl_tax)}</Typography.Text></Col>
+          <Col><Typography.Text type="secondary">{t('subtotal_excl_tax')}:</Typography.Text> <Typography.Text>{fmt(po.subtotal_excl_tax)}</Typography.Text></Col>
+          <Col><Typography.Text type="secondary">{t('tax_amount')}:</Typography.Text> <Typography.Text>{fmt(po.tax_amount)}</Typography.Text></Col>
+          <Col><Typography.Text strong>{t('total_incl_tax')}:</Typography.Text> <Typography.Text strong>{fmt(po.total_incl_tax)}</Typography.Text></Col>
         </Row>
       </Card>
 
       <Modal
-        title="Cancel Purchase Order"
+        title={t('cancel_title')}
         open={cancelModal}
         onOk={handleCancel}
         onCancel={() => { setCancelModal(false); setCancelReason('') }}
         confirmLoading={actionLoading}
         okButtonProps={{ danger: true }}
-        okText="Cancel PO"
+        okText={t('cancel')}
       >
-        <Typography.Paragraph>Please provide a reason for cancellation:</Typography.Paragraph>
+        <Typography.Paragraph>{t('cancel_content')}</Typography.Paragraph>
         <textarea
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
           rows={3}
           style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #d9d9d9' }}
-          placeholder="e.g. Supplier unable to fulfill order"
+          placeholder={t('placeholders.cancelReason')}
         />
       </Modal>
     </Space>

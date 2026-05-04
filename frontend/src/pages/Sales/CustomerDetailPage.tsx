@@ -37,7 +37,7 @@ interface CustomerDetail {
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation('customer')
+  const { t } = useTranslation(['customer', 'common'])
   const [customer, setCustomer] = useState<CustomerDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -70,13 +70,13 @@ export default function CustomerDetailPage() {
         }
         extra={
           <Button icon={<EditOutlined />} onClick={() => navigate(`/sales/customers/${id}/edit`)}>
-            Edit
+            {t('common:edit')}
           </Button>
         }
       >
         <ProDescriptions column={2}>
-          <ProDescriptions.Item label="Status">
-            <Badge status={customer.is_active ? 'success' : 'default'} text={customer.is_active ? 'Active' : 'Inactive'} />
+          <ProDescriptions.Item label={t('common:status')}>
+            <Badge status={customer.is_active ? 'success' : 'default'} text={customer.is_active ? t('common:active') : t('common:inactive')} />
           </ProDescriptions.Item>
           <ProDescriptions.Item label={t('customer_type')}>
             <Tag color={isB2B ? 'blue' : 'green'}>{isB2B ? t('type_b2b') : t('type_b2c')}</Tag>
@@ -89,11 +89,11 @@ export default function CustomerDetailPage() {
           <ProDescriptions.Item label={t('phone')}>{customer.phone || '—'}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('address')} span={2}>{address || '—'}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('currency')}>{customer.currency}</ProDescriptions.Item>
-          <ProDescriptions.Item label={t('payment_terms_days')}>{customer.payment_terms_days} days</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('payment_terms_days')}>{customer.payment_terms_days}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('credit_limit')}>
             {customer.currency} {parseFloat(customer.credit_limit).toLocaleString('en-MY', { minimumFractionDigits: 2 })}
           </ProDescriptions.Item>
-          {customer.notes && <ProDescriptions.Item label="Notes" span={2}>{customer.notes}</ProDescriptions.Item>}
+          {customer.notes && <ProDescriptions.Item label={t('notes')} span={2}>{customer.notes}</ProDescriptions.Item>}
         </ProDescriptions>
       </Card>
 

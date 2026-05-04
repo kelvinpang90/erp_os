@@ -43,5 +43,19 @@
   "add_line": "新增行",
   "same_warehouse_error": "调出和调入仓库不能相同",
   "no_lines_error": "请至少添加一行",
-  "summary": "调拨摘要"
+  "summary": "调拨摘要",
+  "summary_lines": "调拨摘要：共 {{count}} 行",
+  "receive_now": "本次收货数量",
+  "messages": {
+    "ref_data_partial": "部分基础数据加载失败,如下拉为空请刷新重试.",
+    "validation_failed": "校验未通过",
+    "create_failed": "创建调拨单失败",
+    "confirm_failed": "确认调拨单失败",
+    "ship_failed": "发货失败",
+    "cancel_failed": "取消调拨单失败",
+    "update_failed": "更新失败",
+    "receive_failed": "收货失败",
+    "only_draft_editable": "仅草稿状态的调拨单可编辑.",
+    "only_in_transit_receivable": "仅在途状态的调拨单可收货."
+  }
 }

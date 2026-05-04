@@ -2,6 +2,7 @@ import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { ProDescriptions } from '@ant-design/pro-components'
 import { Button, Card, Col, Modal, Row, Space, Spin, Table, Tag, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 
@@ -65,6 +66,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default function SODetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation(['sales_order', 'einvoice', 'common'])
   const [so, setSO] = useState<SODetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [cancelModal, setCancelModal] = useState(false)
@@ -106,11 +108,11 @@ export default function SODetailPage() {
     setActionLoading(true)
     try {
       await axiosInstance.post(`/sales-orders/${id}/confirm`)
-      message.success('Sales order confirmed. Stock reserved.')
+      message.success(t('messages.confirmed'))
       loadSO()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to confirm sales order.')
+      message.error(msg ?? t('messages.confirmFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -122,11 +124,11 @@ export default function SODetailPage() {
     try {
       const res = await axiosInstance.post(`/invoices/generate-from-so/${id}`, {})
       const newId = res.data?.id
-      message.success(`Invoice ${res.data?.document_no} generated.`)
+      message.success(t('messages.invoiceGenerated', { docNo: res.data?.document_no }))
       if (newId) navigate(`/sales/einvoice/${newId}`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to generate invoice.')
+      message.error(msg ?? t('messages.invoiceGenerateFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -134,19 +136,19 @@ export default function SODetailPage() {
 
   const handleCancel = async () => {
     if (!id || !cancelReason.trim()) {
-      message.warning('Please enter a cancellation reason.')
+      message.warning(t('messages.cancelReasonRequired'))
       return
     }
     setActionLoading(true)
     try {
       await axiosInstance.post(`/sales-orders/${id}/cancel`, { cancel_reason: cancelReason })
-      message.success('Sales order cancelled. Reserved stock released.')
+      message.success(t('messages.cancelled'))
       setCancelModal(false)
       setCancelReason('')
       loadSO()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to cancel sales order.')
+      message.error(msg ?? t('messages.cancelFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -161,20 +163,20 @@ export default function SODetailPage() {
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_code',
       width: 260,
       render: (_: unknown, record: SOLine) =>
         record.sku_code ? `${record.sku_code} — ${record.sku_name}` : '-',
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
-    { title: 'Qty Ordered', dataIndex: 'qty_ordered', width: 110, align: 'right' as const },
-    { title: 'Qty Shipped', dataIndex: 'qty_shipped', width: 110, align: 'right' as const },
-    { title: 'Unit Price', dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
-    { title: 'Tax %', dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
-    { title: 'Disc %', dataIndex: 'discount_percent', width: 70, align: 'right' as const },
+    { title: t('description'), dataIndex: 'description', ellipsis: true },
+    { title: t('qty_ordered'), dataIndex: 'qty_ordered', width: 110, align: 'right' as const },
+    { title: t('qty_shipped'), dataIndex: 'qty_shipped', width: 110, align: 'right' as const },
+    { title: t('columns.unitPrice'), dataIndex: 'unit_price_excl_tax', width: 120, align: 'right' as const },
+    { title: t('columns.taxPct'), dataIndex: 'tax_rate_percent', width: 70, align: 'right' as const },
+    { title: t('discount_percent'), dataIndex: 'discount_percent', width: 70, align: 'right' as const },
     {
-      title: 'Line Total (incl. tax)',
+      title: t('line_total_incl_tax'),
       dataIndex: 'line_total_incl_tax',
       width: 160,
       align: 'right' as const,
@@ -203,10 +205,10 @@ export default function SODetailPage() {
             {so.status === 'DRAFT' && (
               <>
                 <Button onClick={() => navigate(`/sales/orders/${id}/edit`)} icon={<EditOutlined />}>
-                  Edit
+                  {t('common:edit')}
                 </Button>
                 <Button type="primary" loading={actionLoading} onClick={handleConfirm}>
-                  Confirm SO
+                  {t('confirm')}
                 </Button>
               </>
             )}
@@ -215,12 +217,12 @@ export default function SODetailPage() {
                 type="primary"
                 onClick={() => navigate(`/sales/delivery/create?so_id=${id}`)}
               >
-                Create Delivery Order
+                {t('create_delivery')}
               </Button>
             )}
             {isInvoiceable && invoiceId !== null && (
               <Button onClick={() => navigate(`/sales/einvoice/${invoiceId}`)}>
-                View Invoice
+                {t('einvoice:view_invoice')}
               </Button>
             )}
             {isInvoiceable && invoiceId === null && (
@@ -229,40 +231,40 @@ export default function SODetailPage() {
                 loading={actionLoading}
                 onClick={handleGenerateInvoice}
               >
-                Generate Invoice
+                {t('einvoice:generate_invoice')}
               </Button>
             )}
             {isCancellable && (
               <Button danger onClick={() => setCancelModal(true)}>
-                Cancel SO
+                {t('cancel')}
               </Button>
             )}
           </Space>
         }
       >
         <ProDescriptions column={3}>
-          <ProDescriptions.Item label="Customer">
+          <ProDescriptions.Item label={t('customer')}>
             {so.customer_name || `#${so.customer_id}`}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Warehouse">
+          <ProDescriptions.Item label={t('warehouse')}>
             {so.warehouse_name || `#${so.warehouse_id}`}
           </ProDescriptions.Item>
-          <ProDescriptions.Item label="Order Date">{so.business_date}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Expected Ship">{so.expected_ship_date ?? '—'}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Currency">{so.currency}</ProDescriptions.Item>
-          <ProDescriptions.Item label="Payment Terms">{so.payment_terms_days} days</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('business_date')}>{so.business_date}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('expected_ship_date')}>{so.expected_ship_date ?? '—'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('currency')}>{so.currency}</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('payment_terms_days')}>{so.payment_terms_days}</ProDescriptions.Item>
           {so.shipping_address && (
-            <ProDescriptions.Item label="Shipping Address" span={3}>{so.shipping_address}</ProDescriptions.Item>
+            <ProDescriptions.Item label={t('shipping_address')} span={3}>{so.shipping_address}</ProDescriptions.Item>
           )}
-          {so.remarks && <ProDescriptions.Item label="Remarks" span={3}>{so.remarks}</ProDescriptions.Item>}
-          {so.cancel_reason && <ProDescriptions.Item label="Cancel Reason" span={3}>{so.cancel_reason}</ProDescriptions.Item>}
-          {so.confirmed_at && <ProDescriptions.Item label="Confirmed At">{new Date(so.confirmed_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
-          {so.fully_shipped_at && <ProDescriptions.Item label="Fully Shipped At">{new Date(so.fully_shipped_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
-          {so.cancelled_at && <ProDescriptions.Item label="Cancelled At">{new Date(so.cancelled_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
+          {so.remarks && <ProDescriptions.Item label={t('remarks')} span={3}>{so.remarks}</ProDescriptions.Item>}
+          {so.cancel_reason && <ProDescriptions.Item label={t('cancel_reason')} span={3}>{so.cancel_reason}</ProDescriptions.Item>}
+          {so.confirmed_at && <ProDescriptions.Item label={t('confirmed_at')}>{new Date(so.confirmed_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
+          {so.fully_shipped_at && <ProDescriptions.Item label={t('fully_shipped_at')}>{new Date(so.fully_shipped_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
+          {so.cancelled_at && <ProDescriptions.Item label={t('cancelled_at')}>{new Date(so.cancelled_at).toLocaleString('en-MY')}</ProDescriptions.Item>}
         </ProDescriptions>
       </Card>
 
-      <Card title="Order Lines">
+      <Card title={t('lines')}>
         <Table
           dataSource={so.lines}
           columns={lineColumns}
@@ -272,31 +274,31 @@ export default function SODetailPage() {
           scroll={{ x: 900 }}
         />
         <Row gutter={16} justify="end" style={{ marginTop: 16 }}>
-          <Col><Typography.Text type="secondary">Subtotal (excl. tax):</Typography.Text> <Typography.Text>{fmt(so.subtotal_excl_tax)}</Typography.Text></Col>
-          <Col><Typography.Text type="secondary">Tax:</Typography.Text> <Typography.Text>{fmt(so.tax_amount)}</Typography.Text></Col>
+          <Col><Typography.Text type="secondary">{t('subtotal_excl_tax')}:</Typography.Text> <Typography.Text>{fmt(so.subtotal_excl_tax)}</Typography.Text></Col>
+          <Col><Typography.Text type="secondary">{t('tax_amount')}:</Typography.Text> <Typography.Text>{fmt(so.tax_amount)}</Typography.Text></Col>
           {parseFloat(so.shipping_amount) > 0 && (
-            <Col><Typography.Text type="secondary">Shipping:</Typography.Text> <Typography.Text>{fmt(so.shipping_amount)}</Typography.Text></Col>
+            <Col><Typography.Text type="secondary">{t('shipping_amount')}:</Typography.Text> <Typography.Text>{fmt(so.shipping_amount)}</Typography.Text></Col>
           )}
-          <Col><Typography.Text strong>Total (incl. tax):</Typography.Text> <Typography.Text strong>{fmt(so.total_incl_tax)}</Typography.Text></Col>
+          <Col><Typography.Text strong>{t('total_incl_tax')}:</Typography.Text> <Typography.Text strong>{fmt(so.total_incl_tax)}</Typography.Text></Col>
         </Row>
       </Card>
 
       <Modal
-        title="Cancel Sales Order"
+        title={t('cancel_title')}
         open={cancelModal}
         onOk={handleCancel}
         onCancel={() => { setCancelModal(false); setCancelReason('') }}
         confirmLoading={actionLoading}
         okButtonProps={{ danger: true }}
-        okText="Cancel SO"
+        okText={t('cancel')}
       >
-        <Typography.Paragraph>Please provide a reason for cancellation:</Typography.Paragraph>
+        <Typography.Paragraph>{t('cancel_content')}</Typography.Paragraph>
         <textarea
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
           rows={3}
           style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #d9d9d9' }}
-          placeholder="e.g. Customer changed mind"
+          placeholder={t('placeholders.cancelReason')}
         />
       </Modal>
     </Space>

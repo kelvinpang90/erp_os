@@ -28,5 +28,21 @@
   "city": "城市",
   "state": "州属",
   "postcode": "邮编",
-  "search_placeholder": "搜索编码、名称、邮件..."
+  "search_placeholder": "搜索编码、名称、邮件...",
+  "buttons": {
+    "view": "查看"
+  },
+  "columns": {
+    "type": "类型",
+    "contact": "联系人"
+  },
+  "sections": {
+    "contact": "联系方式",
+    "payment": "付款信息"
+  },
+  "messages": {
+    "loadFailed": "加载客户失败",
+    "createSuccess": "客户创建成功",
+    "updateSuccess": "客户更新成功"
+  }
 }

@@ -66,7 +66,7 @@ interface CostPoint {
 export default function SKUDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation('inventory')
+  const { t } = useTranslation(['sku', 'inventory'])
   const [sku, setSku] = useState<SKUDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [movements, setMovements] = useState<MovementRow[] | null>(null)
@@ -115,51 +115,51 @@ export default function SKUDetailPage() {
 
   const overviewTab = (
     <ProDescriptions<SKUDetail> column={2} dataSource={sku}>
-      <ProDescriptions.Item label="Status">
+      <ProDescriptions.Item label={t('sku:detail.status')}>
         <Badge
           status={sku.is_active ? 'success' : 'default'}
-          text={sku.is_active ? 'Active' : 'Inactive'}
+          text={sku.is_active ? t('sku:detail.active') : t('sku:detail.inactive')}
         />
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Code">{sku.code}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Name">{sku.name}</ProDescriptions.Item>
-      {sku.name_zh && <ProDescriptions.Item label="Name (ZH)">{sku.name_zh}</ProDescriptions.Item>}
-      {sku.barcode && <ProDescriptions.Item label="Barcode">{sku.barcode}</ProDescriptions.Item>}
-      <ProDescriptions.Item label="Brand">{sku.brand?.name ?? '—'}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Category">{sku.category?.name ?? '—'}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Base UOM">{sku.base_uom?.code ?? '—'}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Tax Rate">
+      <ProDescriptions.Item label={t('sku:detail.code')}>{sku.code}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.name')}>{sku.name}</ProDescriptions.Item>
+      {sku.name_zh && <ProDescriptions.Item label={t('sku:detail.nameZh')}>{sku.name_zh}</ProDescriptions.Item>}
+      {sku.barcode && <ProDescriptions.Item label={t('sku:detail.barcode')}>{sku.barcode}</ProDescriptions.Item>}
+      <ProDescriptions.Item label={t('sku:detail.brand')}>{sku.brand?.name ?? '—'}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.category')}>{sku.category?.name ?? '—'}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.baseUom')}>{sku.base_uom?.code ?? '—'}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.taxRate')}>
         {sku.tax_rate ? `${sku.tax_rate.code} (${sku.tax_rate.rate}%)` : '—'}
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Price (excl. tax)">
+      <ProDescriptions.Item label={t('sku:detail.priceExclTax')}>
         {sku.currency} {parseFloat(sku.unit_price_excl_tax).toFixed(4)}
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Price (incl. tax)">
+      <ProDescriptions.Item label={t('sku:detail.priceInclTax')}>
         {sku.currency} {parseFloat(sku.unit_price_incl_tax).toFixed(4)}
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Costing Method">
+      <ProDescriptions.Item label={t('sku:detail.costingMethod')}>
         <Tag>{sku.costing_method}</Tag>
       </ProDescriptions.Item>
       {sku.last_cost && (
-        <ProDescriptions.Item label="Last Cost">
+        <ProDescriptions.Item label={t('sku:detail.lastCost')}>
           {sku.currency} {parseFloat(sku.last_cost).toFixed(4)}
         </ProDescriptions.Item>
       )}
-      <ProDescriptions.Item label="Safety Stock">{sku.safety_stock}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Reorder Point">{sku.reorder_point}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Reorder Qty">{sku.reorder_qty}</ProDescriptions.Item>
-      <ProDescriptions.Item label="Tracking">
+      <ProDescriptions.Item label={t('sku:detail.safetyStock')}>{sku.safety_stock}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.reorderPoint')}>{sku.reorder_point}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.reorderQty')}>{sku.reorder_qty}</ProDescriptions.Item>
+      <ProDescriptions.Item label={t('sku:detail.tracking')}>
         <Space>
-          {sku.track_batch && <Tag color="blue">Batch</Tag>}
-          {sku.track_expiry && <Tag color="orange">Expiry</Tag>}
-          {sku.track_serial && <Tag color="purple">Serial</Tag>}
+          {sku.track_batch && <Tag color="blue">{t('sku:detail.batch')}</Tag>}
+          {sku.track_expiry && <Tag color="orange">{t('sku:detail.expiry')}</Tag>}
+          {sku.track_serial && <Tag color="purple">{t('sku:detail.serial')}</Tag>}
           {!sku.track_batch && !sku.track_expiry && !sku.track_serial && '—'}
         </Space>
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Created">
+      <ProDescriptions.Item label={t('sku:detail.created')}>
         {new Date(sku.created_at).toLocaleString()}
       </ProDescriptions.Item>
-      <ProDescriptions.Item label="Updated">
+      <ProDescriptions.Item label={t('sku:detail.updated')}>
         {new Date(sku.updated_at).toLocaleString()}
       </ProDescriptions.Item>
     </ProDescriptions>
@@ -170,7 +170,7 @@ export default function SKUDetailPage() {
       {costTrendData.length > 0 ? (
         <>
           <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-            {t('costTrend.title')}
+            {t('inventory:costTrend.title')}
           </Typography.Paragraph>
           <ResponsiveContainer width="100%" height={360}>
             <LineChart data={costTrendData}>
@@ -180,11 +180,11 @@ export default function SKUDetailPage() {
               <ChartTooltip
                 formatter={(value: number, name: string, props) => {
                   if (name === 'avgCost') {
-                    return [`${sku.currency} ${value.toFixed(4)}`, t('costTrend.axisCost')]
+                    return [`${sku.currency} ${value.toFixed(4)}`, t('inventory:costTrend.axisCost')]
                   }
                   return [
                     value,
-                    `${t('costTrend.tooltipMovementType')}: ${props.payload.movementType}`,
+                    `${t('inventory:costTrend.tooltipMovementType')}: ${props.payload.movementType}`,
                   ]
                 }}
               />
@@ -200,7 +200,7 @@ export default function SKUDetailPage() {
           </ResponsiveContainer>
         </>
       ) : (
-        !movementsLoading && <Empty description={t('costTrend.empty')} />
+        !movementsLoading && <Empty description={t('inventory:costTrend.empty')} />
       )}
     </Spin>
   )
@@ -215,7 +215,7 @@ export default function SKUDetailPage() {
       }
       extra={
         <Button icon={<EditOutlined />} onClick={() => navigate(`/skus/${id}/edit`)}>
-          Edit
+          {t('sku:actions.edit')}
         </Button>
       }
     >
@@ -225,8 +225,8 @@ export default function SKUDetailPage() {
           if (key === 'cost') loadMovements()
         }}
         items={[
-          { key: 'overview', label: 'Overview', children: overviewTab },
-          { key: 'cost', label: t('costTrend.title'), children: costTab },
+          { key: 'overview', label: t('sku:tabs.overview'), children: overviewTab },
+          { key: 'cost', label: t('inventory:costTrend.title'), children: costTab },
         ]}
       />
     </Card>

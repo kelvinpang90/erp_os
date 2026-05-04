@@ -14,9 +14,10 @@ import {
   message,
 } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { axiosInstance } from '../../../api/client'
-import { CN_REASON_LABEL } from './CreditNoteColumns'
+import { cnReasonLabel } from './CreditNoteColumns'
 
 interface InvoiceLine {
   id: number
@@ -43,18 +44,21 @@ interface InvoiceDetail {
   lines: InvoiceLine[]
 }
 
-const REASONS: Array<keyof typeof CN_REASON_LABEL> = [
+const REASONS = [
   'RETURN',
   'DISCOUNT_ADJUSTMENT',
   'PRICE_CORRECTION',
   'WRITE_OFF',
   'OTHER',
-]
+] as const
 
 export default function CreditNoteCreatePage() {
   const [params] = useSearchParams()
   const invoiceId = params.get('invoice_id')
   const navigate = useNavigate()
+  const { t } = useTranslation(['einvoice', 'common'])
+  const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
+    t(`einvoice:${key}`, (opts ?? {}) as never) as string
   const [form] = Form.useForm()
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -110,7 +114,7 @@ export default function CreditNoteCreatePage() {
       .filter(Boolean) as Array<{ invoice_line_id: number; qty: string }>
 
     if (lines.length === 0) {
-      message.warning('Enter a return quantity on at least one line.')
+      message.warning(t('einvoice:creditNote.messages.atLeastOneLine'))
       return
     }
 
@@ -123,7 +127,7 @@ export default function CreditNoteCreatePage() {
         remarks: values.remarks,
         lines,
       })
-      message.success(`Credit Note ${res.data?.document_no} created.`)
+      message.success(t('einvoice:creditNote.messages.created', { docNo: res.data?.document_no }))
       navigate(`/sales/credit-notes/${res.data?.id}`)
     } catch (err: unknown) {
       const data = (
@@ -140,7 +144,7 @@ export default function CreditNoteCreatePage() {
         ?.map((e) => `${(e.loc ?? []).filter((p) => p !== 'body').join('.')}: ${e.msg ?? ''}`)
         .filter(Boolean)
         .join('; ')
-      message.error(fieldErrors || data?.message || 'Failed to create credit note.')
+      message.error(fieldErrors || data?.message || t('einvoice:creditNote.messages.createFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -170,7 +174,7 @@ export default function CreditNoteCreatePage() {
               onClick={() => navigate(`/sales/einvoice/${invoice.id}`)}
             />
             <Typography.Text strong>
-              New Credit Note for {invoice.document_no}
+              {t('einvoice:creditNote.titleFor', { docNo: invoice.document_no })}
             </Typography.Text>
             <Tag>{invoice.customer_name || `#${invoice.customer_id}`}</Tag>
           </Space>
@@ -180,7 +184,7 @@ export default function CreditNoteCreatePage() {
           <Alert
             type="warning"
             showIcon
-            message={`Invoice status is ${invoice.status} — only VALIDATED or FINAL invoices can be credited.`}
+            message={t('einvoice:creditNote.notCreditable', { status: invoice.status })}
           />
         )}
 
@@ -192,33 +196,33 @@ export default function CreditNoteCreatePage() {
           disabled={!isCreditable}
         >
           <Form.Item
-            label="Reason"
+            label={t('einvoice:creditNote.fields.reason')}
             name="reason"
             rules={[{ required: true }]}
           >
             <Select
               options={REASONS.map((r) => ({
                 value: r,
-                label: CN_REASON_LABEL[r],
+                label: cnReasonLabel(tEinvoice, r),
               }))}
               style={{ maxWidth: 280 }}
             />
           </Form.Item>
-          <Form.Item label="Reason detail" name="reason_description">
+          <Form.Item label={t('einvoice:creditNote.fields.reasonDetail')} name="reason_description">
             <Input.TextArea
               rows={2}
               maxLength={500}
               showCount
-              placeholder="Optional — specifics of why this CN is being raised"
+              placeholder={t('einvoice:creditNote.placeholders.reasonDescription')}
             />
           </Form.Item>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea rows={2} placeholder="Optional internal notes" />
+          <Form.Item label={t('einvoice:remarks')} name="remarks">
+            <Input.TextArea rows={2} placeholder={t('einvoice:creditNote.placeholders.remarks')} />
           </Form.Item>
 
           <Card
             size="small"
-            title="Lines to credit"
+            title={t('einvoice:creditNote.linesToCredit')}
             style={{ marginBottom: 16 }}
           >
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -230,17 +234,17 @@ export default function CreditNoteCreatePage() {
                   }}
                 >
                   <th style={{ padding: 8, width: 50 }}>#</th>
-                  <th style={{ padding: 8 }}>SKU / Description</th>
+                  <th style={{ padding: 8 }}>{t('einvoice:creditNote.columns.skuDesc')}</th>
                   <th style={{ padding: 8, width: 90, textAlign: 'right' }}>
-                    Invoiced
+                    {t('einvoice:creditNote.columns.invoiced')}
                   </th>
                   <th style={{ padding: 8, width: 100, textAlign: 'right' }}>
-                    Unit Price
+                    {t('einvoice:columns.unitPrice')}
                   </th>
                   <th style={{ padding: 8, width: 70, textAlign: 'right' }}>
-                    Tax %
+                    {t('einvoice:columns.taxPct')}
                   </th>
-                  <th style={{ padding: 8, width: 140 }}>Return Qty</th>
+                  <th style={{ padding: 8, width: 140 }}>{t('einvoice:creditNote.columns.returnQty')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -299,7 +303,7 @@ export default function CreditNoteCreatePage() {
                 fontWeight: 600,
               }}
             >
-              Total Credit (incl. tax):{' '}
+              {t('einvoice:creditNote.totalCredit')}:{' '}
               {invoice.currency}{' '}
               {totalReturned.toLocaleString('en-MY', {
                 minimumFractionDigits: 2,
@@ -309,9 +313,9 @@ export default function CreditNoteCreatePage() {
           </Card>
 
           <Space>
-            <Button onClick={() => navigate(-1)}>Back</Button>
+            <Button onClick={() => navigate(-1)}>{t('common:back')}</Button>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              Create Credit Note (Draft)
+              {t('einvoice:creditNote.buttons.createDraft')}
             </Button>
           </Space>
         </Form>

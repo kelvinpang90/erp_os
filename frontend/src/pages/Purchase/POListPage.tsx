@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { poColumns, type PORow } from './POColumns'
+import { getPoColumns, type PORow } from './POColumns'
 
 async function fetchPOs(params: {
   current?: number
@@ -22,26 +22,28 @@ async function fetchPOs(params: {
 
 export default function POListPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation('ocr')
+  const { t } = useTranslation(['purchase_order', 'ocr', 'common'])
 
   return (
     <ResourceListPage<PORow>
-      title="Purchase Orders"
+      title={t('purchase_order:title')}
       columns={[
-        ...poColumns,
+        ...getPoColumns((key, opts) =>
+          t(`purchase_order:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('common:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/purchase/orders/${row.id}`)}>
-              View
+              {t('purchase_order:buttons.view')}
             </a>,
             ...(row.status === 'DRAFT'
               ? [
                   <a key="edit" onClick={() => navigate(`/purchase/orders/${row.id}/edit`)}>
-                    Edit
+                    {t('common:edit')}
                   </a>,
                 ]
               : []),
@@ -56,7 +58,7 @@ export default function POListPage() {
           icon={<ScanOutlined />}
           onClick={() => navigate('/purchase/orders/ocr-upload')}
         >
-          {t('page_title')}
+          {t('ocr:page_title')}
         </Button>,
       ]}
     />

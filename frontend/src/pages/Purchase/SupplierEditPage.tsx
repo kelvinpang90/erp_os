@@ -32,7 +32,7 @@ export default function SupplierEditPage() {
   const isCreate = !id
   const navigate = useNavigate()
   const { message } = App.useApp()
-  const { t } = useTranslation('supplier')
+  const { t } = useTranslation(['supplier', 'common'])
 
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
@@ -42,23 +42,23 @@ export default function SupplierEditPage() {
       axiosInstance
         .get(`/suppliers/${id}`)
         .then((res) => setInitialValues(res.data))
-        .catch(() => message.error('Failed to load supplier'))
+        .catch(() => message.error(t('messages.loadFailed')))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message])
+  }, [id, isCreate, message, t])
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       if (isCreate) {
         await axiosInstance.post('/suppliers', values)
-        message.success('Supplier created successfully')
+        message.success(t('messages.createSuccess'))
       } else {
         await axiosInstance.patch(`/suppliers/${id}`, values)
-        message.success('Supplier updated successfully')
+        message.success(t('messages.updateSuccess'))
       }
       navigate('/purchase/suppliers')
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Operation failed'
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('common:operationFailed')
       message.error(msg)
     }
   }
@@ -85,20 +85,20 @@ export default function SupplierEditPage() {
           <ProFormText name="name_zh" label={t('name_zh')} width="lg" />
         </ProForm.Group>
 
-        <ProForm.Group title="Contact">
+        <ProForm.Group title={t('sections.contact')}>
           <ProFormText name="contact_person" label={t('contact_person')} width="md" />
           <ProFormText name="email" label={t('email')} fieldProps={{ type: 'email' }} width="md" />
           <ProFormText name="phone" label={t('phone')} width="md" />
         </ProForm.Group>
 
-        <ProForm.Group title="Business Registration">
+        <ProForm.Group title={t('sections.businessRegistration')}>
           <ProFormText name="registration_no" label={t('registration_no')} width="md" />
           <ProFormText name="tin" label={t('tin')} width="sm" />
           <ProFormText name="sst_registration_no" label={t('sst_registration_no')} width="md" />
           <ProFormText name="msic_code" label={t('msic_code')} width="sm" />
         </ProForm.Group>
 
-        <ProForm.Group title="Address">
+        <ProForm.Group title={t('address')}>
           <ProFormText name="address_line1" label={t('address_line1')} width="xl" />
           <ProFormText name="address_line2" label={t('address_line2')} width="xl" />
           <ProFormText name="city" label={t('city')} width="md" />
@@ -107,15 +107,15 @@ export default function SupplierEditPage() {
           <ProFormSelect name="country" label={t('country')} options={COUNTRY_OPTIONS} width="md" />
         </ProForm.Group>
 
-        <ProForm.Group title="Payment">
+        <ProForm.Group title={t('sections.payment')}>
           <ProFormSelect name="currency" label={t('currency')} options={CURRENCY_OPTIONS} width="md" />
           <ProFormDigit name="payment_terms_days" label={t('payment_terms_days')} min={0} width="sm" />
           <ProFormDigit name="credit_limit" label={t('credit_limit')} min={0} fieldProps={{ precision: 2 }} width="md" />
         </ProForm.Group>
 
-        <ProFormTextArea name="notes" label="Notes" fieldProps={{ rows: 2 }} />
+        <ProFormTextArea name="notes" label={t('notes')} fieldProps={{ rows: 2 }} />
 
-        {!isCreate && <ProFormSwitch name="is_active" label="Active" />}
+        {!isCreate && <ProFormSwitch name="is_active" label={t('common:active')} />}
       </ProForm>
     </Card>
   )

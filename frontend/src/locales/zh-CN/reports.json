@@ -31,6 +31,10 @@
     "calls": "调用数",
     "cost_usd": "成本 (USD)",
     "share_pct": "占比 %",
-    "no_data": "所选区间暂无数据"
+    "no_data": "所选区间暂无数据",
+    "code": "编码",
+    "name": "名称",
+    "sku": "SKU",
+    "feature": "功能"
   }
 }

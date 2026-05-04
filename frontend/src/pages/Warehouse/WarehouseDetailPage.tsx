@@ -66,13 +66,13 @@ export default function WarehouseDetailPage() {
       }
       extra={
         <Button icon={<EditOutlined />} onClick={() => navigate(`/settings/warehouses/${id}/edit`)}>
-          Edit
+          {t('edit')}
         </Button>
       }
     >
       <ProDescriptions column={2}>
-        <ProDescriptions.Item label="Status">
-          <Badge status={warehouse.is_active ? 'success' : 'default'} text={warehouse.is_active ? 'Active' : 'Inactive'} />
+        <ProDescriptions.Item label={t('status')}>
+          <Badge status={warehouse.is_active ? 'success' : 'default'} text={warehouse.is_active ? t('active') : t('inactive')} />
         </ProDescriptions.Item>
         <ProDescriptions.Item label={t('type')}>
           <Tag color={TYPE_COLORS[warehouse.type]}>

@@ -12,6 +12,7 @@
   "exchange_rate": "汇率",
   "uin": "UIN",
   "qr_code": "QR 码",
+  "qrCodeMock": "QR 码（模拟链接）",
   "submitted_at": "提交时间",
   "validated_at": "校验时间",
   "finalized_at": "终态时间",
@@ -47,7 +48,7 @@
   "final_hint": "终态 — 反对期已结束",
   "final_hint_desc": "此发票为合法税务凭证。如需修改，必须通过信用单（贷项通知单）。",
   "reject_modal_title": "买家拒绝发票",
-  "reject_modal_desc": "代买家拒绝此发票。仅在 72 小时反对期内可拒（演示模式 72 秒）。",
+  "reject_modal_desc": "代买家拒绝此发票。仅在 72 小时反对期内可拒（演示模式 72 秒）。原因将提交至 LHDN（不少于 3 个字符）。",
   "reject_placeholder": "例：第 2 行金额错误",
   "search_placeholder": "按发票号或 UIN 搜索",
   "status_DRAFT": "草稿",
@@ -56,6 +57,136 @@
   "status_FINAL": "终态",
   "status_REJECTED": "已拒绝",
   "status_CANCELLED": "已取消",
+  "buttons": {
+    "view": "查看",
+    "so": "销售单",
+    "invoice": "发票",
+    "reject": "拒绝",
+    "runPrecheckSubmit": "预校验并提交",
+    "issueCreditNote": "开具贷项通知单",
+    "generateMonthlyConsolidated": "生成月度合并发票"
+  },
+  "columns": {
+    "so": "销售单",
+    "total": "合计",
+    "validated": "校验时间",
+    "unitPrice": "单价",
+    "taxPct": "税率%",
+    "rejected": "已拒绝"
+  },
+  "consolidated": {
+    "modalTitle": "生成 B2C 月度合并发票",
+    "okText": "生成",
+    "year": "年",
+    "month": "月",
+    "description": "将每个 B2C 客户在所选月份内已发货的销售单合并为一张草稿合并发票。已单独开票或已合并的销售单会自动跳过。"
+  },
+  "messages": {
+    "submitted": "发票已提交至 MyInvois，UIN 已签发。",
+    "submitFailed": "发票提交失败。",
+    "rejected": "发票已被买家拒绝。",
+    "rejectFailed": "拒绝发票失败。",
+    "rejectReasonMin": "拒绝原因至少需 3 个字符。",
+    "finalizeScanComplete": "终态扫描完成：{{count}} 张发票推进至 FINAL（窗口 = {{seconds}} 秒）。",
+    "finalizeScanFailed": "运行终态扫描失败。",
+    "consolidatedNoneFound": "{{month}} 没有符合条件的 B2C 销售单。",
+    "consolidatedGenerated": "已生成 {{count}} 张合并发票，覆盖 {{customers}} 个客户（{{month}}）。",
+    "consolidatedFailed": "生成合并发票失败。"
+  },
+  "countdown": {
+    "elapsedHint": "反对期已结束 — 点击 <b>运行终态扫描</b> 或刷新以推进至 FINAL。"
+  },
+  "precheck": {
+    "modalTitle": "电子发票预校验",
+    "running": "正在执行合规校验清单…",
+    "failed": "预校验失败。",
+    "aiUnavailable": "AI 校验不可用 — 仅执行了硬性规则",
+    "aiUnavailableReason": "原因：{{reason}}。3 项语义校验已跳过。",
+    "aiUnavailableDefault": "3 项语义校验已跳过。",
+    "acknowledge": "我已知晓上述风险，仍要强制提交。",
+    "buttons": {
+      "cancel": "取消",
+      "continueSubmit": "继续提交",
+      "forceSubmit": "强制提交"
+    },
+    "banner": {
+      "passTitle": "可以提交",
+      "passDesc": "全部校验通过，点击提交将发送至 MyInvois。",
+      "warnTitle": "存在警告 — 提交前请复核",
+      "warnDesc": "部分软性校验提示警告。仍可提交，但建议先修正标记项。",
+      "failTitle": "硬性规则未通过",
+      "failDesc": "存在硬性规则失败，此时提交大概率被 LHDN 拒绝。请确认风险后强制提交。"
+    },
+    "category": {
+      "hard": "硬性",
+      "soft": "软性"
+    },
+    "severity": {
+      "INFO": "提示",
+      "WARN": "警告",
+      "ERROR": "错误"
+    },
+    "items": {
+      "SELLER_TIN_FORMAT": "卖家 TIN 格式",
+      "BUYER_TIN_PRESENT_OR_B2C": "买家 TIN 必填（B2B）/ 可选（B2C）",
+      "MSIC_CODE_PRESENT": "MSIC 代码（表头 + 每行）",
+      "SST_TAX_AMOUNT_CONSISTENT": "SST 税额计算一致",
+      "SST_RATE_VALID": "SST 税率有效（0% / 6% / 10%）",
+      "LINE_TOTAL_CONSISTENT": "行小计与表头汇总一致",
+      "CURRENCY_RATE_PRESENT": "外币汇率已填写",
+      "BUYER_NAME_VS_TYPE_LOOKS_CONSISTENT": "买家名称与 B2B/B2C 类型相符",
+      "LINE_DESCRIPTION_QUALITY": "行描述足够具体",
+      "BUSINESS_DATE_REASONABLE": "业务日期在合理范围内"
+    }
+  },
+  "creditNote": {
+    "listTitle": "贷项通知单",
+    "linesTitle": "贷项明细",
+    "linesToCredit": "退回明细",
+    "totalCredit": "退回合计 (含税)",
+    "titleFor": "为 {{docNo}} 新建贷项通知单",
+    "notCreditable": "发票状态为 {{status}} — 只有 VALIDATED 或 FINAL 状态的发票可以开具贷项。",
+    "draftHintDesc": "点击\"提交至 MyInvois\"以获得 UIN。在草稿阶段取消会自动回滚库存。",
+    "buttons": {
+      "createDraft": "创建贷项通知单（草稿）",
+      "cancel": "取消贷项"
+    },
+    "columns": {
+      "cnNo": "贷项单号",
+      "invoiceNo": "原发票号",
+      "reason": "原因",
+      "total": "合计",
+      "skuDesc": "SKU / 描述",
+      "invoiced": "已开票",
+      "returnQty": "退回数量"
+    },
+    "fields": {
+      "reason": "原因",
+      "reasonDetail": "原因详情",
+      "originalInvoice": "原发票",
+      "detail": "详情"
+    },
+    "placeholders": {
+      "reasonDescription": "选填 — 说明开具该贷项的具体情况",
+      "remarks": "选填，内部备注"
+    },
+    "reasons": {
+      "RETURN": "退货",
+      "DISCOUNT_ADJUSTMENT": "折扣调整",
+      "PRICE_CORRECTION": "价格更正",
+      "WRITE_OFF": "坏账核销",
+      "OTHER": "其他"
+    },
+    "messages": {
+      "atLeastOneLine": "请至少在一行填写退回数量。",
+      "created": "贷项通知单 {{docNo}} 已创建。",
+      "createFailed": "创建贷项通知单失败。",
+      "submitted": "贷项通知单已提交至 MyInvois，UIN 已签发。",
+      "submitFailed": "提交贷项通知单失败。",
+      "cancelled": "贷项通知单已取消，库存已回滚。",
+      "cancelFailed": "取消贷项通知单失败。"
+    }
+  },
   "errors": {
     "INVOICE_NOT_FOUND": "未找到发票。",
     "INVOICE_INVALID_STATUS": "发票状态不允许此操作。",

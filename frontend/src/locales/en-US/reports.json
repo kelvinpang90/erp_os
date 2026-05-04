@@ -31,6 +31,10 @@
     "calls": "Calls",
     "cost_usd": "Cost (USD)",
     "share_pct": "Share %",
-    "no_data": "No data in selected range"
+    "no_data": "No data in selected range",
+    "code": "Code",
+    "name": "Name",
+    "sku": "SKU",
+    "feature": "Feature"
   }
 }

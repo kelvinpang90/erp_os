@@ -44,5 +44,11 @@
   "search_placeholder": "按单号或备注搜索",
   "add_line": "新增行",
   "no_lines_error": "请至少添加一行",
-  "summary": "调整摘要"
+  "summary": "调整摘要",
+  "messages": {
+    "ref_data_partial": "部分基础数据加载失败,如下拉为空请刷新重试.",
+    "validation_failed": "校验未通过",
+    "create_failed": "创建调整单失败",
+    "cancel_failed": "取消失败"
+  }
 }

@@ -1,5 +1,6 @@
 import { Statistic, Typography } from 'antd'
 import { useEffect, useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 
 interface CountdownTimerProps {
   /** Seconds remaining when this component first mounts. */
@@ -29,6 +30,7 @@ export default function CountdownTimer({
   windowSeconds,
   onElapsed,
 }: CountdownTimerProps) {
+  const { t } = useTranslation('einvoice')
   const [remaining, setRemaining] = useState(initialSeconds)
 
   useEffect(() => {
@@ -48,14 +50,13 @@ export default function CountdownTimer({
 
   const isDemo = windowSeconds <= 60 * 5  // ≤ 5 minutes → demo mode
   const label = isDemo
-    ? `${windowSeconds}s opposition window (DEMO)`
-    : `${Math.round(windowSeconds / HOUR)}h opposition window`
+    ? t('opposition_window_demo', { seconds: windowSeconds })
+    : t('opposition_window_prod', { hours: Math.round(windowSeconds / HOUR) })
 
   if (remaining <= 0) {
     return (
       <Typography.Text type="warning">
-        Opposition window has elapsed — click <strong>Run Finalize Scan</strong> or refresh
-        to advance to FINAL.
+        <Trans i18nKey="einvoice:countdown.elapsedHint" components={{ b: <strong /> }} />
       </Typography.Text>
     )
   }

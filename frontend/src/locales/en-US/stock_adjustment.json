@@ -44,5 +44,11 @@
   "search_placeholder": "Search by adjustment number or remarks",
   "add_line": "Add Line",
   "no_lines_error": "Please add at least one line",
-  "summary": "Adjustment Summary"
+  "summary": "Adjustment Summary",
+  "messages": {
+    "ref_data_partial": "Some reference data failed to load. Please refresh if dropdowns are empty.",
+    "validation_failed": "Validation failed",
+    "create_failed": "Failed to create adjustment",
+    "cancel_failed": "Failed to cancel"
+  }
 }

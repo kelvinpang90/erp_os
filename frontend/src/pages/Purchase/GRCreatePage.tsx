@@ -71,7 +71,7 @@ const FRONTEND_TOLERANCE_HINT = 0.05
 export default function GRCreatePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { t } = useTranslation('goods_receipt')
+  const { t } = useTranslation(['goods_receipt', 'common'])
   const { message } = App.useApp()
 
   const initialPoId = searchParams.get('po_id')
@@ -151,13 +151,13 @@ export default function GRCreatePage() {
         setLines(rows)
         setEditableKeys(rows.map((r) => r.id))
       })
-      .catch(() => message.error('Failed to load purchase order'))
+      .catch(() => message.error(t('messages.loadPoFailed')))
       .finally(() => setPoLoading(false))
   }, [selectedPoId, message, t])
 
   const lineColumns: ProColumns<GRLineRow>[] = [
     {
-      title: '#',
+      title: t('line_no'),
       dataIndex: 'line_no',
       width: 50,
       editable: false,
@@ -297,7 +297,7 @@ export default function GRCreatePage() {
 
     try {
       const res = await axiosInstance.post('/goods-receipts', payload)
-      message.success(`${res.data.document_no} created. Stock updated.`)
+      message.success(t('messages.created', { docNo: res.data.document_no }))
       navigate(`/purchase/goods-receipts/${res.data.id}`)
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { message?: string; error_code?: string } } })
@@ -307,7 +307,7 @@ export default function GRCreatePage() {
         code && t(`errors.${code}`, { defaultValue: '' })
           ? t(`errors.${code}`)
           : null
-      message.error(localized ?? errData?.message ?? 'Failed to create goods receipt')
+      message.error(localized ?? errData?.message ?? t('messages.createFailed'))
     }
   }
 
@@ -342,7 +342,7 @@ export default function GRCreatePage() {
             submitter={{
               searchConfig: {
                 submitText: t('create'),
-                resetText: 'Cancel',
+                resetText: t('common:cancel'),
               },
             }}
           >
@@ -411,10 +411,10 @@ export default function GRCreatePage() {
                   />
                   <Space size="large" style={{ marginTop: 12, justifyContent: 'flex-end', width: '100%' }}>
                     <Typography.Text type="secondary">
-                      Total Qty: {totalsHint.total.toLocaleString('en-MY', { maximumFractionDigits: 4 })}
+                      {t('totalQty')}: {totalsHint.total.toLocaleString('en-MY', { maximumFractionDigits: 4 })}
                     </Typography.Text>
                     <Typography.Text strong>
-                      Total Cost: {po.currency} {totalsHint.totalCost.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {t('totalCost')}: {po.currency} {totalsHint.totalCost.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography.Text>
                   </Space>
                 </Card>

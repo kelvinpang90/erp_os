@@ -21,5 +21,37 @@
   "postcode": "邮编",
   "country": "国家",
   "cannot_delete_main": "主仓库不能删除。",
-  "select_manager_placeholder": "选择负责人（可选）"
+  "select_manager_placeholder": "选择负责人（可选）",
+  "status": "状态",
+  "active": "启用",
+  "inactive": "停用",
+  "address_section": "地址",
+  "view": "查看",
+  "delete": "删除",
+  "delete_confirm": "确认删除此仓库？",
+  "delete_success": "仓库已删除",
+  "delete_failed": "删除失败",
+  "include_inactive": "包含停用",
+  "active_only": "仅显示启用",
+  "yes": "是",
+  "action": "操作",
+  "create_success": "仓库创建成功",
+  "update_success": "仓库更新成功",
+  "load_failed": "加载仓库失败",
+  "operation_failed": "操作失败",
+  "type_label": {
+    "MAIN": "主仓",
+    "BRANCH": "分仓",
+    "TRANSIT": "中转仓",
+    "QUARANTINE": "隔离仓"
+  },
+  "columns": {
+    "code": "编码",
+    "name": "名称",
+    "type": "类型",
+    "location": "位置",
+    "manager": "负责人",
+    "phone": "电话",
+    "status": "状态"
+  }
 }

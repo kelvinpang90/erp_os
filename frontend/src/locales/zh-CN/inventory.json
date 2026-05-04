@@ -48,5 +48,13 @@
   },
   "notification": {
     "lowStock": "{{sku_code}} @ {{warehouse_code}} 库存偏低: 可用 {{available}} / 安全 {{safety_stock}}。"
+  },
+  "stockBadge": {
+    "onHand": "在库",
+    "reserved": "已锁定",
+    "qualityHold": "质检冻结",
+    "available": "可用",
+    "incoming": "在途到货",
+    "inTransit": "调拨在途"
   }
 }

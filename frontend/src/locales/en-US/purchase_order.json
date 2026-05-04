@@ -44,5 +44,42 @@
   "status_CANCELLED": "Cancelled",
   "search_placeholder": "Search by PO number or remarks",
   "add_line": "Add Line",
-  "summary": "Order Summary"
+  "summary": "Order Summary",
+  "buttons": {
+    "view": "View",
+    "createGoodsReceipt": "Create Goods Receipt"
+  },
+  "columns": {
+    "terms": "Terms",
+    "created": "Created",
+    "stock": "Stock",
+    "qty": "Qty",
+    "unitPrice": "Unit Price",
+    "taxPct": "Tax %"
+  },
+  "sections": {
+    "orderDetails": "Order Details",
+    "payment": "Payment"
+  },
+  "placeholders": {
+    "searching": "Searching...",
+    "noSku": "No SKU found",
+    "cancelReason": "e.g. Supplier unable to fulfill order"
+  },
+  "messages": {
+    "confirmed": "Purchase order confirmed. Stock incoming updated.",
+    "confirmFailed": "Failed to confirm purchase order.",
+    "cancelled": "Purchase order cancelled.",
+    "cancelFailed": "Failed to cancel purchase order.",
+    "cancelReasonRequired": "Please enter a cancellation reason.",
+    "loadFailed": "Failed to load purchase order",
+    "created": "Purchase order created.",
+    "updated": "Purchase order updated.",
+    "atLeastOneLine": "Please add at least one order line.",
+    "referenceDataFailed": "Some reference data failed to load. Please refresh if dropdowns are empty.",
+    "ocrPrefilledMissing": "OCR prefilled. Please review unmatched fields: {{fields}}.",
+    "ocrPrefilled": "OCR prefilled (confidence: {{confidence}}). Please review and save.",
+    "restockPrefilledMissing": "Restock prefilled. {{count}} SKU(s) could not be resolved.",
+    "restockPrefilled": "Restock prefilled. Please pick a supplier and review."
+  }
 }

@@ -1,6 +1,8 @@
 import type { ProColumns } from '@ant-design/pro-components'
 import { Tag } from 'antd'
 
+type Translator = (key: string, opts?: Record<string, unknown>) => string
+
 export interface InvoiceRow {
   id: number
   document_no: string
@@ -32,86 +34,81 @@ export const STATUS_COLOR: Record<string, string> = {
   CANCELLED: 'default',
 }
 
-export const STATUS_LABEL: Record<string, string> = {
-  DRAFT: 'Draft',
-  SUBMITTED: 'Submitted',
-  VALIDATED: 'Validated (in 72h window)',
-  FINAL: 'Final',
-  REJECTED: 'Rejected',
-  CANCELLED: 'Cancelled',
+export function statusLabel(t: Translator, status: string): string {
+  return t(`status_${status}`, { defaultValue: status })
 }
 
-export const invoiceColumns: ProColumns<InvoiceRow>[] = [
-  {
-    title: 'Invoice No',
-    dataIndex: 'document_no',
-    width: 160,
-    fixed: 'left',
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    width: 200,
-    valueType: 'select',
-    valueEnum: {
-      DRAFT: { text: STATUS_LABEL.DRAFT },
-      SUBMITTED: { text: STATUS_LABEL.SUBMITTED },
-      VALIDATED: { text: STATUS_LABEL.VALIDATED },
-      FINAL: { text: STATUS_LABEL.FINAL },
-      REJECTED: { text: STATUS_LABEL.REJECTED },
-      CANCELLED: { text: STATUS_LABEL.CANCELLED },
+export function getInvoiceColumns(t: Translator): ProColumns<InvoiceRow>[] {
+  return [
+    {
+      title: t('document_no'),
+      dataIndex: 'document_no',
+      width: 160,
+      fixed: 'left',
     },
-    // ProTable wraps the rendered value with valueEnum's React node first,
-    // so use the row record (2nd arg) to read the raw status string.
-    render: (_, row) => (
-      <Tag color={STATUS_COLOR[row.status] ?? 'default'}>
-        {STATUS_LABEL[row.status] ?? row.status}
-      </Tag>
-    ),
-  },
-  {
-    title: 'SO',
-    dataIndex: 'sales_order_no',
-    width: 130,
-    hideInSearch: true,
-    render: (val) => val || '—',
-  },
-  {
-    title: 'Customer',
-    dataIndex: 'customer_name',
-    width: 180,
-    hideInSearch: true,
-    ellipsis: true,
-  },
-  {
-    title: 'Business Date',
-    dataIndex: 'business_date',
-    width: 120,
-    hideInSearch: true,
-  },
-  {
-    title: 'UIN',
-    dataIndex: 'uin',
-    width: 180,
-    hideInSearch: true,
-    render: (val) => val ?? '—',
-  },
-  {
-    title: 'Total',
-    dataIndex: 'total_incl_tax',
-    width: 150,
-    hideInSearch: true,
-    render: (val, row) =>
-      `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-  },
-  {
-    title: 'Validated',
-    dataIndex: 'validated_at',
-    width: 160,
-    hideInSearch: true,
-    render: (val) => (val ? new Date(String(val)).toLocaleString('en-MY') : '—'),
-  },
-]
+    {
+      title: t('status'),
+      dataIndex: 'status',
+      width: 200,
+      valueType: 'select',
+      valueEnum: {
+        DRAFT: { text: statusLabel(t, 'DRAFT') },
+        SUBMITTED: { text: statusLabel(t, 'SUBMITTED') },
+        VALIDATED: { text: statusLabel(t, 'VALIDATED') },
+        FINAL: { text: statusLabel(t, 'FINAL') },
+        REJECTED: { text: statusLabel(t, 'REJECTED') },
+        CANCELLED: { text: statusLabel(t, 'CANCELLED') },
+      },
+      render: (_, row) => (
+        <Tag color={STATUS_COLOR[row.status] ?? 'default'}>
+          {statusLabel(t, row.status)}
+        </Tag>
+      ),
+    },
+    {
+      title: t('columns.so'),
+      dataIndex: 'sales_order_no',
+      width: 130,
+      hideInSearch: true,
+      render: (val) => val || '—',
+    },
+    {
+      title: t('customer'),
+      dataIndex: 'customer_name',
+      width: 180,
+      hideInSearch: true,
+      ellipsis: true,
+    },
+    {
+      title: t('business_date'),
+      dataIndex: 'business_date',
+      width: 120,
+      hideInSearch: true,
+    },
+    {
+      title: t('uin'),
+      dataIndex: 'uin',
+      width: 180,
+      hideInSearch: true,
+      render: (val) => val ?? '—',
+    },
+    {
+      title: t('columns.total'),
+      dataIndex: 'total_incl_tax',
+      width: 150,
+      hideInSearch: true,
+      render: (val, row) =>
+        `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+    },
+    {
+      title: t('columns.validated'),
+      dataIndex: 'validated_at',
+      width: 160,
+      hideInSearch: true,
+      render: (val) => (val ? new Date(String(val)).toLocaleString('en-MY') : '—'),
+    },
+  ]
+}

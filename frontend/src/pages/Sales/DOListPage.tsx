@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { doColumns, type DORow } from './DOColumns'
+import { getDoColumns, type DORow } from './DOColumns'
 
 async function fetchDOs(params: {
   current?: number
@@ -20,23 +21,26 @@ async function fetchDOs(params: {
 
 export default function DOListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['delivery_order', 'common'])
 
   return (
     <ResourceListPage<DORow>
-      title="Delivery Orders"
+      title={t('delivery_order:title')}
       columns={[
-        ...doColumns,
+        ...getDoColumns((key, opts) =>
+          t(`delivery_order:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('delivery_order:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/sales/delivery/${row.id}`)}>
-              View
+              {t('delivery_order:buttons.view')}
             </a>,
             <a key="so" onClick={() => navigate(`/sales/orders/${row.sales_order_id}`)}>
-              SO
+              {t('delivery_order:buttons.so')}
             </a>,
           ],
         },

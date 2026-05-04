@@ -27,11 +27,29 @@
   "select_so_placeholder": "Pick a CONFIRMED or PARTIAL_SHIPPED sales order…",
   "search_placeholder": "Search by DO number, tracking no, or remarks",
   "summary": "Delivery Summary",
+  "summaryTotal": "Total Qty Shipped",
+  "totalQty": "Total Qty",
   "no_lines_to_ship": "This sales order has no lines remaining to ship.",
   "validation_qty_required": "Qty Shipped is required and must be greater than 0",
   "validation_qty_exceed_remaining": "Qty Shipped cannot exceed remaining quantity (no over-shipment allowed).",
   "validation_select_so_first": "Please select a sales order first",
   "validation_at_least_one_line": "At least one line must have a positive shipped qty",
+  "buttons": {
+    "view": "View",
+    "so": "SO",
+    "viewSo": "View SO"
+  },
+  "columns": {
+    "tracking": "Tracking",
+    "created": "Created"
+  },
+  "messages": {
+    "notFound": "Delivery order not found.",
+    "loadSoFailed": "Failed to load sales order",
+    "created": "{{docNo}} created. Stock updated.",
+    "createFailed": "Failed to create delivery order",
+    "overShipLine": "Line {{lineNo}}: cannot ship more than remaining {{remaining}}."
+  },
   "shipping_method_options": {
     "COURIER": "Courier",
     "OWN_FLEET": "Own Fleet",

@@ -78,9 +78,9 @@ export default function AdjustmentCreatePage() {
       else anyFailed = true
       if (sk.status === 'fulfilled') setSkus(sk.value.data.items)
       else anyFailed = true
-      if (anyFailed) message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+      if (anyFailed) message.warning(t('messages.ref_data_partial'))
     })
-  }, [message])
+  }, [message, t])
 
   const skuOptions = skus.map((s) => ({
     value: s.id,
@@ -244,9 +244,9 @@ export default function AdjustmentCreatePage() {
       const errors = (data?.detail as { errors?: Array<{ loc: unknown[]; msg: string }> } | undefined)?.errors
       if (errors && errors.length > 0) {
         const first = errors[0]
-        message.error(`${data?.message ?? 'Validation failed'} — ${first.loc.join('.')}: ${first.msg}`)
+        message.error(`${data?.message ?? t('messages.validation_failed')} — ${first.loc.join('.')}: ${first.msg}`)
       } else {
-        message.error(data?.message ?? 'Failed to create adjustment')
+        message.error(data?.message ?? t('messages.create_failed'))
       }
       // eslint-disable-next-line no-console
       console.error('[AdjustmentCreate] submit failed', { payload, response: data })

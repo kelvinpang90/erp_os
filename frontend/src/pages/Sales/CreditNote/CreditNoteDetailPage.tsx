@@ -13,12 +13,13 @@ import {
   message,
 } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../../api/client'
 import {
-  CN_REASON_LABEL,
   CN_STATUS_COLOR,
-  CN_STATUS_LABEL,
+  cnReasonLabel,
+  cnStatusLabel,
 } from './CreditNoteColumns'
 
 interface CNLine {
@@ -69,6 +70,9 @@ interface CreditNoteDetail {
 export default function CreditNoteDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation(['einvoice', 'common'])
+  const tEinvoice = (key: string, opts?: Record<string, unknown>) =>
+    t(`einvoice:${key}`, (opts ?? {}) as never) as string
   const [cn, setCn] = useState<CreditNoteDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -89,13 +93,13 @@ export default function CreditNoteDetailPage() {
     setActionLoading(true)
     try {
       await axiosInstance.post(`/credit-notes/${id}/submit`)
-      message.success('Credit Note submitted to MyInvois. UIN issued.')
+      message.success(t('einvoice:creditNote.messages.submitted'))
       load()
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message
-      message.error(msg ?? 'Failed to submit credit note.')
+      message.error(msg ?? t('einvoice:creditNote.messages.submitFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -106,13 +110,13 @@ export default function CreditNoteDetailPage() {
     setActionLoading(true)
     try {
       await axiosInstance.post(`/credit-notes/${id}/cancel`)
-      message.success('Credit Note cancelled. Stock has been rolled back.')
+      message.success(t('einvoice:creditNote.messages.cancelled'))
       load()
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message
-      message.error(msg ?? 'Failed to cancel credit note.')
+      message.error(msg ?? t('einvoice:creditNote.messages.cancelFailed'))
     } finally {
       setActionLoading(false)
     }
@@ -140,28 +144,28 @@ export default function CreditNoteDetailPage() {
   const lineColumns = [
     { title: '#', dataIndex: 'line_no', width: 50 },
     {
-      title: 'SKU',
+      title: t('einvoice:sku'),
       dataIndex: 'sku_code',
       width: 240,
       render: (_: unknown, row: CNLine) =>
         row.sku_code ? `${row.sku_code} — ${row.sku_name}` : '-',
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
-    { title: 'Qty', dataIndex: 'qty', width: 90, align: 'right' as const },
+    { title: t('einvoice:description'), dataIndex: 'description', ellipsis: true },
+    { title: t('einvoice:qty'), dataIndex: 'qty', width: 90, align: 'right' as const },
     {
-      title: 'Unit Price',
+      title: t('einvoice:columns.unitPrice'),
       dataIndex: 'unit_price_excl_tax',
       width: 120,
       align: 'right' as const,
     },
     {
-      title: 'Tax %',
+      title: t('einvoice:columns.taxPct'),
       dataIndex: 'tax_rate_percent',
       width: 70,
       align: 'right' as const,
     },
     {
-      title: 'Line Total (incl. tax)',
+      title: t('einvoice:line_total_incl_tax'),
       dataIndex: 'line_total_incl_tax',
       width: 160,
       align: 'right' as const,
@@ -184,7 +188,7 @@ export default function CreditNoteDetailPage() {
             />
             <Typography.Text strong>{cn.document_no}</Typography.Text>
             <Tag color={CN_STATUS_COLOR[cn.status] ?? 'default'}>
-              {CN_STATUS_LABEL[cn.status] ?? cn.status}
+              {cnStatusLabel(tEinvoice, cn.status)}
             </Tag>
             {cn.uin && <Tag color="purple">UIN: {cn.uin}</Tag>}
           </Space>
@@ -197,22 +201,22 @@ export default function CreditNoteDetailPage() {
                 loading={actionLoading}
                 onClick={handleSubmit}
               >
-                Submit to MyInvois
+                {t('einvoice:submit_to_myinvois')}
               </Button>
             )}
             {isCancellable && (
               <Button danger onClick={handleCancel} loading={actionLoading}>
-                Cancel CN
+                {t('einvoice:creditNote.buttons.cancel')}
               </Button>
             )}
-            <Button onClick={load}>Refresh</Button>
+            <Button onClick={load}>{t('einvoice:refresh')}</Button>
           </Space>
         }
       >
         <Row gutter={24}>
           <Col span={cn.uin ? 16 : 24}>
             <ProDescriptions column={2}>
-              <ProDescriptions.Item label="Original Invoice">
+              <ProDescriptions.Item label={t('einvoice:creditNote.fields.originalInvoice')}>
                 <a
                   onClick={() =>
                     navigate(`/sales/einvoice/${cn.invoice_id}`)
@@ -221,36 +225,36 @@ export default function CreditNoteDetailPage() {
                   {cn.invoice_no || `#${cn.invoice_id}`}
                 </a>
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Customer">
+              <ProDescriptions.Item label={t('einvoice:customer')}>
                 {cn.customer_name || `#${cn.customer_id}`}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Reason">
-                {CN_REASON_LABEL[cn.reason] ?? cn.reason}
+              <ProDescriptions.Item label={t('einvoice:creditNote.fields.reason')}>
+                {cnReasonLabel(tEinvoice, cn.reason)}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Business Date">
+              <ProDescriptions.Item label={t('einvoice:business_date')}>
                 {cn.business_date}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Currency">
+              <ProDescriptions.Item label={t('einvoice:currency')}>
                 {cn.currency} (rate{' '}
                 {parseFloat(cn.exchange_rate).toFixed(4)})
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Submitted At">
+              <ProDescriptions.Item label={t('einvoice:submitted_at')}>
                 {cn.submitted_at
                   ? new Date(cn.submitted_at).toLocaleString('en-MY')
                   : '—'}
               </ProDescriptions.Item>
-              <ProDescriptions.Item label="Validated At">
+              <ProDescriptions.Item label={t('einvoice:validated_at')}>
                 {cn.validated_at
                   ? new Date(cn.validated_at).toLocaleString('en-MY')
                   : '—'}
               </ProDescriptions.Item>
               {cn.reason_description && (
-                <ProDescriptions.Item label="Detail" span={2}>
+                <ProDescriptions.Item label={t('einvoice:creditNote.fields.detail')} span={2}>
                   {cn.reason_description}
                 </ProDescriptions.Item>
               )}
               {cn.remarks && (
-                <ProDescriptions.Item label="Remarks" span={2}>
+                <ProDescriptions.Item label={t('einvoice:remarks')} span={2}>
                   {cn.remarks}
                 </ProDescriptions.Item>
               )}
@@ -278,7 +282,7 @@ export default function CreditNoteDetailPage() {
                   }}
                 />
                 <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
-                  QR code (mock URL)
+                  {t('einvoice:qrCodeMock')}
                 </div>
               </Card>
             </Col>
@@ -290,12 +294,12 @@ export default function CreditNoteDetailPage() {
         <Alert
           type="info"
           showIcon
-          message="DRAFT — not yet sent to LHDN"
-          description="Click 'Submit to MyInvois' to obtain a UIN. Cancelling at this point will roll back stock automatically."
+          message={t('einvoice:draft_hint')}
+          description={t('einvoice:creditNote.draftHintDesc')}
         />
       )}
 
-      <Card title="Credit Note Lines">
+      <Card title={t('einvoice:creditNote.linesTitle')}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #eee', background: '#fafafa' }}>
@@ -342,16 +346,16 @@ export default function CreditNoteDetailPage() {
         <Row gutter={16} justify="end" style={{ marginTop: 16 }}>
           <Col>
             <Typography.Text type="secondary">
-              Subtotal (excl. tax):
+              {t('einvoice:subtotal_excl_tax')}:
             </Typography.Text>{' '}
             <Typography.Text>{fmt(cn.subtotal_excl_tax)}</Typography.Text>
           </Col>
           <Col>
-            <Typography.Text type="secondary">Tax:</Typography.Text>{' '}
+            <Typography.Text type="secondary">{t('einvoice:tax_amount')}:</Typography.Text>{' '}
             <Typography.Text>{fmt(cn.tax_amount)}</Typography.Text>
           </Col>
           <Col>
-            <Typography.Text strong>Total Credit (incl. tax):</Typography.Text>{' '}
+            <Typography.Text strong>{t('einvoice:creditNote.totalCredit')}:</Typography.Text>{' '}
             <Typography.Text strong>{fmt(cn.total_incl_tax)}</Typography.Text>
           </Col>
         </Row>

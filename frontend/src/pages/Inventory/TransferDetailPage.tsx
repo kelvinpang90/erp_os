@@ -85,7 +85,7 @@ export default function TransferDetailPage() {
       load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to confirm transfer')
+      message.error(msg ?? t('messages.confirm_failed'))
     } finally {
       setActionLoading(false)
     }
@@ -100,7 +100,7 @@ export default function TransferDetailPage() {
       load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to ship transfer')
+      message.error(msg ?? t('messages.ship_failed'))
     } finally {
       setActionLoading(false)
     }
@@ -122,7 +122,7 @@ export default function TransferDetailPage() {
       load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      message.error(msg ?? 'Failed to cancel transfer')
+      message.error(msg ?? t('messages.cancel_failed'))
     } finally {
       setActionLoading(false)
     }

@@ -1,5 +1,6 @@
 import type { ProColumns } from '@ant-design/pro-components'
 import { Badge, Tag } from 'antd'
+import type { TFunction } from 'i18next'
 
 export interface WarehouseRow {
   id: number
@@ -22,35 +23,35 @@ const TYPE_COLORS: Record<string, string> = {
   QUARANTINE: 'red',
 }
 
-export const warehouseColumns: ProColumns<WarehouseRow>[] = [
+export const buildWarehouseColumns = (t: TFunction): ProColumns<WarehouseRow>[] => [
   {
-    title: 'Code',
+    title: t('columns.code'),
     dataIndex: 'code',
     width: 110,
     fixed: 'left',
   },
   {
-    title: 'Name',
+    title: t('columns.name'),
     dataIndex: 'name',
     ellipsis: true,
   },
   {
-    title: 'Type',
+    title: t('columns.type'),
     dataIndex: 'type',
     width: 110,
     hideInSearch: true,
     render: (val) => (
-      <Tag color={TYPE_COLORS[String(val)] ?? 'default'}>{String(val)}</Tag>
+      <Tag color={TYPE_COLORS[String(val)] ?? 'default'}>{t(`type_label.${String(val)}`)}</Tag>
     ),
   },
   {
-    title: 'Location',
+    title: t('columns.location'),
     width: 160,
     hideInSearch: true,
     render: (_, row) => [row.city, row.state].filter(Boolean).join(', ') || '—',
   },
   {
-    title: 'Manager',
+    title: t('columns.manager'),
     dataIndex: 'manager_name',
     width: 140,
     ellipsis: true,
@@ -58,19 +59,19 @@ export const warehouseColumns: ProColumns<WarehouseRow>[] = [
     render: (val) => val || '—',
   },
   {
-    title: 'Phone',
+    title: t('columns.phone'),
     dataIndex: 'phone',
     width: 130,
     hideInSearch: true,
     render: (val) => val || '—',
   },
   {
-    title: 'Status',
+    title: t('columns.status'),
     dataIndex: 'is_active',
     width: 90,
     hideInSearch: true,
     render: (val) => (
-      <Badge status={val ? 'success' : 'default'} text={val ? 'Active' : 'Inactive'} />
+      <Badge status={val ? 'success' : 'default'} text={val ? t('active') : t('inactive')} />
     ),
   },
 ]

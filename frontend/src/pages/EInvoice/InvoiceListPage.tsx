@@ -1,10 +1,11 @@
 import { Button, InputNumber, Modal, Space, Typography, message } from 'antd'
 import { CalendarOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { invoiceColumns, type InvoiceRow } from './InvoiceColumns'
+import { getInvoiceColumns, type InvoiceRow } from './InvoiceColumns'
 
 async function fetchInvoices(params: {
   current?: number
@@ -32,6 +33,7 @@ function previousMonth(): { year: number; month: number } {
 
 export default function InvoiceListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['einvoice', 'common'])
   const [scanLoading, setScanLoading] = useState(false)
   const [consOpen, setConsOpen] = useState(false)
   const [consLoading, setConsLoading] = useState(false)
@@ -44,13 +46,15 @@ export default function InvoiceListPage() {
       const res = await axiosInstance.post('/invoices/admin/run-finalize-scan')
       const { finalized_count, finalize_window_seconds } = res.data
       message.success(
-        `Finalize scan complete: ${finalized_count} invoice(s) advanced to FINAL ` +
-          `(window = ${finalize_window_seconds}s).`,
+        t('einvoice:messages.finalizeScanComplete', {
+          count: finalized_count,
+          seconds: finalize_window_seconds,
+        }),
       )
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Failed to run finalize scan.'
+        t('einvoice:messages.finalizeScanFailed')
       message.error(msg)
     } finally {
       setScanLoading(false)
@@ -65,21 +69,23 @@ export default function InvoiceListPage() {
         { year: consYear, month: consMonth },
       )
       const { generated_count, customer_ids } = res.data
+      const monthStr = `${consYear}-${String(consMonth).padStart(2, '0')}`
       if (generated_count === 0) {
-        message.info(
-          `No eligible B2C sales orders found for ${consYear}-${String(consMonth).padStart(2, '0')}.`,
-        )
+        message.info(t('einvoice:messages.consolidatedNoneFound', { month: monthStr }))
       } else {
         message.success(
-          `Generated ${generated_count} Consolidated Invoice(s) covering ` +
-            `${customer_ids.length} customer(s) for ${consYear}-${String(consMonth).padStart(2, '0')}.`,
+          t('einvoice:messages.consolidatedGenerated', {
+            count: generated_count,
+            customers: customer_ids.length,
+            month: monthStr,
+          }),
         )
       }
       setConsOpen(false)
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Failed to generate consolidated invoices.'
+        t('einvoice:messages.consolidatedFailed')
       message.error(msg)
     } finally {
       setConsLoading(false)
@@ -89,21 +95,23 @@ export default function InvoiceListPage() {
   return (
     <>
       <ResourceListPage<InvoiceRow>
-        title="e-Invoices"
+        title={t('einvoice:title')}
         columns={[
-          ...invoiceColumns,
+          ...getInvoiceColumns((key, opts) =>
+            t(`einvoice:${key}`, (opts ?? {}) as never) as string,
+          ),
           {
-            title: 'Action',
+            title: t('common:actions'),
             valueType: 'option',
             fixed: 'right',
             width: 120,
             render: (_, row) => [
               <a key="view" onClick={() => navigate(`/sales/einvoice/${row.id}`)}>
-                View
+                {t('einvoice:buttons.view')}
               </a>,
               row.sales_order_id ? (
                 <a key="so" onClick={() => navigate(`/sales/orders/${row.sales_order_id}`)}>
-                  SO
+                  {t('einvoice:buttons.so')}
                 </a>
               ) : null,
             ].filter(Boolean) as React.ReactNode[],
@@ -116,7 +124,7 @@ export default function InvoiceListPage() {
             icon={<CalendarOutlined />}
             onClick={() => setConsOpen(true)}
           >
-            Generate Monthly Consolidated
+            {t('einvoice:buttons.generateMonthlyConsolidated')}
           </Button>,
           <Button
             key="scan"
@@ -124,33 +132,31 @@ export default function InvoiceListPage() {
             loading={scanLoading}
             onClick={handleFinalizeScan}
           >
-            Run Finalize Scan
+            {t('einvoice:run_finalize_scan')}
           </Button>,
         ]}
       />
 
       <Modal
-        title="Generate Monthly Consolidated B2C Invoices"
+        title={t('einvoice:consolidated.modalTitle')}
         open={consOpen}
         onCancel={() => setConsOpen(false)}
         onOk={handleGenerateConsolidated}
         confirmLoading={consLoading}
-        okText="Generate"
+        okText={t('einvoice:consolidated.okText')}
       >
         <Typography.Paragraph>
-          Roll up every B2C customer's shipped Sales Orders for the chosen month
-          into one Draft Consolidated Invoice each. SOs already individually
-          invoiced or already rolled-up are skipped automatically.
+          {t('einvoice:consolidated.description')}
         </Typography.Paragraph>
         <Space>
-          <span>Year:</span>
+          <span>{t('einvoice:consolidated.year')}:</span>
           <InputNumber
             min={2024}
             max={2100}
             value={consYear}
             onChange={(v) => setConsYear(Number(v ?? consYear))}
           />
-          <span>Month:</span>
+          <span>{t('einvoice:consolidated.month')}:</span>
           <InputNumber
             min={1}
             max={12}

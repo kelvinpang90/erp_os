@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { soColumns, type SORow } from './SOColumns'
+import { getSoColumns, type SORow } from './SOColumns'
 
 async function fetchSOs(params: {
   current?: number
@@ -19,25 +20,28 @@ async function fetchSOs(params: {
 
 export default function SOListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['sales_order', 'common'])
 
   return (
     <ResourceListPage<SORow>
-      title="Sales Orders"
+      title={t('sales_order:title')}
       columns={[
-        ...soColumns,
+        ...getSoColumns((key, opts) =>
+          t(`sales_order:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('sales_order:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
           render: (_, row) => [
             <a key="view" onClick={() => navigate(`/sales/orders/${row.id}`)}>
-              View
+              {t('sales_order:buttons.view')}
             </a>,
             ...(row.status === 'DRAFT'
               ? [
                   <a key="edit" onClick={() => navigate(`/sales/orders/${row.id}/edit`)}>
-                    Edit
+                    {t('common:edit')}
                   </a>,
                 ]
               : []),

@@ -16,6 +16,7 @@ import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
 import enReports from './locales/en-US/reports.json'
 import enSalesOrder from './locales/en-US/sales_order.json'
+import enSku from './locales/en-US/sku.json'
 import enStockAdjustment from './locales/en-US/stock_adjustment.json'
 import enStockMovement from './locales/en-US/stock_movement.json'
 import enStockTransfer from './locales/en-US/stock_transfer.json'
@@ -35,6 +36,7 @@ import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
 import zhReports from './locales/zh-CN/reports.json'
 import zhSalesOrder from './locales/zh-CN/sales_order.json'
+import zhSku from './locales/zh-CN/sku.json'
 import zhStockAdjustment from './locales/zh-CN/stock_adjustment.json'
 import zhStockMovement from './locales/zh-CN/stock_movement.json'
 import zhStockTransfer from './locales/zh-CN/stock_transfer.json'
@@ -59,6 +61,7 @@ i18n
         purchase_order: enPurchaseOrder,
         goods_receipt: enGoodsReceipt,
         sales_order: enSalesOrder,
+        sku: enSku,
         delivery_order: enDeliveryOrder,
         ocr: enOcr,
         einvoice: enEinvoice,
@@ -80,6 +83,7 @@ i18n
         purchase_order: zhPurchaseOrder,
         goods_receipt: zhGoodsReceipt,
         sales_order: zhSalesOrder,
+        sku: zhSku,
         delivery_order: zhDeliveryOrder,
         ocr: zhOcr,
         einvoice: zhEinvoice,

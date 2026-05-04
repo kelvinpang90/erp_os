@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
-import { grColumns, type GRRow } from './GRColumns'
+import { getGrColumns, type GRRow } from './GRColumns'
 
 async function fetchGRs(params: {
   current?: number
@@ -21,15 +21,17 @@ async function fetchGRs(params: {
 
 export default function GRListPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation('goods_receipt')
+  const { t } = useTranslation(['goods_receipt', 'common'])
 
   return (
     <ResourceListPage<GRRow>
-      title={t('title')}
+      title={t('goods_receipt:title')}
       columns={[
-        ...grColumns,
+        ...getGrColumns((key, opts) =>
+          t(`goods_receipt:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: t('actions'),
+          title: t('goods_receipt:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
@@ -38,13 +40,13 @@ export default function GRListPage() {
               key="view"
               onClick={() => navigate(`/purchase/goods-receipts/${row.id}`)}
             >
-              View
+              {t('goods_receipt:buttons.view')}
             </a>,
             <a
               key="po"
               onClick={() => navigate(`/purchase/orders/${row.purchase_order_id}`)}
             >
-              PO
+              {t('goods_receipt:buttons.po')}
             </a>,
           ],
         },

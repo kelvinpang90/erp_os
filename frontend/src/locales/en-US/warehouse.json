@@ -21,5 +21,37 @@
   "postcode": "Postcode",
   "country": "Country",
   "cannot_delete_main": "Main warehouse cannot be deleted.",
-  "select_manager_placeholder": "Select manager (optional)"
+  "select_manager_placeholder": "Select manager (optional)",
+  "status": "Status",
+  "active": "Active",
+  "inactive": "Inactive",
+  "address_section": "Address",
+  "view": "View",
+  "delete": "Delete",
+  "delete_confirm": "Delete this warehouse?",
+  "delete_success": "Warehouse deleted",
+  "delete_failed": "Delete failed",
+  "include_inactive": "Include Inactive",
+  "active_only": "Active only",
+  "yes": "Yes",
+  "action": "Action",
+  "create_success": "Warehouse created successfully",
+  "update_success": "Warehouse updated successfully",
+  "load_failed": "Failed to load warehouse",
+  "operation_failed": "Operation failed",
+  "type_label": {
+    "MAIN": "Main",
+    "BRANCH": "Branch",
+    "TRANSIT": "Transit",
+    "QUARANTINE": "Quarantine"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "location": "Location",
+    "manager": "Manager",
+    "phone": "Phone",
+    "status": "Status"
+  }
 }

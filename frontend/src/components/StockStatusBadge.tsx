@@ -1,4 +1,5 @@
 import { Space, Tag, Tooltip } from 'antd'
+import { useTranslation } from 'react-i18next'
 
 export interface StockSnapshot {
   on_hand?: number | string
@@ -21,6 +22,7 @@ interface Props {
  * Full mode (default): all 6 dimensions, suitable for detail panels and tooltips.
  */
 export default function StockStatusBadge({ stock, compact = false }: Props) {
+  const { t } = useTranslation('inventory')
   const fmt = (val: number | string | undefined) => {
     if (val === undefined || val === null) return '0'
     const n = typeof val === 'string' ? parseFloat(val) : val
@@ -29,12 +31,12 @@ export default function StockStatusBadge({ stock, compact = false }: Props) {
 
   const fullView = (
     <Space direction="vertical" size={4}>
-      <Tag color="blue">On Hand: {fmt(stock.on_hand)}</Tag>
-      <Tag color="orange">Reserved: {fmt(stock.reserved)}</Tag>
-      <Tag color="purple">QualityHold: {fmt(stock.quality_hold)}</Tag>
-      <Tag color="green">Available: {fmt(stock.available)}</Tag>
-      <Tag color="cyan">Incoming: {fmt(stock.incoming)}</Tag>
-      <Tag color="gold">InTransit: {fmt(stock.in_transit)}</Tag>
+      <Tag color="blue">{t('stockBadge.onHand')}: {fmt(stock.on_hand)}</Tag>
+      <Tag color="orange">{t('stockBadge.reserved')}: {fmt(stock.reserved)}</Tag>
+      <Tag color="purple">{t('stockBadge.qualityHold')}: {fmt(stock.quality_hold)}</Tag>
+      <Tag color="green">{t('stockBadge.available')}: {fmt(stock.available)}</Tag>
+      <Tag color="cyan">{t('stockBadge.incoming')}: {fmt(stock.incoming)}</Tag>
+      <Tag color="gold">{t('stockBadge.inTransit')}: {fmt(stock.in_transit)}</Tag>
     </Space>
   )
 

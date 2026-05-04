@@ -29,5 +29,22 @@
   "total_pos": "Total POs",
   "total_amount": "Total Amount",
   "last_po_date": "Last PO Date",
-  "search_placeholder": "Search by code, name, email..."
+  "search_placeholder": "Search by code, name, email...",
+  "buttons": {
+    "view": "View"
+  },
+  "columns": {
+    "contact": "Contact",
+    "terms": "Terms"
+  },
+  "sections": {
+    "contact": "Contact",
+    "businessRegistration": "Business Registration",
+    "payment": "Payment"
+  },
+  "messages": {
+    "loadFailed": "Failed to load supplier",
+    "createSuccess": "Supplier created successfully",
+    "updateSuccess": "Supplier updated successfully"
+  }
 }

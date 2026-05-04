@@ -1,6 +1,8 @@
 import type { ProColumns } from '@ant-design/pro-components'
 import { Badge } from 'antd'
 
+type Translator = (key: string, opts?: Record<string, unknown>) => string
+
 export interface SupplierRow {
   id: number
   code: string
@@ -17,65 +19,67 @@ export interface SupplierRow {
   created_at: string
 }
 
-export const supplierColumns: ProColumns<SupplierRow>[] = [
-  {
-    title: 'Code',
-    dataIndex: 'code',
-    width: 120,
-    fixed: 'left',
-  },
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    ellipsis: true,
-  },
-  {
-    title: 'Contact',
-    dataIndex: 'contact_person',
-    width: 140,
-    ellipsis: true,
-    hideInSearch: true,
-  },
-  {
-    title: 'Email',
-    dataIndex: 'email',
-    width: 180,
-    ellipsis: true,
-    hideInSearch: true,
-  },
-  {
-    title: 'Phone',
-    dataIndex: 'phone',
-    width: 130,
-    hideInSearch: true,
-  },
-  {
-    title: 'Currency',
-    dataIndex: 'currency',
-    width: 80,
-    hideInSearch: true,
-  },
-  {
-    title: 'Terms',
-    dataIndex: 'payment_terms_days',
-    width: 80,
-    hideInSearch: true,
-    render: (val) => `${val}d`,
-  },
-  {
-    title: 'Credit Limit',
-    dataIndex: 'credit_limit',
-    width: 130,
-    hideInSearch: true,
-    render: (val, row) => `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-  },
-  {
-    title: 'Status',
-    dataIndex: 'is_active',
-    width: 90,
-    hideInSearch: true,
-    render: (val) => (
-      <Badge status={val ? 'success' : 'default'} text={val ? 'Active' : 'Inactive'} />
-    ),
-  },
-]
+export function getSupplierColumns(t: Translator, tCommon: Translator): ProColumns<SupplierRow>[] {
+  return [
+    {
+      title: t('code'),
+      dataIndex: 'code',
+      width: 120,
+      fixed: 'left',
+    },
+    {
+      title: t('name'),
+      dataIndex: 'name',
+      ellipsis: true,
+    },
+    {
+      title: t('columns.contact'),
+      dataIndex: 'contact_person',
+      width: 140,
+      ellipsis: true,
+      hideInSearch: true,
+    },
+    {
+      title: t('email'),
+      dataIndex: 'email',
+      width: 180,
+      ellipsis: true,
+      hideInSearch: true,
+    },
+    {
+      title: t('phone'),
+      dataIndex: 'phone',
+      width: 130,
+      hideInSearch: true,
+    },
+    {
+      title: t('currency'),
+      dataIndex: 'currency',
+      width: 80,
+      hideInSearch: true,
+    },
+    {
+      title: t('columns.terms'),
+      dataIndex: 'payment_terms_days',
+      width: 80,
+      hideInSearch: true,
+      render: (val) => `${val}d`,
+    },
+    {
+      title: t('credit_limit'),
+      dataIndex: 'credit_limit',
+      width: 130,
+      hideInSearch: true,
+      render: (val, row) => `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    },
+    {
+      title: tCommon('status'),
+      dataIndex: 'is_active',
+      width: 90,
+      hideInSearch: true,
+      render: (val) => (
+        <Badge status={val ? 'success' : 'default'} text={val ? tCommon('active') : tCommon('inactive')} />
+      ),
+    },
+  ]
+}

@@ -41,7 +41,7 @@ interface SupplierDetail {
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation('supplier')
+  const { t } = useTranslation(['supplier', 'common'])
   const [supplier, setSupplier] = useState<SupplierDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -72,13 +72,13 @@ export default function SupplierDetailPage() {
         }
         extra={
           <Button icon={<EditOutlined />} onClick={() => navigate(`/purchase/suppliers/${id}/edit`)}>
-            Edit
+            {t('common:edit')}
           </Button>
         }
       >
         <ProDescriptions column={2}>
-          <ProDescriptions.Item label="Status">
-            <Badge status={supplier.is_active ? 'success' : 'default'} text={supplier.is_active ? 'Active' : 'Inactive'} />
+          <ProDescriptions.Item label={t('common:status')}>
+            <Badge status={supplier.is_active ? 'success' : 'default'} text={supplier.is_active ? t('common:active') : t('common:inactive')} />
           </ProDescriptions.Item>
           <ProDescriptions.Item label={t('code')}>{supplier.code}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('name')}>{supplier.name}</ProDescriptions.Item>
@@ -92,11 +92,11 @@ export default function SupplierDetailPage() {
           <ProDescriptions.Item label={t('msic_code')}>{supplier.msic_code || '—'}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('address')} span={2}>{address || '—'}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('currency')}>{supplier.currency}</ProDescriptions.Item>
-          <ProDescriptions.Item label={t('payment_terms_days')}>{supplier.payment_terms_days} days</ProDescriptions.Item>
+          <ProDescriptions.Item label={t('payment_terms_days')}>{supplier.payment_terms_days}</ProDescriptions.Item>
           <ProDescriptions.Item label={t('credit_limit')}>
             {supplier.currency} {parseFloat(supplier.credit_limit).toLocaleString('en-MY', { minimumFractionDigits: 2 })}
           </ProDescriptions.Item>
-          {supplier.notes && <ProDescriptions.Item label="Notes" span={2}>{supplier.notes}</ProDescriptions.Item>}
+          {supplier.notes && <ProDescriptions.Item label={t('notes')} span={2}>{supplier.notes}</ProDescriptions.Item>}
         </ProDescriptions>
       </Card>
 

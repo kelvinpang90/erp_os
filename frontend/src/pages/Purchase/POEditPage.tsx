@@ -12,6 +12,7 @@ import {
 import { App, Card, Row, Skeleton, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { axiosInstance } from '../../api/client'
 import StockStatusBadge, { type StockSnapshot } from '../../components/StockStatusBadge'
@@ -44,6 +45,7 @@ export default function POEditPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { message } = App.useApp()
+  const { t } = useTranslation(['purchase_order', 'common'])
 
   // OCR prefill payload (when arriving from /purchase/orders/ocr-upload).
   // Only meaningful on create; ignored when editing an existing PO.
@@ -226,7 +228,7 @@ export default function POEditPage() {
       } else { anyFailed = true }
 
       if (anyFailed) {
-        message.warning('Some reference data failed to load. Please refresh if dropdowns are empty.')
+        message.warning(t('messages.referenceDataFailed'))
       }
     })
 
@@ -275,10 +277,10 @@ export default function POEditPage() {
             })
           }
         })
-        .catch(() => message.error('Failed to load purchase order'))
+        .catch(() => message.error(t('messages.loadFailed')))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message, fetchSkus, fetchStockForLine])
+  }, [id, isCreate, message, fetchSkus, fetchStockForLine, t])
 
   // ── OCR prefill: apply once reference dropdowns are populated ──────────
   // SKUs aren't matched against the local cache (which only has the first 50
@@ -425,11 +427,9 @@ export default function POEditPage() {
       const linesMissingSku = newLines.filter((l) => l.sku_id === undefined).length
       if (linesMissingSku > 0) missing.push(`${linesMissingSku} SKU`)
       if (missing.length > 0) {
-        message.warning(
-          `OCR prefilled. Please review unmatched fields: ${missing.join(', ')}.`,
-        )
+        message.warning(t('messages.ocrPrefilledMissing', { fields: missing.join(', ') }))
       } else {
-        message.success(`OCR prefilled (confidence: ${ocrPrefill.confidence}). Please review and save.`)
+        message.success(t('messages.ocrPrefilled', { confidence: ocrPrefill.confidence }))
       }
     }
 
@@ -528,9 +528,9 @@ export default function POEditPage() {
 
       const missing = newLines.filter((l) => !skuById.has(l.sku_id ?? -1)).length
       if (missing > 0) {
-        message.warning(`Restock prefilled. ${missing} SKU(s) could not be resolved.`)
+        message.warning(t('messages.restockPrefilledMissing', { count: missing }))
       } else {
-        message.success('Restock prefilled. Please pick a supplier and review.')
+        message.success(t('messages.restockPrefilled'))
       }
     }
 
@@ -548,7 +548,7 @@ export default function POEditPage() {
 
   const lineColumns: ProColumns<LineRow>[] = [
     {
-      title: 'SKU',
+      title: t('sku'),
       dataIndex: 'sku_id',
       valueType: 'select',
       fieldProps: {
@@ -558,13 +558,13 @@ export default function POEditPage() {
         filterOption: false,
         onSearch: handleSkuSearch,
         loading: skuLoading,
-        notFoundContent: skuLoading ? 'Searching…' : 'No SKU found',
+        notFoundContent: skuLoading ? t('placeholders.searching') : t('placeholders.noSku'),
       },
       formItemProps: { rules: [{ required: true }] },
       width: 240,
     },
     {
-      title: 'UOM',
+      title: t('uom'),
       dataIndex: 'uom_id',
       valueType: 'select',
       fieldProps: { options: uomOptions },
@@ -572,7 +572,7 @@ export default function POEditPage() {
       width: 90,
     },
     {
-      title: 'Stock',
+      title: t('columns.stock'),
       dataIndex: 'current_stock',
       editable: false,
       width: 140,
@@ -584,7 +584,7 @@ export default function POEditPage() {
         ),
     },
     {
-      title: 'Qty',
+      title: t('columns.qty'),
       dataIndex: 'qty_ordered',
       valueType: 'digit',
       fieldProps: { min: 0.0001, precision: 4 },
@@ -592,7 +592,7 @@ export default function POEditPage() {
       width: 100,
     },
     {
-      title: 'Unit Price',
+      title: t('columns.unitPrice'),
       dataIndex: 'unit_price_excl_tax',
       valueType: 'digit',
       fieldProps: { min: 0, precision: 4 },
@@ -600,7 +600,7 @@ export default function POEditPage() {
       width: 120,
     },
     {
-      title: 'Tax Rate',
+      title: t('tax_rate'),
       dataIndex: 'tax_rate_id',
       valueType: 'select',
       fieldProps: { options: taxRateOptions },
@@ -608,14 +608,14 @@ export default function POEditPage() {
       width: 140,
     },
     {
-      title: 'Disc %',
+      title: t('discount_percent'),
       dataIndex: 'discount_percent',
       valueType: 'digit',
       fieldProps: { min: 0, max: 100, precision: 2 },
       width: 90,
     },
     {
-      title: 'Description',
+      title: t('description'),
       dataIndex: 'description',
       width: 180,
     },
@@ -652,7 +652,7 @@ export default function POEditPage() {
 
     const filledLines = lines.filter((l) => l.sku_id != null)
     if (filledLines.length === 0) {
-      message.error('Please add at least one order line.')
+      message.error(t('messages.atLeastOneLine'))
       return
     }
 
@@ -675,15 +675,15 @@ export default function POEditPage() {
     try {
       if (isCreate) {
         await axiosInstance.post('/purchase-orders', payload)
-        message.success('Purchase order created.')
+        message.success(t('messages.created'))
       } else {
         await axiosInstance.patch(`/purchase-orders/${id}`, payload)
-        message.success('Purchase order updated.')
+        message.success(t('messages.updated'))
       }
       navigate('/purchase/orders')
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { message?: string; detail?: unknown } } })?.response?.data
-      const msg = errData?.message ?? 'Operation failed'
+      const msg = errData?.message ?? t('common:operationFailed')
       message.error(msg)
     }
   }
@@ -691,7 +691,7 @@ export default function POEditPage() {
   if (loading) return <Skeleton active />
 
   return (
-    <Card title={isCreate ? 'New Purchase Order' : 'Edit Purchase Order'}>
+    <Card title={isCreate ? t('create') : t('edit')}>
       <ProForm
         formRef={formRef}
         initialValues={initialValues ?? {
@@ -702,10 +702,10 @@ export default function POEditPage() {
         onFinish={handleSubmit}
         onReset={() => navigate('/purchase/orders')}
       >
-        <ProForm.Group title="Order Details">
+        <ProForm.Group title={t('sections.orderDetails')}>
           <ProFormSelect
             name="supplier_id"
-            label="Supplier"
+            label={t('supplier')}
             options={supplierOptions}
             rules={[{ required: true }]}
             fieldProps={{ showSearch: true }}
@@ -713,7 +713,7 @@ export default function POEditPage() {
           />
           <ProFormSelect
             name="warehouse_id"
-            label="Warehouse"
+            label={t('warehouse')}
             options={warehouseOptions}
             rules={[{ required: true }]}
             width="md"
@@ -721,19 +721,19 @@ export default function POEditPage() {
               onChange: (wh: number) => refreshAllStock(wh),
             }}
           />
-          <ProFormDatePicker name="business_date" label="Order Date" rules={[{ required: true }]} width="md" />
-          <ProFormDatePicker name="expected_date" label="Expected Date" width="md" />
+          <ProFormDatePicker name="business_date" label={t('business_date')} rules={[{ required: true }]} width="md" />
+          <ProFormDatePicker name="expected_date" label={t('expected_date')} width="md" />
         </ProForm.Group>
 
-        <ProForm.Group title="Payment">
-          <ProFormSelect name="currency" label="Currency" options={CURRENCY_OPTIONS} width="sm" />
-          <ProFormDigit name="exchange_rate" label="Exchange Rate" min={0.000001} fieldProps={{ precision: 8 }} width="sm" />
-          <ProFormDigit name="payment_terms_days" label="Payment Terms (Days)" min={0} width="sm" />
+        <ProForm.Group title={t('sections.payment')}>
+          <ProFormSelect name="currency" label={t('currency')} options={CURRENCY_OPTIONS} width="sm" />
+          <ProFormDigit name="exchange_rate" label={t('exchange_rate')} min={0.000001} fieldProps={{ precision: 8 }} width="sm" />
+          <ProFormDigit name="payment_terms_days" label={t('payment_terms_days')} min={0} width="sm" />
         </ProForm.Group>
 
-        <ProFormTextArea name="remarks" label="Remarks" fieldProps={{ rows: 2 }} />
+        <ProFormTextArea name="remarks" label={t('remarks')} fieldProps={{ rows: 2 }} />
 
-        <Card title="Order Lines" size="small" style={{ marginBottom: 24 }}>
+        <Card title={t('lines')} size="small" style={{ marginBottom: 24 }}>
           <EditableProTable<LineRow>
             rowKey="id"
             editableFormRef={editableFormRef}
@@ -761,7 +761,7 @@ export default function POEditPage() {
             recordCreatorProps={{
               newRecordType: 'dataSource',
               record: () => ({ id: `new-${Date.now()}` }),
-              creatorButtonText: '+ Add Line',
+              creatorButtonText: `+ ${t('add_line')}`,
             }}
             scroll={{ x: 1100 }}
             size="small"
@@ -769,13 +769,13 @@ export default function POEditPage() {
           <Row justify="end" style={{ marginTop: 12 }}>
             <Space size="large">
               <Typography.Text type="secondary">
-                Subtotal: MYR {totals.subtotal.toFixed(2)}
+                {t('subtotal_excl_tax')}: MYR {totals.subtotal.toFixed(2)}
               </Typography.Text>
               <Typography.Text type="secondary">
-                Tax: MYR {totals.tax.toFixed(2)}
+                {t('tax_amount')}: MYR {totals.tax.toFixed(2)}
               </Typography.Text>
               <Typography.Text strong>
-                Total: MYR {totals.total.toFixed(2)}
+                {t('total_incl_tax')}: MYR {totals.total.toFixed(2)}
               </Typography.Text>
             </Space>
           </Row>

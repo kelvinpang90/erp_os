@@ -1,5 +1,6 @@
 import type { ProColumns } from '@ant-design/pro-components'
 import { Badge, Tag } from 'antd'
+import type { TFunction } from 'i18next'
 
 export interface SKURow {
   id: number
@@ -17,27 +18,27 @@ export interface SKURow {
   created_at: string
 }
 
-export const skuColumns: ProColumns<SKURow>[] = [
+export const buildSkuColumns = (t: TFunction): ProColumns<SKURow>[] => [
   {
-    title: 'Code',
+    title: t('columns.code'),
     dataIndex: 'code',
     width: 120,
     fixed: 'left',
     copyable: true,
   },
   {
-    title: 'Name',
+    title: t('columns.name'),
     dataIndex: 'name',
     ellipsis: true,
   },
   {
-    title: 'Barcode',
+    title: t('columns.barcode'),
     dataIndex: 'barcode',
     hideInSearch: true,
     width: 130,
   },
   {
-    title: 'Price (excl. tax)',
+    title: t('columns.priceExclTax'),
     dataIndex: 'unit_price_excl_tax',
     hideInSearch: true,
     width: 140,
@@ -45,36 +46,36 @@ export const skuColumns: ProColumns<SKURow>[] = [
       `${row.currency} ${parseFloat(row.unit_price_excl_tax).toFixed(2)}`,
   },
   {
-    title: 'Safety Stock',
+    title: t('columns.safetyStock'),
     dataIndex: 'safety_stock',
     hideInSearch: true,
     width: 120,
     render: (val) => parseFloat(val as string).toFixed(2),
   },
   {
-    title: 'Costing',
+    title: t('columns.costing'),
     dataIndex: 'costing_method',
     hideInSearch: true,
     width: 140,
     render: (val) => <Tag>{val as string}</Tag>,
   },
   {
-    title: 'Status',
+    title: t('columns.status'),
     dataIndex: 'is_active',
     width: 90,
     valueEnum: {
-      true: { text: 'Active' },
-      false: { text: 'Inactive' },
+      true: { text: t('columns.active') },
+      false: { text: t('columns.inactive') },
     },
     render: (_, row) => (
       <Badge
         status={row.is_active ? 'success' : 'default'}
-        text={row.is_active ? 'Active' : 'Inactive'}
+        text={row.is_active ? t('columns.active') : t('columns.inactive')}
       />
     ),
   },
   {
-    title: 'Created',
+    title: t('columns.created'),
     dataIndex: 'created_at',
     hideInSearch: true,
     width: 160,

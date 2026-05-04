@@ -1,6 +1,8 @@
 import type { ProColumns } from '@ant-design/pro-components'
 import { Tag } from 'antd'
 
+type Translator = (key: string, opts?: Record<string, unknown>) => string
+
 export interface CreditNoteRow {
   id: number
   document_no: string
@@ -28,92 +30,86 @@ export const CN_STATUS_COLOR: Record<string, string> = {
   CANCELLED: 'default',
 }
 
-export const CN_STATUS_LABEL: Record<string, string> = {
-  DRAFT: 'Draft',
-  SUBMITTED: 'Submitted',
-  VALIDATED: 'Validated',
-  FINAL: 'Final',
-  REJECTED: 'Rejected',
-  CANCELLED: 'Cancelled',
+export function cnStatusLabel(t: Translator, status: string): string {
+  // Reuses einvoice:status_* keys.
+  return t(`status_${status}`, { defaultValue: status })
 }
 
-export const CN_REASON_LABEL: Record<string, string> = {
-  RETURN: 'Return',
-  DISCOUNT_ADJUSTMENT: 'Discount Adjustment',
-  PRICE_CORRECTION: 'Price Correction',
-  WRITE_OFF: 'Write-Off',
-  OTHER: 'Other',
+export function cnReasonLabel(t: Translator, reason: string): string {
+  return t(`creditNote.reasons.${reason}`, { defaultValue: reason })
 }
 
-export const creditNoteColumns: ProColumns<CreditNoteRow>[] = [
-  {
-    title: 'CN No',
-    dataIndex: 'document_no',
-    width: 160,
-    fixed: 'left',
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    width: 130,
-    valueType: 'select',
-    valueEnum: {
-      DRAFT: { text: CN_STATUS_LABEL.DRAFT },
-      SUBMITTED: { text: CN_STATUS_LABEL.SUBMITTED },
-      VALIDATED: { text: CN_STATUS_LABEL.VALIDATED },
-      FINAL: { text: CN_STATUS_LABEL.FINAL },
-      REJECTED: { text: CN_STATUS_LABEL.REJECTED },
-      CANCELLED: { text: CN_STATUS_LABEL.CANCELLED },
+export function getCreditNoteColumns(t: Translator): ProColumns<CreditNoteRow>[] {
+  return [
+    {
+      title: t('creditNote.columns.cnNo'),
+      dataIndex: 'document_no',
+      width: 160,
+      fixed: 'left',
     },
-    render: (_, row) => (
-      <Tag color={CN_STATUS_COLOR[row.status] ?? 'default'}>
-        {CN_STATUS_LABEL[row.status] ?? row.status}
-      </Tag>
-    ),
-  },
-  {
-    title: 'Invoice No',
-    dataIndex: 'invoice_no',
-    width: 160,
-    hideInSearch: true,
-    render: (val) => val || '—',
-  },
-  {
-    title: 'Customer',
-    dataIndex: 'customer_name',
-    width: 200,
-    hideInSearch: true,
-    ellipsis: true,
-  },
-  {
-    title: 'Reason',
-    dataIndex: 'reason',
-    width: 160,
-    hideInSearch: true,
-    render: (_, row) => CN_REASON_LABEL[row.reason] ?? row.reason,
-  },
-  {
-    title: 'Business Date',
-    dataIndex: 'business_date',
-    width: 120,
-    hideInSearch: true,
-  },
-  {
-    title: 'UIN',
-    dataIndex: 'uin',
-    width: 180,
-    hideInSearch: true,
-    render: (val) => val ?? '—',
-  },
-  {
-    title: 'Total',
-    dataIndex: 'total_incl_tax',
-    width: 140,
-    hideInSearch: true,
-    render: (val, row) =>
-      `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-  },
-]
+    {
+      title: t('status'),
+      dataIndex: 'status',
+      width: 130,
+      valueType: 'select',
+      valueEnum: {
+        DRAFT: { text: cnStatusLabel(t, 'DRAFT') },
+        SUBMITTED: { text: cnStatusLabel(t, 'SUBMITTED') },
+        VALIDATED: { text: cnStatusLabel(t, 'VALIDATED') },
+        FINAL: { text: cnStatusLabel(t, 'FINAL') },
+        REJECTED: { text: cnStatusLabel(t, 'REJECTED') },
+        CANCELLED: { text: cnStatusLabel(t, 'CANCELLED') },
+      },
+      render: (_, row) => (
+        <Tag color={CN_STATUS_COLOR[row.status] ?? 'default'}>
+          {cnStatusLabel(t, row.status)}
+        </Tag>
+      ),
+    },
+    {
+      title: t('creditNote.columns.invoiceNo'),
+      dataIndex: 'invoice_no',
+      width: 160,
+      hideInSearch: true,
+      render: (val) => val || '—',
+    },
+    {
+      title: t('customer'),
+      dataIndex: 'customer_name',
+      width: 200,
+      hideInSearch: true,
+      ellipsis: true,
+    },
+    {
+      title: t('creditNote.columns.reason'),
+      dataIndex: 'reason',
+      width: 160,
+      hideInSearch: true,
+      render: (_, row) => cnReasonLabel(t, row.reason),
+    },
+    {
+      title: t('business_date'),
+      dataIndex: 'business_date',
+      width: 120,
+      hideInSearch: true,
+    },
+    {
+      title: t('uin'),
+      dataIndex: 'uin',
+      width: 180,
+      hideInSearch: true,
+      render: (val) => val ?? '—',
+    },
+    {
+      title: t('creditNote.columns.total'),
+      dataIndex: 'total_incl_tax',
+      width: 140,
+      hideInSearch: true,
+      render: (val, row) =>
+        `${row.currency} ${parseFloat(String(val)).toLocaleString('en-MY', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+    },
+  ]
+}

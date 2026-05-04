@@ -5,17 +5,10 @@ import {
   ProFormText,
 } from '@ant-design/pro-components'
 import { App, Card, Skeleton } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
-
-const WAREHOUSE_TYPE_OPTIONS = [
-  { value: 'MAIN', label: 'Main' },
-  { value: 'BRANCH', label: 'Branch' },
-  { value: 'TRANSIT', label: 'Transit' },
-  { value: 'QUARANTINE', label: 'Quarantine' },
-]
 
 const COUNTRY_OPTIONS = [
   { value: 'MY', label: 'Malaysia' },
@@ -28,6 +21,16 @@ export default function WarehouseEditPage() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { t } = useTranslation('warehouse')
+
+  const WAREHOUSE_TYPE_OPTIONS = useMemo(
+    () => [
+      { value: 'MAIN', label: t('type_label.MAIN') },
+      { value: 'BRANCH', label: t('type_label.BRANCH') },
+      { value: 'TRANSIT', label: t('type_label.TRANSIT') },
+      { value: 'QUARANTINE', label: t('type_label.QUARANTINE') },
+    ],
+    [t],
+  )
 
   const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(!isCreate)
@@ -60,19 +63,19 @@ export default function WarehouseEditPage() {
       axiosInstance
         .get(`/warehouses/${id}`)
         .then((res) => setInitialValues(res.data))
-        .catch(() => message.error('Failed to load warehouse'))
+        .catch(() => message.error(t('load_failed')))
         .finally(() => setLoading(false))
     }
-  }, [id, isCreate, message])
+  }, [id, isCreate, message, t])
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       if (isCreate) {
         await axiosInstance.post('/warehouses', values)
-        message.success('Warehouse created successfully')
+        message.success(t('create_success'))
       } else {
         await axiosInstance.patch(`/warehouses/${id}`, values)
-        message.success('Warehouse updated successfully')
+        message.success(t('update_success'))
       }
       navigate('/settings/warehouses')
     } catch (err: unknown) {
@@ -81,7 +84,7 @@ export default function WarehouseEditPage() {
       if (errCode === 'WAREHOUSE_MAIN_DELETE_FORBIDDEN') {
         message.error(t('cannot_delete_main'))
       } else {
-        message.error(apiErr?.response?.data?.message ?? 'Operation failed')
+        message.error(apiErr?.response?.data?.message ?? t('operation_failed'))
       }
     }
   }
@@ -113,7 +116,7 @@ export default function WarehouseEditPage() {
           />
         </ProForm.Group>
 
-        <ProForm.Group title="Address">
+        <ProForm.Group title={t('address_section')}>
           <ProFormText name="address_line1" label={t('address_line1')} width="xl" />
           <ProFormText name="address_line2" label={t('address_line2')} width="xl" />
           <ProFormText name="city" label={t('city')} width="md" />
@@ -133,7 +136,7 @@ export default function WarehouseEditPage() {
           />
         </ProForm.Group>
 
-        {!isCreate && <ProFormSwitch name="is_active" label="Active" />}
+        {!isCreate && <ProFormSwitch name="is_active" label={t('active')} />}
       </ProForm>
     </Card>
   )

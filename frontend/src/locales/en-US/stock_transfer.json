@@ -43,5 +43,19 @@
   "add_line": "Add Line",
   "same_warehouse_error": "From and To warehouses must differ",
   "no_lines_error": "Please add at least one line",
-  "summary": "Transfer Summary"
+  "summary": "Transfer Summary",
+  "summary_lines": "Transfer Summary: {{count}} line(s)",
+  "receive_now": "Receive Now",
+  "messages": {
+    "ref_data_partial": "Some reference data failed to load. Please refresh if dropdowns are empty.",
+    "validation_failed": "Validation failed",
+    "create_failed": "Failed to create transfer",
+    "confirm_failed": "Failed to confirm transfer",
+    "ship_failed": "Failed to ship transfer",
+    "cancel_failed": "Failed to cancel transfer",
+    "update_failed": "Failed to update",
+    "receive_failed": "Failed to receive",
+    "only_draft_editable": "Only DRAFT transfers can be edited.",
+    "only_in_transit_receivable": "Only IN_TRANSIT transfers can be received."
+  }
 }

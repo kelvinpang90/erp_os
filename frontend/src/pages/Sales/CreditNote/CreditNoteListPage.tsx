@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../../api/client'
 import ResourceListPage from '../../../components/ResourceListPage'
-import { creditNoteColumns, type CreditNoteRow } from './CreditNoteColumns'
+import { getCreditNoteColumns, type CreditNoteRow } from './CreditNoteColumns'
 
 async function fetchCreditNotes(params: {
   current?: number
@@ -22,14 +23,17 @@ async function fetchCreditNotes(params: {
 
 export default function CreditNoteListPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation(['einvoice', 'common'])
 
   return (
     <ResourceListPage<CreditNoteRow>
-      title="Credit Notes"
+      title={t('einvoice:creditNote.listTitle')}
       columns={[
-        ...creditNoteColumns,
+        ...getCreditNoteColumns((key, opts) =>
+          t(`einvoice:${key}`, (opts ?? {}) as never) as string,
+        ),
         {
-          title: 'Action',
+          title: t('common:actions'),
           valueType: 'option',
           fixed: 'right',
           width: 120,
@@ -38,14 +42,14 @@ export default function CreditNoteListPage() {
               key="view"
               onClick={() => navigate(`/sales/credit-notes/${row.id}`)}
             >
-              View
+              {t('einvoice:buttons.view')}
             </a>,
             row.invoice_id ? (
               <a
                 key="invoice"
                 onClick={() => navigate(`/sales/einvoice/${row.invoice_id}`)}
               >
-                Invoice
+                {t('einvoice:buttons.invoice')}
               </a>
             ) : null,
           ].filter(Boolean) as React.ReactNode[],
