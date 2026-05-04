@@ -792,7 +792,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 | 11 Invoice + MyInvois | ✅ 完成 | 2026-04-29 | 2026-04-29 | ~80 | 99/99 单测全绿（新增 16）；Mock adapter 通过 Protocol 隔离，未来真实 LHDN 对接零侵入；72h 用懒触发 + admin scan 替代 Celery（推迟 W18）；DEMO_MODE 自动 72h→72s |
 | 12 e-Invoice AI + CN | ✅ 完成 | 2026-04-29 | 2026-04-29 | ~70 | 145/145 单测全绿（新增 34: 14 precheck + 4 sales_return + 10 CN + 6 consolidated）；7 硬规则 + 3 LLM 软规则 + 三档降级（gate/超时/error）；CN 5 件套完整含 cancel 库存回滚；Consolidated 按客户分组 + SO_ALREADY_CONSOLIDATED 反向校验；前端 PrecheckModal 三档行为 + CN 三页 + Generate Monthly Consolidated Modal |
 | 13 Stock Movements | ✅ 完成 | 2026-04-30 | 2026-04-30 | ~80 | 177/177 单测全绿（新增 20: 8 transfer state + 6 adjustment + 6 inventory atomic）；inventory.py 新 4 个 apply_* 函数；StockTransfer 4 状态机（DRAFT→CONFIRMED→IN_TRANSIT→RECEIVED）支持部分收货 + unit_cost_snapshot 跨阶段传递；StockAdjustment 统一录单（盘盈/盘亏混合行 by qty_diff sign），Manager/Admin 才能 confirm；Movement 只读列表带 6 维筛选；前端 9 页面 + StockStatusBadge + 3 i18n 命名空间双语；Migration 不需新建（initial_schema 已建表）；audit handler 推迟 W17 |
-| 14 Branch Inventory | ⏳ | | | | |
+| 14 Branch Inventory | ✅ 完成 | 2026-05-02 | 2026-05-02 | ~70 | inventory matrix + low-stock alerts API；notify_on_low_stock handler 带 1h 去重；前端热力图 + AlertPage 多选 → POEditPage restockPrefill 跳转预填；SKU DetailPage 成本趋势 Tab 懒加载；inventory i18n 双语；test_low_stock_notification 4 case 全绿 |
 | 15 Dashboard + Reports | ⏳ | | | | |
 | 16 UI + i18n | ⏳ | | | | |
 | 17 审计 + Dev Tools | ⏳ | | | | |

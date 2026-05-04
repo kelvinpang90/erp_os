@@ -85,9 +85,12 @@ export default function SKUDetailPage() {
     if (!id || movements !== null) return
     setMovementsLoading(true)
     axiosInstance
-      .get<MovementListResponse>(`/inventory/movements?sku_id=${id}&page_size=200&page=1`)
+      .get<MovementListResponse>(`/inventory/movements?sku_id=${id}&page_size=100&page=1`)
       .then((res) => setMovements(res.data.items))
-      .catch(() => setMovements([]))
+      .catch((err) => {
+        console.error('Failed to load cost trend movements', err)
+        setMovements([])
+      })
       .finally(() => setMovementsLoading(false))
   }
 
