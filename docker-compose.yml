@@ -1,11 +1,18 @@
-services:
+x-tz: &tz
+  TZ: Asia/Kuala_Lumpur
 
+services:
   # ── MySQL 8.0 ────────────────────────────────────────────────────────────
+  # mysqld 强制 UTC（--default-time-zone='+00:00'）以匹配 CLAUDE.md A5
+  # "时间 UTC 存储"。容器 OS 仍是 +08 方便看日志；NOW()/CURRENT_TIMESTAMP
+  # 走 UTC，TIMESTAMP/DATETIME 列存盘都是 UTC，跨 region 部署零漂移。
   mysql:
     image: mysql:8.0
     container_name: erp_mysql
     restart: unless-stopped
+    command: --default-time-zone=+00:00
     environment:
+      <<: *tz
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-erp_os}
     ports:
@@ -24,6 +31,8 @@ services:
     image: redis:7-alpine
     container_name: erp_redis
     restart: unless-stopped
+    environment:
+      <<: *tz
     ports:
       - "6379:6379"
     volumes:
@@ -42,6 +51,8 @@ services:
     container_name: erp_backend
     restart: unless-stopped
     env_file: .env
+    environment:
+      <<: *tz
     ports:
       - "8000:8000"
     volumes:
@@ -68,7 +79,8 @@ services:
     container_name: erp_frontend
     restart: unless-stopped
     environment:
-      - VITE_API_URL=http://backend:8000
+      <<: *tz
+      VITE_API_URL: http://backend:8000
     ports:
       - "3000:3000"
     volumes:
@@ -89,6 +101,8 @@ services:
     image: nginx:alpine
     container_name: erp_nginx
     restart: unless-stopped
+    environment:
+      <<: *tz
     ports:
       - "80:80"
     volumes:
