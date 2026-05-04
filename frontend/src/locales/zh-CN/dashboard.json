@@ -1,0 +1,37 @@
+{
+  "title": "工作台",
+  "kpi": {
+    "today_sales": "今日销售",
+    "today_purchases": "今日采购",
+    "pending_shipments": "待发货",
+    "low_stock": "库存预警",
+    "pending_einvoices": "待提交发票",
+    "ai_cost_today": "AI 今日费用",
+    "currency_prefix": "RM"
+  },
+  "summary": {
+    "title": "AI 每日摘要",
+    "headline_label": "今日",
+    "key_findings": "关键发现",
+    "action_items": "建议动作",
+    "fresh": "实时",
+    "stale_minutes": "{{minutes}} 分钟前",
+    "stale_hours": "{{hours}} 小时前",
+    "never_generated": "尚无摘要 — 打开本页或点击刷新即可生成。",
+    "ai_disabled": "本组织已关闭 AI 摘要。",
+    "refresh": "立即刷新",
+    "refreshing": "生成中…",
+    "error_timeout": "AI 调用超时,显示上次缓存内容。",
+    "error_general": "AI 暂不可用,显示缓存内容。"
+  },
+  "trends": {
+    "sales_30d": "销售 — 近 30 天",
+    "purchase_30d": "采购 — 近 30 天",
+    "einvoice_status": "e-Invoice 状态分布",
+    "ai_cost_30d": "AI 成本 — 近 30 天"
+  },
+  "cache": {
+    "hit": "已缓存",
+    "fresh": "最新"
+  }
+}

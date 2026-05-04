@@ -1,5 +1,6 @@
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   DashboardOutlined,
   GlobalOutlined,
   LogoutOutlined,
@@ -75,6 +76,11 @@ export default function AppLayout() {
         { path: '/inventory/adjustments', name: t('stockAdjustments') },
         { path: '/inventory/movements', name: t('stockMovements') },
       ],
+    },
+    {
+      path: '/reports',
+      name: t('reports'),
+      icon: <BarChartOutlined />,
     },
     {
       path: '/settings',

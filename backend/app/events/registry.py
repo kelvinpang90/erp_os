@@ -13,8 +13,9 @@ from app.events.types import DocumentStatusChanged, EInvoiceValidated, StockMove
 
 
 def setup_event_handlers(bus: EventBus) -> None:
-    # DocumentStatusChanged — sync: audit log
+    # DocumentStatusChanged — sync: audit log; after-commit: dashboard cache drop
     bus.subscribe_sync(DocumentStatusChanged, audit.handle_document_status_changed)
+    bus.subscribe_after_commit(DocumentStatusChanged, cache.invalidate_dashboard_cache)
 
     # StockMovementOccurred — sync: audit; after-commit: cache invalidation + low-stock check
     bus.subscribe_sync(StockMovementOccurred, audit.handle_stock_movement_occurred)
@@ -22,5 +23,6 @@ def setup_event_handlers(bus: EventBus) -> None:
     bus.subscribe_after_commit(StockMovementOccurred, notification.notify_on_low_stock)
     bus.subscribe_after_commit(StockMovementOccurred, inventory.update_stock_on_movement)
 
-    # EInvoiceValidated — after-commit: buyer notification
+    # EInvoiceValidated — after-commit: buyer notification + dashboard cache drop
     bus.subscribe_after_commit(EInvoiceValidated, notification.notify_on_einvoice_validated)
+    bus.subscribe_after_commit(EInvoiceValidated, cache.invalidate_dashboard_cache)

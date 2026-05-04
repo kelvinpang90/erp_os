@@ -1,0 +1,36 @@
+{
+  "title": "报表中心",
+  "subtitle": "跨模块综合分析 — 每 5 分钟刷新。",
+  "range": {
+    "label": "时间范围",
+    "7d": "近 7 天",
+    "30d": "近 30 天",
+    "90d": "近 90 天"
+  },
+  "cards": {
+    "sales_trend": "销售趋势",
+    "purchase_trend": "采购趋势",
+    "top_skus": "Top 10 SKU 销售额",
+    "top_suppliers": "Top 10 供应商采购额",
+    "top_customers": "Top 10 客户贡献",
+    "inventory_turnover": "库存周转率",
+    "warehouse_distribution": "各仓库库存价值",
+    "category_share": "品类销售占比",
+    "einvoice_status": "e-Invoice 状态分布",
+    "ai_cost": "AI 成本"
+  },
+  "labels": {
+    "amount": "金额 (RM)",
+    "amount_short": "RM",
+    "qty": "数量",
+    "po_count": "PO 单数",
+    "so_count": "订单数",
+    "cogs": "销货成本 (RM)",
+    "inventory_value": "库存价值 (RM)",
+    "turnover": "周转倍数",
+    "calls": "调用数",
+    "cost_usd": "成本 (USD)",
+    "share_pct": "占比 %",
+    "no_data": "所选区间暂无数据"
+  }
+}

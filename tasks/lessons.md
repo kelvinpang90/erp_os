@@ -71,6 +71,17 @@
 
 ---
 
+## Window 15: Dashboard + AI 日报
+
+### [2026-05-04] `docker compose restart` 不重读 env_file
+
+**场景**:Window 15 演示 AI 日报,DB 已开 `ai_master_enabled=1` + `ai_features.DASHBOARD_SUMMARY=true`,`.env` 改 `AI_ENABLED=true`,`docker compose restart backend` 后前端仍显示 "AI digest is disabled for this organization."
+**犯的错**:以为 `docker compose restart` 会重新加载 `env_file` 指向的 `.env`。实际上 restart 只是重启已存在的容器实例,环境变量是容器创建时从 `.env` 快照进容器的,**restart 不重新读快照**。`docker compose exec backend env | grep AI_ENABLED` 仍是 `false`(老快照)
+**纠正**:`docker compose up -d --force-recreate backend` 销毁并按当前 `.env` 重建容器,新进程才能拿到新值。验证手段:`docker compose exec backend python -c "from app.core.config import settings; print(settings.AI_ENABLED)"`
+**预防**:任何修改 `.env`(尤其涉及 feature flag / API key / DB URL)后,统一用 `docker compose up -d <service>` 而非 `restart`。如果只改了代码文件不改 env,`restart` 才安全。把这条挂进 CLAUDE.md Part 12 部署/DevOps 备注里。
+
+---
+
 ### [2026-04-28] PyCharm Docker Compose Interpreter 的 Debug 模式会劫持容器 entrypoint
 
 **场景**：用 PyCharm 配 Docker Compose Interpreter 跑 backend

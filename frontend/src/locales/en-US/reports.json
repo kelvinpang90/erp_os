@@ -1,0 +1,36 @@
+{
+  "title": "Reports",
+  "subtitle": "Cross-cutting analytics — refreshed every 5 minutes.",
+  "range": {
+    "label": "Time range",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "90d": "Last 90 days"
+  },
+  "cards": {
+    "sales_trend": "Sales Trend",
+    "purchase_trend": "Purchase Trend",
+    "top_skus": "Top 10 SKUs by Revenue",
+    "top_suppliers": "Top 10 Suppliers by Spend",
+    "top_customers": "Top 10 Customers by Revenue",
+    "inventory_turnover": "Inventory Turnover",
+    "warehouse_distribution": "Stock Value by Warehouse",
+    "category_share": "Sales Share by Category",
+    "einvoice_status": "e-Invoice Status",
+    "ai_cost": "AI Spend"
+  },
+  "labels": {
+    "amount": "Amount (RM)",
+    "amount_short": "RM",
+    "qty": "Quantity",
+    "po_count": "POs",
+    "so_count": "Orders",
+    "cogs": "COGS (RM)",
+    "inventory_value": "Inv Value (RM)",
+    "turnover": "Turnover x",
+    "calls": "Calls",
+    "cost_usd": "Cost (USD)",
+    "share_pct": "Share %",
+    "no_data": "No data in selected range"
+  }
+}

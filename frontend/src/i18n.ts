@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import enCommon from './locales/en-US/common.json'
 import enCustomer from './locales/en-US/customer.json'
+import enDashboard from './locales/en-US/dashboard.json'
 import enDeliveryOrder from './locales/en-US/delivery_order.json'
 import enEinvoice from './locales/en-US/einvoice.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
@@ -11,6 +12,7 @@ import enInventory from './locales/en-US/inventory.json'
 import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
+import enReports from './locales/en-US/reports.json'
 import enSalesOrder from './locales/en-US/sales_order.json'
 import enStockAdjustment from './locales/en-US/stock_adjustment.json'
 import enStockMovement from './locales/en-US/stock_movement.json'
@@ -19,6 +21,7 @@ import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
 import zhCommon from './locales/zh-CN/common.json'
 import zhCustomer from './locales/zh-CN/customer.json'
+import zhDashboard from './locales/zh-CN/dashboard.json'
 import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
 import zhEinvoice from './locales/zh-CN/einvoice.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
@@ -26,6 +29,7 @@ import zhInventory from './locales/zh-CN/inventory.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
+import zhReports from './locales/zh-CN/reports.json'
 import zhSalesOrder from './locales/zh-CN/sales_order.json'
 import zhStockAdjustment from './locales/zh-CN/stock_adjustment.json'
 import zhStockMovement from './locales/zh-CN/stock_movement.json'
@@ -41,6 +45,8 @@ i18n
       'en-US': {
         common: enCommon,
         menu: enMenu,
+        dashboard: enDashboard,
+        reports: enReports,
         supplier: enSupplier,
         customer: enCustomer,
         warehouse: enWarehouse,
@@ -58,6 +64,8 @@ i18n
       'zh-CN': {
         common: zhCommon,
         menu: zhMenu,
+        dashboard: zhDashboard,
+        reports: zhReports,
         supplier: zhSupplier,
         customer: zhCustomer,
         warehouse: zhWarehouse,

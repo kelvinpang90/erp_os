@@ -1,0 +1,37 @@
+{
+  "title": "Dashboard",
+  "kpi": {
+    "today_sales": "Today's Sales",
+    "today_purchases": "Today's Purchases",
+    "pending_shipments": "Pending Shipments",
+    "low_stock": "Low Stock",
+    "pending_einvoices": "Pending e-Invoices",
+    "ai_cost_today": "AI Cost Today",
+    "currency_prefix": "RM"
+  },
+  "summary": {
+    "title": "AI Daily Digest",
+    "headline_label": "Today",
+    "key_findings": "Key findings",
+    "action_items": "Recommended actions",
+    "fresh": "Fresh",
+    "stale_minutes": "{{minutes}} min ago",
+    "stale_hours": "{{hours}} h ago",
+    "never_generated": "No digest yet — open this page or click Refresh to generate one.",
+    "ai_disabled": "AI digest is disabled for this organization.",
+    "refresh": "Refresh now",
+    "refreshing": "Generating…",
+    "error_timeout": "AI took too long; showing the last cached digest.",
+    "error_general": "AI is temporarily unavailable; showing cached digest."
+  },
+  "trends": {
+    "sales_30d": "Sales — last 30 days",
+    "purchase_30d": "Purchases — last 30 days",
+    "einvoice_status": "e-Invoice status",
+    "ai_cost_30d": "AI cost — last 30 days"
+  },
+  "cache": {
+    "hit": "Cached",
+    "fresh": "Fresh"
+  }
+}

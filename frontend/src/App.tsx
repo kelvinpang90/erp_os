@@ -46,15 +46,8 @@ const AdjustmentDetailPage = lazy(() => import('./pages/Inventory/AdjustmentDeta
 const MovementListPage = lazy(() => import('./pages/Inventory/MovementListPage'))
 const BranchInventoryPage = lazy(() => import('./pages/Inventory/BranchInventoryPage'))
 const AlertPage = lazy(() => import('./pages/Inventory/AlertPage'))
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div style={{ padding: 24, textAlign: 'center' }}>
-      <h2>{title}</h2>
-      <p style={{ color: '#888' }}>Coming soon...</p>
-    </div>
-  )
-}
+const DashboardPage = lazy(() => import('./pages/Dashboard'))
+const ReportsPage = lazy(() => import('./pages/Reports'))
 
 function AppRoutes() {
   return (
@@ -68,7 +61,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<PlaceholderPage title="Dashboard" />} />
+        <Route index element={<DashboardPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/skus" element={<SKUListPage />} />
         <Route path="/skus/create" element={<SKUEditPage />} />
         <Route path="/skus/:id" element={<SKUDetailPage />} />
