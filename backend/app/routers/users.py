@@ -194,14 +194,14 @@ async def update_user(
 @router.post(
     "/{user_id}/reset-password",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Admin password reset",
+    response_model=None,
 )
 async def reset_password(
     user_id: int,
     payload: PasswordReset,
     user: User = Depends(require_role(RoleCode.ADMIN)),
     db: AsyncSession = Depends(get_db),
-) -> None:
+):
     target = await _get_user_or_404(db, user.organization_id, user_id)
     target.password_hash = hash_password(payload.new_password)
     target.locked_until = None  # clear any lockout when admin resets
@@ -212,13 +212,13 @@ async def reset_password(
 @router.delete(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Soft-delete a user",
+    response_model=None,
 )
 async def soft_delete(
     user_id: int,
     user: User = Depends(require_role(RoleCode.ADMIN)),
     db: AsyncSession = Depends(get_db),
-) -> None:
+):
     target = await _get_user_or_404(db, user.organization_id, user_id)
     if target.id == user.id:
         raise BusinessRuleError(

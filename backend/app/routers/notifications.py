@@ -68,13 +68,13 @@ async def unread_count(
 @router.post(
     "/{notification_id}/read",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Mark a single notification as read",
+    response_model=None,
 )
 async def mark_read(
     notification_id: int,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> None:
+):
     repo = NotificationRepository(db)
     updated = await repo.mark_one_read(
         user.organization_id, user.id, _user_role_codes(user), notification_id
