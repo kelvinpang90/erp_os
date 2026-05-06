@@ -39,7 +39,7 @@ from app.enums import RoleCode
 from app.models.organization import User
 from app.repositories.user import UserRepository
 from app.schemas.auth import TokenResponse
-from app.schemas.user import MeResponse, MenuNode, UserResponse
+from app.schemas.user import AISettingsSnapshot, MeResponse, MenuNode, UserResponse
 
 if TYPE_CHECKING:
     pass
@@ -300,6 +300,30 @@ _MENU_DEFINITIONS: list[dict] = [
                 "roles": [RoleCode.ADMIN],
                 "children": [],
             },
+            {
+                "key": "settings.uoms",
+                "path": "/settings/uoms",
+                "icon": "",
+                "label": "menu.settings.uoms",
+                "roles": [RoleCode.ADMIN],
+                "children": [],
+            },
+            {
+                "key": "settings.brands",
+                "path": "/settings/brands",
+                "icon": "",
+                "label": "menu.settings.brands",
+                "roles": [RoleCode.ADMIN],
+                "children": [],
+            },
+            {
+                "key": "settings.categories",
+                "path": "/settings/categories",
+                "icon": "",
+                "label": "menu.settings.categories",
+                "roles": [RoleCode.ADMIN],
+                "children": [],
+            },
         ],
     },
     {
@@ -322,6 +346,14 @@ _MENU_DEFINITIONS: list[dict] = [
                 "path": "/admin/demo-reset",
                 "icon": "",
                 "label": "menu.admin.demo_reset",
+                "roles": [RoleCode.ADMIN],
+                "children": [],
+            },
+            {
+                "key": "admin.audit-logs",
+                "path": "/admin/audit-logs",
+                "icon": "",
+                "label": "menu.admin.audit_logs",
                 "roles": [RoleCode.ADMIN],
                 "children": [],
             },
@@ -535,8 +567,27 @@ class AuthService:
 
         menu = _build_menu_for_roles(role_codes)
 
+        # Inline imports avoid a top-level cycle on settings ↔ services.
+        from app.core.config import settings as app_settings
+        from app.models.organization import Organization
+
+        org = await self.session.get(Organization, user_with_roles.organization_id)
+        master_enabled = bool(org and org.ai_master_enabled and app_settings.AI_ENABLED)
+        features_raw = dict((org.ai_features if org else None) or {})
+        # Always surface the documented feature keys with default ON so the UI
+        # toggles render predictably even before the org has saved settings.
+        for key in ("OCR_INVOICE", "EINVOICE_PRECHECK", "DASHBOARD_SUMMARY"):
+            features_raw.setdefault(key, True)
+        features = {k: bool(v) for k, v in features_raw.items()}
+        ai_settings = AISettingsSnapshot(
+            master_enabled=master_enabled,
+            features=features,
+        )
+
         return MeResponse(
             user=UserResponse.model_validate(user_with_roles),
             permissions=sorted(permission_codes),
             menu=menu,
+            demo_mode=app_settings.DEMO_MODE,
+            ai_settings=ai_settings,
         )

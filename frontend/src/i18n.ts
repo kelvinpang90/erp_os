@@ -11,6 +11,7 @@ import enDeliveryOrder from './locales/en-US/delivery_order.json'
 import enEinvoice from './locales/en-US/einvoice.json'
 import enGoodsReceipt from './locales/en-US/goods_receipt.json'
 import enInventory from './locales/en-US/inventory.json'
+import enNotification from './locales/en-US/notification.json'
 import enMenu from './locales/en-US/menu.json'
 import enOcr from './locales/en-US/ocr.json'
 import enPurchaseOrder from './locales/en-US/purchase_order.json'
@@ -22,6 +23,9 @@ import enStockMovement from './locales/en-US/stock_movement.json'
 import enStockTransfer from './locales/en-US/stock_transfer.json'
 import enSupplier from './locales/en-US/supplier.json'
 import enWarehouse from './locales/en-US/warehouse.json'
+import enSettings from './locales/en-US/settings.json'
+import enUsers from './locales/en-US/users.json'
+import enAdmin from './locales/en-US/admin.json'
 import zhAuth from './locales/zh-CN/auth.json'
 import zhCommon from './locales/zh-CN/common.json'
 import zhErrors from './locales/zh-CN/errors.json'
@@ -31,6 +35,7 @@ import zhDeliveryOrder from './locales/zh-CN/delivery_order.json'
 import zhEinvoice from './locales/zh-CN/einvoice.json'
 import zhGoodsReceipt from './locales/zh-CN/goods_receipt.json'
 import zhInventory from './locales/zh-CN/inventory.json'
+import zhNotification from './locales/zh-CN/notification.json'
 import zhMenu from './locales/zh-CN/menu.json'
 import zhOcr from './locales/zh-CN/ocr.json'
 import zhPurchaseOrder from './locales/zh-CN/purchase_order.json'
@@ -42,6 +47,9 @@ import zhStockMovement from './locales/zh-CN/stock_movement.json'
 import zhStockTransfer from './locales/zh-CN/stock_transfer.json'
 import zhSupplier from './locales/zh-CN/supplier.json'
 import zhWarehouse from './locales/zh-CN/warehouse.json'
+import zhSettings from './locales/zh-CN/settings.json'
+import zhUsers from './locales/zh-CN/users.json'
+import zhAdmin from './locales/zh-CN/admin.json'
 
 i18n
   .use(LanguageDetector)
@@ -69,6 +77,10 @@ i18n
         stock_adjustment: enStockAdjustment,
         stock_movement: enStockMovement,
         inventory: enInventory,
+        notification: enNotification,
+        settings: enSettings,
+        users: enUsers,
+        admin: enAdmin,
       },
       'zh-CN': {
         auth: zhAuth,
@@ -91,6 +103,10 @@ i18n
         stock_adjustment: zhStockAdjustment,
         stock_movement: zhStockMovement,
         inventory: zhInventory,
+        notification: zhNotification,
+        settings: zhSettings,
+        users: zhUsers,
+        admin: zhAdmin,
       },
     },
     fallbackLng: 'en-US',

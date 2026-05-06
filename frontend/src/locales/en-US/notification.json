@@ -1,0 +1,7 @@
+{
+  "title": "Notifications",
+  "empty": "No notifications yet.",
+  "markAllRead": "Mark all read",
+  "low_stock": "Low stock: {{sku_code}} at {{warehouse_code}} (available {{available}}, safety {{safety_stock}})",
+  "einvoice_validated": "Invoice {{invoice_no}} validated by LHDN — UIN {{uin}}"
+}

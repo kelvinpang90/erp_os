@@ -1,0 +1,90 @@
+{
+  "title": "Settings",
+  "description": "Configure system-wide options.",
+  "cards": {
+    "general": { "title": "General", "desc": "Organization profile and defaults" },
+    "currencies": { "title": "Currencies", "desc": "Manage supported currencies" },
+    "tax_rates": { "title": "Tax Rates", "desc": "SST and exemption codes" },
+    "uoms": { "title": "Units of Measure", "desc": "EA / KG / L and friends" },
+    "brands": { "title": "Brands", "desc": "Brand master list" },
+    "categories": { "title": "Categories", "desc": "Product taxonomy" },
+    "warehouses": { "title": "Warehouses", "desc": "Locations and types" },
+    "ai_features": { "title": "AI Features", "desc": "Toggle AI-driven capabilities" },
+    "users": { "title": "Users", "desc": "User accounts and roles" }
+  },
+  "currencies": {
+    "title": "Currencies",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "symbol": "Symbol",
+      "decimal_places": "Decimals",
+      "is_base": "Base",
+      "status": "Status"
+    },
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "tax_rates": {
+    "title": "Tax Rates",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "rate": "Rate %",
+      "type": "Type",
+      "status": "Status"
+    }
+  },
+  "uoms": {
+    "title": "Units of Measure",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "category": "Category",
+      "status": "Status"
+    }
+  },
+  "brands": {
+    "title": "Brands",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "country": "Country",
+      "status": "Status"
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "parent": "Parent",
+      "status": "Status"
+    }
+  },
+  "ai": {
+    "title": "AI Features",
+    "description": "Three-layer toggle: global env switch (read-only here) → org master → per-feature. Disabling the master switch disables all AI features for this organisation.",
+    "load_failed": "Failed to load AI settings.",
+    "save_success": "AI settings saved.",
+    "save_failed": "Failed to save AI settings.",
+    "master_label": "Organisation master switch",
+    "master_help": "When OFF, every AI-driven endpoint returns AI_DISABLED for this org.",
+    "per_feature_label": "Per-feature toggles",
+    "per_feature_help": "Available only when the master switch is ON.",
+    "features": {
+      "OCR_INVOICE": {
+        "title": "OCR Invoice (Purchase)",
+        "desc": "Extract PO line items from supplier-invoice PDFs."
+      },
+      "EINVOICE_PRECHECK": {
+        "title": "e-Invoice Pre-check",
+        "desc": "AI-assisted validation before submitting to LHDN MyInvois."
+      },
+      "DASHBOARD_SUMMARY": {
+        "title": "Dashboard AI Summary",
+        "desc": "Daily natural-language briefing on the home page."
+      }
+    }
+  }
+}

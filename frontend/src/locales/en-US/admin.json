@@ -1,0 +1,50 @@
+{
+  "dev_tools": {
+    "title": "Dev Tools — Event Stream",
+    "subtitle": "Real-time view of the EventBus. Useful when demoing the event-driven architecture.",
+    "live": "Live",
+    "history": "Recent (last 50)",
+    "status_live": "live",
+    "status_paused": "paused",
+    "status_disconnected": "disconnected",
+    "pause": "Pause",
+    "resume": "Resume",
+    "clear": "Clear",
+    "refresh": "Refresh",
+    "empty_live": "Waiting for events… try confirming an order in another tab.",
+    "empty_history": "No events recorded yet."
+  },
+  "demo_reset": {
+    "title": "Demo Reset",
+    "description": "Wipes all transactional data (orders, invoices, stock movements) and re-seeds the demo dataset. Master data (SKUs, suppliers, customers) is preserved.",
+    "mode_on": "Demo mode is ACTIVE.",
+    "mode_on_desc": "Reset is permitted. The actual data wipe runs via Celery (ships in Window 18); for now this endpoint records the request.",
+    "mode_off": "Demo mode is OFF.",
+    "mode_off_desc": "Reset is disabled because DEMO_MODE is false on the backend. Set DEMO_MODE=true in .env to enable.",
+    "button": "Reset demo data",
+    "confirm_title": "Reset all demo data?",
+    "confirm_body": "This will wipe orders, invoices, stock movements, and notifications and re-seed the demo dataset. Master data is kept. Continue?",
+    "confirm_ok": "Yes, reset",
+    "confirm_cancel": "Cancel",
+    "queued": "Reset queued.",
+    "failed": "Reset request failed.",
+    "disabled": "Demo reset is only available when DEMO_MODE=true.",
+    "last_run": "Last request",
+    "status": "Status",
+    "message": "Message",
+    "log_id": "Log ID"
+  },
+  "audit": {
+    "title": "Audit Logs",
+    "show_diff": "Show before / after",
+    "columns": {
+      "occurred_at": "When",
+      "entity_type": "Entity",
+      "entity_id": "ID",
+      "action": "Action",
+      "actor": "Actor",
+      "diff": "Change",
+      "request_id": "Request ID"
+    }
+  }
+}

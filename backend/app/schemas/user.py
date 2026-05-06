@@ -50,6 +50,14 @@ class UserResponse(BaseModel):
 
 # ── /me ───────────────────────────────────────────────────────────────────────
 
+class AISettingsSnapshot(BaseModel):
+    """Per-org AI feature snapshot exposed via /me so the frontend can hide
+    AI-driven UI when a feature is disabled."""
+
+    master_enabled: bool
+    features: dict[str, bool] = Field(default_factory=dict)
+
+
 class MeResponse(BaseModel):
     """
     Full response for GET /api/auth/me.
@@ -58,6 +66,8 @@ class MeResponse(BaseModel):
     - permissions : flat list of permission codes the user holds
                     (union of all role permissions, de-duplicated)
     - menu        : filtered sidebar tree for this user's roles
+    - demo_mode   : true when DEMO_MODE env is on (drives demo banner + reset btn)
+    - ai_settings : snapshot of org AI feature toggles (Layer 2 + Layer 3)
     """
 
     user: UserResponse
@@ -65,3 +75,7 @@ class MeResponse(BaseModel):
         description="Permission codes, e.g. ['sku.read', 'po.create', ...]"
     )
     menu: list[MenuNode] = Field(description="Sidebar navigation tree")
+    demo_mode: bool = False
+    ai_settings: AISettingsSnapshot = Field(
+        default_factory=lambda: AISettingsSnapshot(master_enabled=False, features={})
+    )

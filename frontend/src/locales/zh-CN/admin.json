@@ -1,0 +1,50 @@
+{
+  "dev_tools": {
+    "title": "开发者工具 — 事件流",
+    "subtitle": "实时观察事件总线。适合演示事件驱动架构。",
+    "live": "实时",
+    "history": "最近 50 条",
+    "status_live": "在线",
+    "status_paused": "已暂停",
+    "status_disconnected": "已断开",
+    "pause": "暂停",
+    "resume": "继续",
+    "clear": "清空",
+    "refresh": "刷新",
+    "empty_live": "等待事件中…可在其他标签确认一张单据触发。",
+    "empty_history": "暂无历史事件。"
+  },
+  "demo_reset": {
+    "title": "演示数据重置",
+    "description": "清除所有业务数据（订单、发票、库存流水）并重新生成演示数据。主数据（SKU、供应商、客户）保留。",
+    "mode_on": "演示模式已开启",
+    "mode_on_desc": "可执行重置。实际清理任务由 Celery 执行（Window 18 落地），当前接口仅记录请求。",
+    "mode_off": "演示模式已关闭",
+    "mode_off_desc": "后端 DEMO_MODE 为 false，重置被禁用。请在 .env 中设置 DEMO_MODE=true。",
+    "button": "重置演示数据",
+    "confirm_title": "确认重置所有演示数据？",
+    "confirm_body": "将清除订单、发票、库存流水、通知，并重新生成演示数据。主数据保留。是否继续？",
+    "confirm_ok": "确认重置",
+    "confirm_cancel": "取消",
+    "queued": "重置任务已提交。",
+    "failed": "重置请求失败。",
+    "disabled": "演示重置仅在 DEMO_MODE=true 时可用。",
+    "last_run": "最近一次请求",
+    "status": "状态",
+    "message": "信息",
+    "log_id": "日志 ID"
+  },
+  "audit": {
+    "title": "审计日志",
+    "show_diff": "查看变更前后",
+    "columns": {
+      "occurred_at": "时间",
+      "entity_type": "实体",
+      "entity_id": "ID",
+      "action": "操作",
+      "actor": "操作人",
+      "diff": "变更",
+      "request_id": "请求 ID"
+    }
+  }
+}

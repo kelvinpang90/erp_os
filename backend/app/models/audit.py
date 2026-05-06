@@ -223,6 +223,32 @@ class LoginAttempt(Base):
     )
 
 
+class EventLog(Base):
+    """Persistent stream of recently-published domain events.
+
+    Backs the Admin Dev Tools timeline. Inserts come from the
+    ``event_log`` after-commit handler. To keep the table small the
+    application periodically trims to the most recent N rows
+    (see ``app.events.handlers.event_log``).
+    """
+
+    __tablename__ = "event_logs"
+    __table_args__ = (
+        Index("ix_eventlog_occurred", "occurred_at"),
+        Index("ix_eventlog_org_type", "organization_id", "event_type", "occurred_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    organization_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    actor_user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    request_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    payload: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), nullable=False, server_default=func.current_timestamp()
+    )
+
+
 class DemoResetLog(Base):
     __tablename__ = "demo_reset_logs"
     __table_args__ = (

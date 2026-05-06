@@ -22,13 +22,23 @@ from starlette.types import ASGIApp
 
 from app.core.config import settings
 
-# ── Context variable for request_id ──────────────────────────────────────────
+# ── Context variables for per-request metadata ───────────────────────────────
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
+client_ip_var: ContextVar[str] = ContextVar("client_ip", default="")
+user_agent_var: ContextVar[str] = ContextVar("user_agent", default="")
 
 
 def get_request_id() -> str:
     return request_id_var.get()
+
+
+def get_client_ip() -> str:
+    return client_ip_var.get()
+
+
+def get_user_agent() -> str:
+    return user_agent_var.get()
 
 
 # ── structlog processor: inject request_id into every log record ──────────────
@@ -114,11 +124,18 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         incoming = request.headers.get("X-Request-ID")
         rid = incoming if incoming else str(uuid.uuid4())
 
-        token = request_id_var.set(rid)
+        client_ip = request.client.host if request.client else ""
+        user_agent = request.headers.get("user-agent", "")[:500]
+
+        rid_token = request_id_var.set(rid)
+        ip_token = client_ip_var.set(client_ip)
+        ua_token = user_agent_var.set(user_agent)
         try:
             response: Response = await call_next(request)
         finally:
-            request_id_var.reset(token)
+            request_id_var.reset(rid_token)
+            client_ip_var.reset(ip_token)
+            user_agent_var.reset(ua_token)
 
         response.headers["X-Request-ID"] = rid
         return response

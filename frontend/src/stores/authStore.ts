@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { MeResponse, UserProfile, MenuItem } from '../types/auth'
+import type { AISettingsSnapshot, MeResponse, UserProfile, MenuItem } from '../types/auth'
 
 interface AuthState {
   user: UserProfile | null
   permissions: string[]
   menu: MenuItem[]
+  demoMode: boolean
+  aiSettings: AISettingsSnapshot
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
@@ -15,12 +17,19 @@ interface AuthState {
   hasPermission: (code: string) => boolean
 }
 
+const DEFAULT_AI_SETTINGS: AISettingsSnapshot = {
+  master_enabled: false,
+  features: {},
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       permissions: [],
       menu: [],
+      demoMode: false,
+      aiSettings: DEFAULT_AI_SETTINGS,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
@@ -31,7 +40,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setMe: (me) =>
-        set({ user: me.user, permissions: me.permissions, menu: me.menu }),
+        set({
+          user: me.user,
+          permissions: me.permissions,
+          menu: me.menu,
+          demoMode: me.demo_mode ?? false,
+          aiSettings: me.ai_settings ?? DEFAULT_AI_SETTINGS,
+        }),
 
       logout: () => {
         localStorage.removeItem('access_token')
@@ -39,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           permissions: [],
           menu: [],
+          demoMode: false,
+          aiSettings: DEFAULT_AI_SETTINGS,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
@@ -56,6 +73,8 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         permissions: state.permissions,
         menu: state.menu,
+        demoMode: state.demoMode,
+        aiSettings: state.aiSettings,
       }),
     },
   ),

@@ -37,16 +37,31 @@ class DomainEvent:
         return type(self).__name__
 
 
+ObserverCallback = Callable[["DomainEvent"], None]
+
+
 class EventBus:
     def __init__(self) -> None:
         self._sync: dict[str, list[AsyncHandler]] = {}
         self._after_commit: dict[str, list[AsyncHandler]] = {}
+        # Live observers — fan-out for the Admin Dev Tools SSE stream.
+        # Each subscriber gets a callback invoked synchronously after-commit.
+        self._observers: list[ObserverCallback] = []
 
     def subscribe_sync(self, event_class: type[DomainEvent], handler: AsyncHandler) -> None:
         self._sync.setdefault(event_class.__name__, []).append(handler)
 
     def subscribe_after_commit(self, event_class: type[DomainEvent], handler: AsyncHandler) -> None:
         self._after_commit.setdefault(event_class.__name__, []).append(handler)
+
+    def subscribe_observer(self, callback: ObserverCallback) -> None:
+        self._observers.append(callback)
+
+    def unsubscribe_observer(self, callback: ObserverCallback) -> None:
+        try:
+            self._observers.remove(callback)
+        except ValueError:
+            pass
 
     async def publish(self, event: DomainEvent, session: Any) -> None:
         """Run sync handlers immediately; queue after-commit handlers in session.info."""
@@ -63,7 +78,8 @@ class EventBus:
             session.info.setdefault("pending_events", []).append((event, deferred))
 
     async def drain_after_commit(self, session: Any) -> None:
-        """Called by get_db() after a successful commit to run deferred handlers."""
+        """Called by get_db() after a successful commit to run deferred handlers
+        and notify live observers (Dev Tools SSE)."""
         pending: list[tuple[DomainEvent, list[AsyncHandler]]] = session.info.pop(
             "pending_events", []
         )
@@ -76,4 +92,13 @@ class EventBus:
                         "event_after_commit_handler_error",
                         event_type=event.event_type,
                         handler=handler.__name__,
+                    )
+            # Fan-out to live observers — failures must not abort the loop.
+            for cb in list(self._observers):
+                try:
+                    cb(event)
+                except Exception:
+                    logger.exception(
+                        "event_observer_error",
+                        event_type=event.event_type,
                     )

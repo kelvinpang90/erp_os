@@ -17,10 +17,17 @@ export interface UserProfile {
   last_login_at: string | null
 }
 
+export interface AISettingsSnapshot {
+  master_enabled: boolean
+  features: Record<string, boolean>
+}
+
 export interface MeResponse {
   user: UserProfile
   permissions: string[]
   menu: MenuItem[]
+  demo_mode: boolean
+  ai_settings: AISettingsSnapshot
 }
 
 export interface TokenResponse {

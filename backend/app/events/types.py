@@ -16,13 +16,17 @@ from app.events.base import DomainEvent
 
 @dataclass
 class DocumentStatusChanged(DomainEvent):
-    document_type: str = ""        # "PO" | "SO" | "INVOICE" | "CN"
+    document_type: str = ""        # "PO" | "SO" | "INVOICE" | "CN" | "TRANSFER" | "ADJUSTMENT"
     document_id: int = 0
     document_no: str = ""
     old_status: str = ""
     new_status: str = ""
     organization_id: int = 0
     actor_user_id: int | None = None
+    # Optional richer snapshots — services for the three audited tables
+    # (PO/SO, Invoice, CreditNote) populate these for compliance/diff display.
+    before: dict | None = None
+    after: dict | None = None
 
 
 @dataclass

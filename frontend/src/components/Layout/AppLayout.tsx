@@ -6,6 +6,7 @@ import {
   ShoppingOutlined,
   SettingOutlined,
   TagsOutlined,
+  ToolOutlined,
 } from '@ant-design/icons'
 import { ProLayout } from '@ant-design/pro-components'
 import { Grid } from 'antd'
@@ -19,7 +20,7 @@ import TopBar from './TopBar'
 // The backend's /api/auth/me menu is the source of truth for visibility:
 // if a frontend item's path is in ROLE_GATED_PATHS, it's only shown when the
 // backend menu (already role-filtered) contains a node with the same path.
-const ROLE_GATED_PATHS = new Set(['/purchase', '/sales', '/inventory', '/reports', '/settings'])
+const ROLE_GATED_PATHS = new Set(['/purchase', '/sales', '/inventory', '/reports', '/settings', '/admin'])
 
 export default function AppLayout() {
   const navigate = useNavigate()
@@ -85,6 +86,23 @@ export default function AppLayout() {
       icon: <SettingOutlined />,
       children: [
         { path: '/settings/warehouses', name: t('warehouses') },
+        { path: '/settings/users', name: t('users') },
+        { path: '/settings/currencies', name: t('currencies') },
+        { path: '/settings/tax-rates', name: t('taxRates') },
+        { path: '/settings/uoms', name: t('uoms') },
+        { path: '/settings/brands', name: t('brands') },
+        { path: '/settings/categories', name: t('categories') },
+        { path: '/settings/ai-features', name: t('aiFeatures') },
+      ],
+    },
+    {
+      path: '/admin',
+      name: t('admin'),
+      icon: <ToolOutlined />,
+      children: [
+        { path: '/admin/dev-tools', name: t('devTools') },
+        { path: '/admin/demo-reset', name: t('demoReset') },
+        { path: '/admin/audit-logs', name: t('auditLogs') },
       ],
     },
   ]

@@ -35,7 +35,9 @@ from app.core.logging import RequestIDMiddleware, configure_logging, get_request
 from app.core.redis import ping_redis
 from app.events import event_bus
 from app.events.registry import setup_event_handlers
+from app.routers import admin as admin_router
 from app.routers import ai as ai_router
+from app.routers import audit as audit_router
 from app.routers import auth as auth_router
 from app.routers import brand as brand_router
 from app.routers import category as category_router
@@ -47,6 +49,7 @@ from app.routers import exchange_rate as exchange_rate_router
 from app.routers import goods_receipt as goods_receipt_router
 from app.routers import inventory as inventory_router
 from app.routers import invoice as invoice_router
+from app.routers import notifications as notifications_router
 from app.routers import purchase_order as purchase_order_router
 from app.routers import reports as reports_router
 from app.routers import sales_order as sales_order_router
@@ -57,6 +60,7 @@ from app.routers import stock_transfer as stock_transfer_router
 from app.routers import supplier as supplier_router
 from app.routers import tax_rate as tax_rate_router
 from app.routers import uom as uom_router
+from app.routers import users as users_router
 from app.routers import warehouse as warehouse_router
 
 logger = structlog.get_logger()
@@ -213,6 +217,10 @@ app.include_router(inventory_router.router, prefix="/api/inventory", tags=["inve
 app.include_router(ai_router.router, prefix="/api/ai", tags=["ai"])
 app.include_router(dashboard_router.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(reports_router.router, prefix="/api/reports", tags=["reports"])
+app.include_router(audit_router.router, prefix="/api/audit", tags=["audit"])
+app.include_router(notifications_router.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(admin_router.router, prefix="/api/admin", tags=["admin"])
+app.include_router(users_router.router, prefix="/api/users", tags=["users"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

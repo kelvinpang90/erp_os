@@ -1,0 +1,90 @@
+{
+  "title": "系统设置",
+  "description": "配置系统范围的选项。",
+  "cards": {
+    "general": { "title": "通用设置", "desc": "组织信息与默认值" },
+    "currencies": { "title": "货币", "desc": "管理支持的币种" },
+    "tax_rates": { "title": "税率", "desc": "SST 与免税代码" },
+    "uoms": { "title": "计量单位", "desc": "EA / KG / L 等单位" },
+    "brands": { "title": "品牌", "desc": "品牌主数据" },
+    "categories": { "title": "商品分类", "desc": "商品分类树" },
+    "warehouses": { "title": "仓库", "desc": "仓库地点与类型" },
+    "ai_features": { "title": "AI 功能", "desc": "AI 能力开关" },
+    "users": { "title": "用户", "desc": "用户账号与角色" }
+  },
+  "currencies": {
+    "title": "货币",
+    "columns": {
+      "code": "代码",
+      "name": "名称",
+      "symbol": "符号",
+      "decimal_places": "小数位",
+      "is_base": "本位币",
+      "status": "状态"
+    },
+    "active": "启用",
+    "inactive": "停用"
+  },
+  "tax_rates": {
+    "title": "税率",
+    "columns": {
+      "code": "代码",
+      "name": "名称",
+      "rate": "税率 %",
+      "type": "类型",
+      "status": "状态"
+    }
+  },
+  "uoms": {
+    "title": "计量单位",
+    "columns": {
+      "code": "代码",
+      "name": "名称",
+      "category": "类别",
+      "status": "状态"
+    }
+  },
+  "brands": {
+    "title": "品牌",
+    "columns": {
+      "code": "代码",
+      "name": "名称",
+      "country": "国家",
+      "status": "状态"
+    }
+  },
+  "categories": {
+    "title": "商品分类",
+    "columns": {
+      "code": "代码",
+      "name": "名称",
+      "parent": "上级分类",
+      "status": "状态"
+    }
+  },
+  "ai": {
+    "title": "AI 功能开关",
+    "description": "三层开关：全局环境变量（此页只读）→ 组织总闸 → 单功能。关闭总闸即禁用本组织所有 AI 功能。",
+    "load_failed": "加载 AI 设置失败",
+    "save_success": "AI 设置已保存",
+    "save_failed": "保存 AI 设置失败",
+    "master_label": "组织级总开关",
+    "master_help": "关闭后，所有 AI 接口对本组织返回 AI_DISABLED。",
+    "per_feature_label": "单功能开关",
+    "per_feature_help": "总开关开启后才能调整。",
+    "features": {
+      "OCR_INVOICE": {
+        "title": "OCR 发票识别（采购）",
+        "desc": "从供应商发票 PDF 自动提取 PO 行项。"
+      },
+      "EINVOICE_PRECHECK": {
+        "title": "e-Invoice 智能预校验",
+        "desc": "提交 LHDN MyInvois 前由 AI 辅助校验。"
+      },
+      "DASHBOARD_SUMMARY": {
+        "title": "Dashboard AI 日报",
+        "desc": "首页每日自然语言简报。"
+      }
+    }
+  }
+}

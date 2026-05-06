@@ -6,11 +6,14 @@ import {
   SunOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons'
-import { Avatar, Badge, Drawer, Dropdown, Empty, Grid, Modal, Space, Tag } from 'antd'
-import { useState } from 'react'
+import { Avatar, Badge, Dropdown, Empty, Grid, Modal, Space, Tag } from 'antd'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../stores/authStore'
+import { useNotificationStore } from '../../stores/notificationStore'
 import { useThemeStore } from '../../stores/themeStore'
+import NotificationDrawer from '../Notification/NotificationDrawer'
 
 export default function TopBar() {
   const { t, i18n } = useTranslation('menu')
@@ -21,10 +24,23 @@ export default function TopBar() {
   const [roleSwitchOpen, setRoleSwitchOpen] = useState(false)
   const screens = Grid.useBreakpoint()
   const isMobile = !screens.md
+  const unread = useNotificationStore((s) => s.unread)
+  const startPolling = useNotificationStore((s) => s.startPolling)
+  const stopPolling = useNotificationStore((s) => s.stopPolling)
+
+  useEffect(() => {
+    if (user) {
+      startPolling()
+      return () => stopPolling()
+    }
+  }, [user, startPolling, stopPolling])
 
   const currentLang = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en-US'
   const isAdmin = user?.email === 'admin@demo.my'
-  const demoMode = (import.meta.env.VITE_DEMO_MODE ?? 'true') !== 'false'
+  const demoModeStore = useAuthStore((s) => s.demoMode)
+  const demoMode = user
+    ? demoModeStore
+    : (import.meta.env.VITE_DEMO_MODE ?? 'true') !== 'false'
 
   const langItems = [
     { key: 'en-US', label: 'English', onClick: () => i18n.changeLanguage('en-US') },
@@ -69,7 +85,7 @@ export default function TopBar() {
         {mode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
       </span>
 
-      <Badge count={0} size="small" offset={[-2, 4]}>
+      <Badge count={unread} size="small" offset={[-2, 4]} overflowCount={99}>
         <span style={topBarItemStyle} onClick={() => setNotifyOpen(true)} role="button" aria-label="notifications">
           <BellOutlined />
         </span>
@@ -86,15 +102,7 @@ export default function TopBar() {
         </Space>
       </Dropdown>
 
-      <Drawer
-        title={t('notifications')}
-        placement="right"
-        width={360}
-        open={notifyOpen}
-        onClose={() => setNotifyOpen(false)}
-      >
-        <Empty description={t('notificationsPlaceholder')} />
-      </Drawer>
+      <NotificationDrawer open={notifyOpen} onClose={() => setNotifyOpen(false)} />
 
       <Modal
         title={t('switchRole')}

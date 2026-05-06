@@ -1,0 +1,39 @@
+{
+  "title": "Users",
+  "create": "New User",
+  "columns": {
+    "email": "Email",
+    "full_name": "Full Name",
+    "roles": "Roles",
+    "status": "Status",
+    "last_login": "Last Login"
+  },
+  "form": {
+    "email": "Email",
+    "full_name": "Full Name",
+    "password": "Password",
+    "roles": "Roles",
+    "locale": "Locale",
+    "theme": "Theme",
+    "is_active": "Active"
+  },
+  "active": "Active",
+  "inactive": "Inactive",
+  "reset_password": "Reset password",
+  "reset_password_success": "Password reset successfully.",
+  "reset_password_failed": "Failed to reset password.",
+  "new_password": "New Password",
+  "delete_confirm": "Delete this user? This is a soft delete.",
+  "delete_success": "User deleted.",
+  "delete_failed": "Failed to delete user.",
+  "cannot_delete_self": "You cannot delete your own account.",
+  "cannot_deactivate_self": "You cannot deactivate your own account.",
+  "create_success": "User created.",
+  "update_success": "User updated.",
+  "load_failed": "Failed to load user.",
+  "operation_failed": "Operation failed.",
+  "edit": "Edit",
+  "view": "View",
+  "back": "Back",
+  "never": "Never"
+}

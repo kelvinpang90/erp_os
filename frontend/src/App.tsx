@@ -58,6 +58,19 @@ const BranchInventoryPage = lazy(() => import('./pages/Inventory/BranchInventory
 const AlertPage = lazy(() => import('./pages/Inventory/AlertPage'))
 const DashboardPage = lazy(() => import('./pages/Dashboard'))
 const ReportsPage = lazy(() => import('./pages/Reports'))
+const SettingsHubPage = lazy(() => import('./pages/Settings'))
+const CurrenciesListPage = lazy(() => import('./pages/Settings/CurrenciesListPage'))
+const TaxRatesListPage = lazy(() => import('./pages/Settings/TaxRatesListPage'))
+const UOMsListPage = lazy(() => import('./pages/Settings/UOMsListPage'))
+const BrandsListPage = lazy(() => import('./pages/Settings/BrandsListPage'))
+const CategoriesListPage = lazy(() => import('./pages/Settings/CategoriesListPage'))
+const UserListPage = lazy(() => import('./pages/Settings/Users/UserListPage'))
+const UserEditPage = lazy(() => import('./pages/Settings/Users/UserEditPage'))
+const UserDetailPage = lazy(() => import('./pages/Settings/Users/UserDetailPage'))
+const AIFeaturesPage = lazy(() => import('./pages/Settings/AIFeaturesPage'))
+const DevToolsPage = lazy(() => import('./pages/Admin/DevToolsPage'))
+const DemoResetPage = lazy(() => import('./pages/Admin/DemoResetPage'))
+const AuditLogsPage = lazy(() => import('./pages/Admin/AuditLogsPage'))
 
 function AppRoutes() {
   return (
@@ -116,10 +129,25 @@ function AppRoutes() {
         <Route path="/inventory/movements" element={<MovementListPage />} />
         <Route path="/inventory/branch-matrix" element={<BranchInventoryPage />} />
         <Route path="/inventory/alerts" element={<AlertPage />} />
+        <Route path="/settings" element={<SettingsHubPage />} />
+        <Route path="/settings/currencies" element={<CurrenciesListPage />} />
+        <Route path="/settings/tax-rates" element={<TaxRatesListPage />} />
+        <Route path="/settings/uoms" element={<UOMsListPage />} />
+        <Route path="/settings/brands" element={<BrandsListPage />} />
+        <Route path="/settings/categories" element={<CategoriesListPage />} />
+        <Route path="/settings/users" element={<UserListPage />} />
+        <Route path="/settings/users/create" element={<UserEditPage />} />
+        <Route path="/settings/users/:id" element={<UserDetailPage />} />
+        <Route path="/settings/users/:id/edit" element={<UserEditPage />} />
         <Route path="/settings/warehouses" element={<WarehouseListPage />} />
         <Route path="/settings/warehouses/create" element={<WarehouseEditPage />} />
         <Route path="/settings/warehouses/:id" element={<WarehouseDetailPage />} />
         <Route path="/settings/warehouses/:id/edit" element={<WarehouseEditPage />} />
+        <Route path="/settings/ai" element={<AIFeaturesPage />} />
+        <Route path="/settings/ai-features" element={<AIFeaturesPage />} />
+        <Route path="/admin/dev-tools" element={<DevToolsPage />} />
+        <Route path="/admin/demo-reset" element={<DemoResetPage />} />
+        <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
