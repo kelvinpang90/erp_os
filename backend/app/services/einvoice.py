@@ -143,17 +143,23 @@ def _build_payload(
 ) -> InvoicePayload:
     org = invoice.organization
     cust = invoice.customer
+    # Prefer snapshot TIN baked onto the invoice at draft creation; fall back
+    # to live org/customer TIN only when snapshot is missing (e.g. legacy rows
+    # before the snapshot migration). This guarantees the value submitted to
+    # MyInvois is the legal TIN at the moment the invoice was issued.
+    seller_tin = invoice.seller_tin or (org.tin if org else "") or ""
+    buyer_tin = invoice.buyer_tin or (cust.tin if cust else None) or "000000000000"
     return InvoicePayload(
         document_no=invoice.document_no,
         invoice_type=invoice.invoice_type.value,
         business_date=invoice.business_date.isoformat(),
         currency=invoice.currency,
         exchange_rate=invoice.exchange_rate,
-        seller_tin=org.tin or "",
+        seller_tin=seller_tin,
         seller_name=org.name,
         seller_msic_code=org.msic_code,
         seller_sst_no=org.sst_registration_no,
-        buyer_tin=cust.tin or "000000000000",  # B2C fallback per LHDN spec
+        buyer_tin=buyer_tin,
         buyer_name=cust.name,
         buyer_msic_code=cust.msic_code,
         subtotal_excl_tax=invoice.subtotal_excl_tax,
@@ -283,11 +289,17 @@ async def generate_draft_from_so(
         else today
     )
 
-    # Load org for LHDN line-MSIC fallback (relationship is not eager-loaded
-    # by SO repo; explicit fetch avoids lazy-load greenlet errors).
+    # Load org for LHDN line-MSIC fallback + seller TIN snapshot (relationship
+    # is not eager-loaded by SO repo; explicit fetch avoids lazy-load greenlet
+    # errors). Customer is imported at module level.
     from app.models.organization import Organization  # local to avoid cycle
     org_row = await session.get(Organization, org_id)
     org_msic_fallback = org_row.msic_code if org_row else None
+    seller_tin_snap = org_row.tin if org_row else None
+
+    # Buyer TIN snapshot — load customer once for the invoice draft.
+    customer_row = await session.get(Customer, so.customer_id)
+    buyer_tin_snap = customer_row.tin if customer_row else None
 
     invoice = Invoice(
         organization_id=org_id,
@@ -301,6 +313,8 @@ async def generate_draft_from_so(
         due_date=due_date,
         currency=so.currency,
         exchange_rate=so.exchange_rate,
+        seller_tin=seller_tin_snap,
+        buyer_tin=buyer_tin_snap,
         remarks=payload.remarks,
         created_by=user.id,
     )
@@ -683,10 +697,12 @@ async def generate_monthly_consolidated(
             year=year, month=month,
         )
 
-    # Load org for line MSIC fallback.
+    # Load org for line MSIC fallback + seller TIN snapshot. Customer is
+    # imported at module level (line 43).
     from app.models.organization import Organization  # local import to avoid cycle
     org_row = await session.get(Organization, org_id)
     org_msic_fallback = org_row.msic_code if org_row else None
+    seller_tin_snap = org_row.tin if org_row else None
 
     invoice_ids: list[int] = []
     customer_ids: list[int] = sorted(by_customer.keys())
@@ -695,6 +711,9 @@ async def generate_monthly_consolidated(
     for customer_id, sos in by_customer.items():
         document_no = await next_document_no(session, "INV", org_id)
         first_so = sos[0]
+        # Buyer TIN snapshot per consolidated invoice (one per customer).
+        customer_row = await session.get(Customer, customer_id)
+        buyer_tin_snap = customer_row.tin if customer_row else None
         invoice = Invoice(
             organization_id=org_id,
             document_no=document_no,
@@ -707,6 +726,8 @@ async def generate_monthly_consolidated(
             due_date=today + timedelta(days=first_so.payment_terms_days or 0),
             currency=first_so.currency,
             exchange_rate=first_so.exchange_rate,
+            seller_tin=seller_tin_snap,
+            buyer_tin=buyer_tin_snap,
             remarks=f"Monthly consolidated for {year}-{month:02d}",
             created_by=user.id,
         )

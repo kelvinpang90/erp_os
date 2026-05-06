@@ -58,6 +58,8 @@ interface CreditNoteDetail {
   tax_amount: string
   total_incl_tax: string
   base_currency_amount: string
+  seller_tin?: string | null
+  buyer_tin?: string | null
   uin?: string | null
   qr_code_url?: string | null
   submitted_at?: string | null
@@ -227,6 +229,12 @@ export default function CreditNoteDetailPage() {
               </ProDescriptions.Item>
               <ProDescriptions.Item label={t('einvoice:customer')}>
                 {cn.customer_name || `#${cn.customer_id}`}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={t('einvoice:seller_tin')}>
+                {cn.seller_tin || <span style={{ color: '#ff4d4f' }}>{t('einvoice:tin_missing')}</span>}
+              </ProDescriptions.Item>
+              <ProDescriptions.Item label={t('einvoice:buyer_tin')}>
+                {cn.buyer_tin || <span style={{ color: '#ff4d4f' }}>{t('einvoice:tin_missing')}</span>}
               </ProDescriptions.Item>
               <ProDescriptions.Item label={t('einvoice:creditNote.fields.reason')}>
                 {cnReasonLabel(tEinvoice, cn.reason)}

@@ -114,6 +114,22 @@
 **纠正**：(前端) worktree 单独跑 `npm install`；(后端) `docker exec -u root erp_backend pip install pytest pytest-asyncio` 后 `docker cp` worktree 文件进容器跑测试，测完再 cp 主仓文件还原
 **预防**：把 pytest 加到 backend Dockerfile 始终装(requirements-dev.txt 已有, dev profile 应安装)。短期先把 setup 步骤补到 CLAUDE.md Part 14 Window 工作流
 
+## Window 16+ 修补：e-Invoice TIN snapshot 缺失
+
+### [2026-05-04] W11 漏了发票 TIN snapshot — 法律凭证不合规
+
+**场景**：用户在 InvoiceDetailPage 上发现没显示 TIN，让我排查
+**犯的错**：W11 实现 invoice 时只在 customer / org 表存了 tin，没在 invoice / credit_note 表 snapshot。CLAUDE.md C4 明文要求"单据涉关键字段必须 snapshot"，但 TIN 这一项被漏。后果：(a) 哪天 customer.tin 改了，旧发票的法律 TIN 也跟着变，违反 LHDN 合规；(b) MyInvois mock 提交 payload 实时 lookup org/customer，跟 W18 真实 LHDN 对接思路不一致
+**纠正**：(1) `invoices` / `credit_notes` 各加 `seller_tin VARCHAR(16)` + `buyer_tin VARCHAR(16)`；(2) Alembic migration 同时 backfill 历史行从 org/customer.tin；(3) `generate_draft_from_so` / `generate_monthly_consolidated` 创建草稿时写入 snapshot；(4) `_build_payload` 优先用 invoice 上的 snapshot，fallback 到 live；(5) CN 从 invoice 继承 snapshot；(6) Frontend Detail 页渲染，缺失时红字提示
+**预防**：W11/W18 review checklist 加一条"e-Invoice 字段是否 snapshot 完整"。CLAUDE.md C4 已有规则，但要在 e-Invoice 字段列表里补一条 TIN（snapshot 必填项还可能漏：`buyer_name`, `buyer_address`, `seller_name`, `seller_address` — W17/W18 应一并补）
+
+### [2026-05-04] Python 局部 import 遮蔽模块级名字 → UnboundLocalError
+
+**场景**：往 `generate_monthly_consolidated` 里加 `from app.models.partner import Customer` 想做 buyer TIN snapshot 查询
+**犯的错**：模块顶部 line 43 已经 `from app.models.partner import Customer`。我又在函数内部第二次写 local import。Python 看到函数内有 `Customer` 赋值 → 把整个函数体里的 `Customer` 当成 local。结果函数前部 line 655 的 `.join(Customer, ...)` 在 local import 之前执行 → UnboundLocalError
+**纠正**：删掉冗余的 local import，统一靠模块级 import
+**预防**：加 import 前先 `grep "import Customer"` 确认有没有，避免 shadow。也可启用 ruff F823 / F841 类规则检测。这条放进 CLAUDE.md Part 6 backend 命名/import 规范里。
+
 ## 通用教训
 
 （每完成一个 Phase 提炼一次）

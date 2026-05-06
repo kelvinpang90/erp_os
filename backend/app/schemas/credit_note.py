@@ -74,6 +74,8 @@ class CreditNoteListItem(BaseModel):
     reason: CreditNoteReason
     currency: str
     total_incl_tax: Decimal
+    seller_tin: Optional[str] = None
+    buyer_tin: Optional[str] = None
     uin: Optional[str]
     submitted_at: Optional[datetime]
     validated_at: Optional[datetime]

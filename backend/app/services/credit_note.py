@@ -220,6 +220,10 @@ async def create_credit_note(
         reason_description=payload.reason_description,
         currency=invoice.currency,
         exchange_rate=invoice.exchange_rate,
+        # CN inherits TIN snapshot from invoice (the legal counterparty
+        # at the time the original invoice was issued).
+        seller_tin=invoice.seller_tin,
+        buyer_tin=invoice.buyer_tin,
         remarks=payload.remarks,
         created_by=user.id,
     )

@@ -84,6 +84,10 @@ class Invoice(Base, SoftDeleteMixin, TimestampedMixin, VersionedMixin):
     total_incl_tax: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
     base_currency_amount: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
     paid_amount: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
+    # ── e-Invoice TIN snapshot (LHDN MyInvois 必填，不能从关联表实时读) ──
+    # 从 organization.tin / customer.tin 快照，保证发票 TIN 即使主数据后续修改也保留法律凭证。
+    seller_tin: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    buyer_tin: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     uin: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     qr_code_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
@@ -213,6 +217,9 @@ class CreditNote(Base, SoftDeleteMixin, TimestampedMixin, VersionedMixin):
     tax_amount: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
     total_incl_tax: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
     base_currency_amount: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=0)
+    # CN 也是法定凭证，TIN 同样 snapshot
+    seller_tin: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    buyer_tin: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     uin: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     qr_code_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
