@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
+!infra/.env.example
 .env.claude
 
 # ── Python ───────────────────────────────────────────────────────────────────
@@ -41,6 +43,15 @@ Thumbs.db
 
 # ── Docker ───────────────────────────────────────────────────────────────────
 docker-compose.override.yml
+
+# ── Infra (shared nginx/mysql/redis on VPS) ──────────────────────────────────
+# Cloudflare Origin certs / TLS keys — NEVER commit
+infra/nginx/certs/*.crt
+infra/nginx/certs/*.key
+infra/nginx/certs/*.pem
+# Real vhost configs (only .example tracked)
+infra/nginx/conf.d/*.conf
+!infra/nginx/conf.d/*.conf.example
 
 # ── Uploads ──────────────────────────────────────────────────────────────────
 backend/uploads/

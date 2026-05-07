@@ -1,0 +1,91 @@
+# 生产 / Demo 站点 compose
+# 前置：infra 栈已起（infra/docker-compose.yml），proxy_net 和 data_net 已存在
+#
+# 启动：
+#   cp .env.production.example .env.production && vim .env.production
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
+
+x-tz: &tz
+  TZ: Asia/Kuala_Lumpur
+
+x-backend-build: &backend-build
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+
+networks:
+  proxy_net:
+    external: true
+  data_net:
+    external: true
+
+services:
+  backend:
+    <<: *backend-build
+    image: erp/backend:latest
+    container_name: erp_backend
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      <<: *tz
+    volumes:
+      - uploads_data:/app/uploads
+    networks: [proxy_net, data_net]
+    # 不发布 host 端口；nginx 通过 proxy_net 访问 erp_backend:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  celery_worker:
+    <<: *backend-build
+    image: erp/backend:latest
+    container_name: erp_celery_worker
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      <<: *tz
+    command: celery -A app.tasks.celery_app worker -l info -Q default,ai
+    volumes:
+      - uploads_data:/app/uploads
+    networks: [data_net]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  celery_beat:
+    <<: *backend-build
+    image: erp/backend:latest
+    container_name: erp_celery_beat
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      <<: *tz
+    command: celery -A app.tasks.celery_app beat -l info
+    networks: [data_net]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    image: erp/frontend:latest
+    container_name: erp_frontend
+    restart: unless-stopped
+    environment:
+      <<: *tz
+    networks: [proxy_net]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  uploads_data:
