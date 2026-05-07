@@ -1,24 +1,31 @@
 import type { ProColumns } from '@ant-design/pro-components'
-import { Badge, Tag } from 'antd'
+import { Badge } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { axiosInstance } from '../../api/client'
 import ResourceListPage from '../../components/ResourceListPage'
 
 interface CurrencyRow {
-  id: number
   code: string
   name: string
   symbol: string
   decimal_places: number
-  is_base: boolean
   is_active: boolean
+  created_at: string
 }
 
 async function fetchCurrencies(params: { current?: number; pageSize?: number }) {
   const { current = 1, pageSize = 20 } = params
-  const query = new URLSearchParams({ page: String(current), page_size: String(pageSize) })
-  const res = await axiosInstance.get(`/currencies?${query}`)
-  return res.data
+  // /api/currencies returns a flat array (no pagination), so wrap it
+  // into the shape ResourceListPage expects.
+  const res = await axiosInstance.get<CurrencyRow[]>(`/currencies`)
+  const items = Array.isArray(res.data) ? res.data : []
+  return {
+    items,
+    total: items.length,
+    page: current,
+    page_size: pageSize,
+    total_pages: 1,
+  }
 }
 
 export default function CurrenciesListPage() {
@@ -33,13 +40,6 @@ export default function CurrenciesListPage() {
       dataIndex: 'decimal_places',
       width: 100,
       hideInSearch: true,
-    },
-    {
-      title: t('currencies.columns.is_base'),
-      dataIndex: 'is_base',
-      width: 90,
-      hideInSearch: true,
-      render: (val) => (val ? <Tag color="gold">★</Tag> : '—'),
     },
     {
       title: t('currencies.columns.status'),
@@ -58,6 +58,7 @@ export default function CurrenciesListPage() {
   return (
     <ResourceListPage<CurrencyRow>
       title={t('currencies.title')}
+      rowKey="code"
       columns={columns}
       fetchData={fetchCurrencies}
     />
