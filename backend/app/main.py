@@ -18,8 +18,12 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
 
+import sentry_sdk
 import structlog
 from fastapi import FastAPI, Request, status
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -64,6 +68,28 @@ from app.routers import users as users_router
 from app.routers import warehouse as warehouse_router
 
 logger = structlog.get_logger()
+
+# ── Sentry (noop when DSN empty) ──────────────────────────────────────────────
+# Init at import time so unhandled exceptions during startup are captured.
+if settings.SENTRY_DSN:
+    def _sentry_before_send(event: dict, hint: dict) -> dict:
+        rid = get_request_id()
+        if rid:
+            event.setdefault("tags", {})["request_id"] = rid
+        return event
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        release=settings.APP_VERSION,
+        traces_sample_rate=0.1,
+        integrations=[
+            FastApiIntegration(),
+            StarletteIntegration(),
+            AsyncioIntegration(),
+        ],
+        before_send=_sentry_before_send,
+    )
 
 # ── Rate limiter (slowapi) ────────────────────────────────────────────────────
 

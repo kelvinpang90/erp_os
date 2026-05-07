@@ -23,7 +23,7 @@ from app.core.config import settings
 from app.core.deps import get_db, require_role
 from app.core.exceptions import AuthenticationError, AuthorizationError, NotFoundError
 from app.core.security import decode_access_token
-from app.enums import DemoResetStatus, DemoResetTrigger, RoleCode
+from app.enums import RoleCode
 from app.events import event_bus
 from app.events.base import DomainEvent
 from app.models.audit import DemoResetLog, EventLog
@@ -98,27 +98,57 @@ async def trigger_demo_reset(
             error_code="DEMO_MODE_REQUIRED",
         )
 
-    log_row = DemoResetLog(
-        triggered_by=DemoResetTrigger.MANUAL,
-        triggered_by_user_id=user.id,
-        status=DemoResetStatus.RUNNING,
-    )
-    db.add(log_row)
-    await db.flush()
-    log_id = log_row.id
+    # Hand off to Celery so the request returns immediately. The worker
+    # creates its own DemoResetLog row inside ``run_demo_reset``.
+    from app.tasks.demo_reset import task_run_demo_reset_manual
 
-    # W17: queue is symbolic — the Celery task lands in W18.
-    # We immediately mark the row as "queued for execution" so the UI has
-    # something to display, and the actual destructive work waits on W18.
-    log_row.status = DemoResetStatus.RUNNING
-    db.add(log_row)
-    logger.info("demo_reset_requested", user_id=user.id, log_id=log_id)
+    async_result = task_run_demo_reset_manual.delay(user.id)
+    logger.info(
+        "demo_reset_enqueued",
+        user_id=user.id,
+        celery_task_id=async_result.id,
+    )
 
     return DemoResetResponse(
         status="queued",
-        message="Demo reset accepted. Worker integration ships in Window 18.",
-        demo_reset_log_id=log_id,
+        message="Demo reset enqueued. Watch /api/admin/demo-reset/history for completion.",
+        demo_reset_log_id=0,
     )
+
+
+@router.get(
+    "/demo-reset/history",
+    response_model=list[dict[str, Any]],
+    summary="Recent demo reset runs",
+)
+async def list_demo_reset_history(
+    limit: int = Query(default=20, ge=1, le=100),
+    user: User = Depends(require_role(RoleCode.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict[str, Any]]:
+    rows = (
+        (
+            await db.execute(
+                select(DemoResetLog).order_by(DemoResetLog.id.desc()).limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "triggered_by": r.triggered_by.value,
+            "triggered_by_user_id": r.triggered_by_user_id,
+            "status": r.status.value,
+            "started_at": r.started_at.isoformat() if r.started_at else None,
+            "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+            "backup_path": r.backup_path,
+            "error_message": r.error_message,
+            "records_deleted": r.records_deleted or {},
+        }
+        for r in rows
+    ]
 
 
 # ── Event log: history list + live SSE stream ────────────────────────────────
