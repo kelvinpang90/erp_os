@@ -1,0 +1,160 @@
+# Production / demo-VPS topology.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
+#
+# Differences vs docker-compose.yml (dev):
+#   - mysql/redis ports NOT published to host (private to docker network)
+#   - frontend uses production target (built static + internal nginx)
+#   - celery worker (default + ai) and beat services
+#   - backups volume mounted into mysql container for backup.sh
+#   - all services restart unless-stopped
+
+x-tz: &tz
+  TZ: Asia/Kuala_Lumpur
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: erp_mysql_prod
+    restart: unless-stopped
+    command: --default-time-zone=+00:00
+    environment:
+      <<: *tz
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-erp_os}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: erp_redis_prod
+    restart: unless-stopped
+    environment:
+      <<: *tz
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_backend_prod
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      <<: *tz
+    volumes:
+      - uploads_data:/app/uploads
+      - backups_data:/app/backups
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_worker_prod
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker -Q default -l info -c 2
+    env_file: .env.production
+    environment:
+      <<: *tz
+    volumes:
+      - uploads_data:/app/uploads
+      - backups_data:/app/backups
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker-ai:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_worker_ai_prod
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker -Q ai -l info -c 1
+    env_file: .env.production
+    environment:
+      <<: *tz
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_beat_prod
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app beat -l info
+    env_file: .env.production
+    environment:
+      <<: *tz
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_APP_VERSION: ${APP_VERSION:-0.1.0}
+    container_name: erp_frontend_prod
+    restart: unless-stopped
+    environment:
+      <<: *tz
+
+  nginx:
+    image: nginx:alpine
+    container_name: erp_nginx_prod
+    restart: unless-stopped
+    environment:
+      <<: *tz
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:
+  backups_data:

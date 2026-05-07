@@ -1,0 +1,57 @@
+name: Nightly E2E
+
+on:
+  schedule:
+    # 18:00 UTC = 02:00 Asia/Kuala_Lumpur (1h before the 03:00 demo reset)
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Playwright E2E (3 golden paths)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose up
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+      - name: Wait for backend
+        run: |
+          for i in {1..60}; do
+            if curl -fs http://localhost:8000/health >/dev/null; then
+              break
+            fi
+            sleep 5
+          done
+      - name: Apply migrations + seed
+        run: |
+          docker compose exec -T backend alembic upgrade head
+          docker compose exec -T backend python scripts/seed_master_data.py || true
+          docker compose exec -T backend python scripts/seed_all_master.py || true
+          docker compose exec -T backend python scripts/seed_transactional.py || true
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - name: Install Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps
+      - name: Run E2E
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+      - name: Compose down
+        if: always()
+        run: docker compose down -v

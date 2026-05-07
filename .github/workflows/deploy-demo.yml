@@ -1,0 +1,51 @@
+name: Deploy demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH → VPS → docker compose up
+    runs-on: ubuntu-latest
+    environment:
+      name: demo
+      url: https://erp-demo.example.com
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$SSH_KNOWN_HOSTS" ]; then
+            echo "::warning::DEPLOY_SSH_KEY / DEPLOY_SSH_KNOWN_HOSTS not configured — skipping deploy."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          REPO_DIR: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          if [ -z "${DEPLOY_HOST:-}" ]; then
+            echo "::warning::DEPLOY_HOST secret not set — skipping."
+            exit 0
+          fi
+          ssh -o BatchMode=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "REPO_DIR=${REPO_DIR} bash ${REPO_DIR}/scripts/deploy.sh"
+      - name: Smoke test
+        if: ${{ env.DEPLOY_HOST != '' }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          curl -fs "http://${DEPLOY_HOST}/health" | tee /dev/stderr | grep -q '"status"'

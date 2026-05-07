@@ -96,6 +96,65 @@ services:
       backend:
         condition: service_healthy
 
+  # ── Celery worker (default queue) ─────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_worker
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker -Q default -l info -c 2
+    env_file: .env
+    environment:
+      <<: *tz
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery worker (ai queue, isolated for long LLM calls) ─────────────────
+  celery-worker-ai:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_worker_ai
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker -Q ai -l info -c 1
+    env_file: .env
+    environment:
+      <<: *tz
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery beat (scheduler) ───────────────────────────────────────────────
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_celery_beat
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app beat -l info
+    env_file: .env
+    environment:
+      <<: *tz
+    volumes:
+      - ./backend:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # ── Nginx reverse proxy ───────────────────────────────────────────────────
   nginx:
     image: nginx:alpine
