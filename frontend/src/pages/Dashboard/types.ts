@@ -11,10 +11,15 @@ export interface DashboardKPIs {
   ai_cost_today_usd: string
 }
 
-export interface AISummaryPayload {
+export interface AISummaryContent {
   headline: string
   key_findings: string[]
   action_items: string[]
+}
+
+export interface AISummaryPayload {
+  en: AISummaryContent
+  zh: AISummaryContent
 }
 
 export interface AISummaryEnvelope {

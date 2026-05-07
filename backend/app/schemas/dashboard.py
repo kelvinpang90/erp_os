@@ -34,12 +34,23 @@ class DashboardKPIs(BaseModel):
 # ── AI summary ────────────────────────────────────────────────────────────────
 
 
-class AISummaryPayload(BaseModel):
-    """Body of the AI-generated daily digest."""
+class AISummaryContent(BaseModel):
+    """Single-language body of the AI-generated daily digest."""
 
     headline: str
     key_findings: List[str]
     action_items: List[str]
+
+    model_config = _cfg
+
+
+class AISummaryPayload(BaseModel):
+    """Bilingual digest body. The frontend picks ``en`` or ``zh`` based on
+    the active i18n language so language switching is instant (no extra
+    backend round-trip)."""
+
+    en: AISummaryContent
+    zh: AISummaryContent
 
     model_config = _cfg
 

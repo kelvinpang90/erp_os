@@ -17,6 +17,7 @@ import pytest
 
 from app.enums import AICallStatus
 from app.schemas.dashboard import (
+    AISummaryContent,
     AISummaryEnvelope,
     AISummaryPayload,
     DashboardKPIs,
@@ -24,6 +25,22 @@ from app.schemas.dashboard import (
     StatusBucket,
     TrendPoint,
 )
+
+
+def _bilingual(headline_en: str, finding_en: str, action_en: str) -> AISummaryPayload:
+    """Helper to build a bilingual AISummaryPayload for tests."""
+    return AISummaryPayload(
+        en=AISummaryContent(
+            headline=headline_en,
+            key_findings=[finding_en],
+            action_items=[action_en],
+        ),
+        zh=AISummaryContent(
+            headline=f"{headline_en}（中）",
+            key_findings=[f"{finding_en}（中）"],
+            action_items=[f"{action_en}（中）"],
+        ),
+    )
 from app.services import dashboard as dashboard_service
 
 
@@ -241,11 +258,7 @@ class TestAISummaryDegradation:
         session = AsyncMock()
         cached = AISummaryEnvelope(
             available=True,
-            payload=AISummaryPayload(
-                headline="yesterday",
-                key_findings=["a"],
-                action_items=["b"],
-            ),
+            payload=_bilingual("yesterday", "a", "b"),
             staleness_seconds=3600,
             is_stale=True,
             error_code=None,
@@ -272,17 +285,14 @@ class TestAISummaryDegradation:
             )
 
         assert envelope.payload is not None
-        assert envelope.payload.headline == "yesterday"
+        assert envelope.payload.en.headline == "yesterday"
+        assert envelope.payload.zh.headline == "yesterday（中）"
         assert envelope.error_code == "AI_TIMEOUT"
         assert envelope.is_stale is True
 
     async def test_success_persists_and_returns_fresh_envelope(self) -> None:
         session = AsyncMock()
-        new_payload = AISummaryPayload(
-            headline="today is good",
-            key_findings=["sales up"],
-            action_items=["nothing urgent"],
-        )
+        new_payload = _bilingual("today is good", "sales up", "nothing urgent")
 
         persist_mock = AsyncMock()
         with patch.object(

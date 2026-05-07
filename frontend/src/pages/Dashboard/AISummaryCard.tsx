@@ -25,7 +25,16 @@ function stalenessColor(seconds: number, isStale: boolean): string {
 }
 
 export default function AISummaryCard({ envelope, refreshing, canRefresh, onRefresh }: Props) {
-  const { t } = useTranslation('dashboard')
+  const { t, i18n } = useTranslation('dashboard')
+
+  // The payload carries both English and Simplified Chinese versions.
+  // Pick whichever matches the active i18n language so language switching
+  // is instant — no extra backend round-trip.
+  const content = envelope.payload
+    ? i18n.language?.startsWith('zh')
+      ? envelope.payload.zh
+      : envelope.payload.en
+    : null
 
   const showError =
     envelope.error_code &&
@@ -82,18 +91,18 @@ export default function AISummaryCard({ envelope, refreshing, canRefresh, onRefr
         />
       )}
 
-      {envelope.payload && (
+      {content && (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Typography.Title level={5} style={{ margin: 0 }}>
-            {envelope.payload.headline}
+            {content.headline}
           </Typography.Title>
 
-          {envelope.payload.key_findings.length > 0 && (
+          {content.key_findings.length > 0 && (
             <div>
               <Typography.Text strong>{t('summary.key_findings')}</Typography.Text>
               <List
                 size="small"
-                dataSource={envelope.payload.key_findings}
+                dataSource={content.key_findings}
                 renderItem={(item) => <List.Item>{item}</List.Item>}
                 bordered={false}
                 split={false}
@@ -101,12 +110,12 @@ export default function AISummaryCard({ envelope, refreshing, canRefresh, onRefr
             </div>
           )}
 
-          {envelope.payload.action_items.length > 0 && (
+          {content.action_items.length > 0 && (
             <div>
               <Typography.Text strong>{t('summary.action_items')}</Typography.Text>
               <List
                 size="small"
-                dataSource={envelope.payload.action_items}
+                dataSource={content.action_items}
                 renderItem={(item) => (
                   <List.Item>
                     <Tag color="processing">→</Tag> {item}

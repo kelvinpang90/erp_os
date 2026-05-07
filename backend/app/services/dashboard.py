@@ -85,16 +85,18 @@ def _trends_key(org_id: int) -> str:
     return f"dashboard:{org_id}:trends"
 
 
+# NOTE: ":v2" suffix marks the bilingual schema (en + zh in one payload).
+# Old single-language v1 cache entries simply expire in their TTL window.
 def _summary_key(org_id: int) -> str:
-    return f"dashboard:{org_id}:summary"
+    return f"dashboard:{org_id}:summary:v2"
 
 
 def _summary_meta_key(org_id: int) -> str:
-    return f"dashboard:{org_id}:summary:meta"
+    return f"dashboard:{org_id}:summary:meta:v2"
 
 
 def _summary_lock_key(org_id: int) -> str:
-    return f"dashboard:{org_id}:summary:lock"
+    return f"dashboard:{org_id}:summary:lock:v2"
 
 
 # Track in-flight summary generations so the lazy path doesn't fan out one
