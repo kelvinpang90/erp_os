@@ -67,14 +67,15 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'erp-auth',
       partialize: (state) => ({
+        // demoMode + aiSettings are intentionally NOT persisted: they reflect
+        // backend env / org config that can change between page loads, and the
+        // /me call right after login refreshes them anyway.
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         user: state.user,
         permissions: state.permissions,
         menu: state.menu,
-        demoMode: state.demoMode,
-        aiSettings: state.aiSettings,
       }),
     },
   ),
