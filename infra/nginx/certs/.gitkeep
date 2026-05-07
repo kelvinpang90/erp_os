@@ -1,0 +1,3 @@
+# 把 Cloudflare Origin CA 颁发的 origin.crt / origin.key 放在这个目录
+# chmod 600 origin.key
+# *.crt / *.key 已被 .gitignore 排除
