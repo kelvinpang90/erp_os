@@ -1,5 +1,7 @@
 # 生产 / Demo 站点 compose
-# 前置：infra 栈已起（infra/docker-compose.yml），proxy_net 和 data_net 已存在
+#
+# 前置：vps_infra 栈已起（独立仓库 https://github.com/.../vps_infra，部署在
+# VPS 的 /srv/infra/），external network proxy_net 和 data_net 必须已存在。
 #
 # 启动：
 #   cp .env.production.example .env.production && vim .env.production
