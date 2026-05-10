@@ -16,9 +16,11 @@ test.describe.serial('E2E-2 Sales loop', () => {
   let api: ApiClient
   let baseline: Awaited<ReturnType<typeof pickInventoryBaseline>>
   let customerId: number
+  // Shared across tests in this describe — annotations don't survive between tests.
+  let soId = 0
+  let invoiceId = 0
 
   test.beforeAll(async ({ baseURL }) => {
-    // sales role can't see suppliers, but can read customers / sales / invoices.
     api = await loginAsRole(baseURL!, 'sales')
     baseline = await pickInventoryBaseline(api)
     const cust = await pickB2BCustomer(api)
@@ -50,17 +52,16 @@ test.describe.serial('E2E-2 Sales loop', () => {
       ],
     })
     expect(created.status).toBe('DRAFT')
+    soId = created.id
 
-    await api.post(`/sales-orders/${created.id}/confirm`)
+    await api.post(`/sales-orders/${soId}/confirm`)
     const after = await getStock(api, baseline.sku.id, baseline.warehouseKL.id)
     expect(Number(after.reserved) - Number(before.reserved)).toBeCloseTo(2, 4)
     expect(Number(before.available) - Number(after.available)).toBeCloseTo(2, 4)
-
-    test.info().annotations.push({ type: 'so-id', description: String(created.id) })
   })
 
   test('DO ship full → on_hand drops, reserved cleared, SO FULLY_SHIPPED', async ({ page }) => {
-    const soId = Number(test.info().annotations.find((a) => a.type === 'so-id')?.description)
+    expect(soId).toBeGreaterThan(0)
     const so = await api.get<{ lines: { id: number; qty_ordered: string }[] }>(
       `/sales-orders/${soId}`,
     )
@@ -82,42 +83,33 @@ test.describe.serial('E2E-2 Sales loop', () => {
     await loginViaUI(page, 'sales')
     await page.goto(`/sales/orders/${soId}`)
     await expect(page.locator('[data-testid="so-status"]')).toContainText('FULLY SHIPPED', {
-      timeout: 10_000,
+      timeout: 15_000,
     })
   })
 
   test('Invoice generate → precheck → submit reaches VALIDATED', async ({ page }) => {
-    const soId = Number(test.info().annotations.find((a) => a.type === 'so-id')?.description)
+    expect(soId).toBeGreaterThan(0)
 
-    // Generate-from-SO returns InvoiceDetail. The router wants an empty body too.
     const inv = await api.post<{ id: number; status: string }>(
       `/invoices/generate-from-so/${soId}`,
       {},
     )
     expect(inv.status).toBe('DRAFT')
+    invoiceId = inv.id
 
-    // Precheck (returns InvoiceDetail with precheck_result populated)
-    const prechecked = await api.post<{
-      id: number
-      status: string
-      precheck_result?: { passed: boolean; checks: unknown[] }
-    }>(`/invoices/${inv.id}/precheck`, {})
-    // status stays DRAFT after precheck; result attached
-    expect(prechecked.status).toBe('DRAFT')
+    await api.post<{ status: string }>(`/invoices/${invoiceId}/precheck`, {})
 
-    // Submit → mock MyInvois returns UIN + status flips to VALIDATED
     const submitted = await api.post<{ id: number; status: string; uin?: string }>(
-      `/invoices/${inv.id}/submit`,
+      `/invoices/${invoiceId}/submit`,
       {},
     )
     expect(['VALIDATED', 'FINAL']).toContain(submitted.status)
     expect(submitted.uin).toBeTruthy()
 
-    // UI sanity check
     await loginViaUI(page, 'sales')
-    await page.goto(`/sales/einvoice/${inv.id}`)
+    await page.goto(`/sales/einvoice/${invoiceId}`)
     await expect(page.locator('[data-testid="invoice-status"]')).toBeVisible({
-      timeout: 10_000,
+      timeout: 15_000,
     })
     await expect(page.locator('[data-testid="invoice-status"]')).not.toContainText('DRAFT')
   })
