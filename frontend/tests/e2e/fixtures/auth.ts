@@ -10,15 +10,19 @@ export async function loginViaUI(page: Page, role: DemoRole): Promise<void> {
   const creds = DEMO_CREDENTIALS[role]
   await page.goto('/login')
 
-  // ProForm's LoginForm renders inputs with name="email" / name="password"
-  // (the `placeholder` text is i18n-driven and brittle).
-  await page.fill('input[name="email"]', creds.email)
-  await page.fill('input[name="password"]', creds.password)
+  // ProForm wraps inputs in Form.Item; the `name` prop binds to form state,
+  // not the DOM <input> element, so `input[name="email"]` won't match.
+  // Login page has exactly two inputs (email + password) — target by order.
+  const emailInput = page.locator('form input').nth(0)
+  const passwordInput = page.locator('form input').nth(1)
+  await emailInput.waitFor({ state: 'visible', timeout: 15_000 })
+  await emailInput.fill(creds.email)
+  await passwordInput.fill(creds.password)
 
-  // The login button is the only submit button on the page.
+  // The submit button is the only one on the form.
   await page.locator('button[type="submit"]').click()
 
-  // Successful login navigates away from /login and the dashboard renders.
+  // Successful login navigates away from /login.
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 15_000 })
   await expect(page).toHaveURL(/^(?!.*\/login).*/)
 }
