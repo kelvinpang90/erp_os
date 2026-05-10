@@ -192,7 +192,7 @@ export default function InvoiceDetailPage() {
               onClick={() => navigate('/sales/einvoice')}
             />
             <Typography.Text strong>{inv.document_no}</Typography.Text>
-            <Tag color={STATUS_COLOR[inv.status] ?? 'default'}>
+            <Tag data-testid="invoice-status" color={STATUS_COLOR[inv.status] ?? 'default'}>
               {statusLabel(tEinvoice, inv.status)}
             </Tag>
             {inv.uin && <Tag color="purple">UIN: {inv.uin}</Tag>}

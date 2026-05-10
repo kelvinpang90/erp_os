@@ -151,7 +151,9 @@ export default function PODetailPage() {
           <Space>
             <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/purchase/orders')} />
             <Typography.Text strong>{po.document_no}</Typography.Text>
-            <Tag color={STATUS_COLOR[po.status] ?? 'default'}>{po.status.replace(/_/g, ' ')}</Tag>
+            <Tag data-testid="po-status" color={STATUS_COLOR[po.status] ?? 'default'}>
+              {po.status.replace(/_/g, ' ')}
+            </Tag>
           </Space>
         }
         extra={

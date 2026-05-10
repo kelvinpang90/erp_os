@@ -180,7 +180,7 @@ export default function TransferDetailPage() {
               onClick={() => navigate('/inventory/transfers')}
             />
             <Typography.Text strong>{transfer.document_no}</Typography.Text>
-            <Tag color={STATUS_COLOR[transfer.status] ?? 'default'}>
+            <Tag data-testid="transfer-status" color={STATUS_COLOR[transfer.status] ?? 'default'}>
               {t(`status_${transfer.status}`)}
             </Tag>
           </Space>

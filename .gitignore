@@ -33,6 +33,11 @@ frontend/dist/
 frontend/.vite/
 *.tsbuildinfo
 
+# ── Playwright ───────────────────────────────────────────────────────────────
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright/.cache/
+
 # ── IDE ──────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/

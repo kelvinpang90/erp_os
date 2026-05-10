@@ -197,7 +197,9 @@ export default function SODetailPage() {
           <Space>
             <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/sales/orders')} />
             <Typography.Text strong>{so.document_no}</Typography.Text>
-            <Tag color={STATUS_COLOR[so.status] ?? 'default'}>{so.status.replace(/_/g, ' ')}</Tag>
+            <Tag data-testid="so-status" color={STATUS_COLOR[so.status] ?? 'default'}>
+              {so.status.replace(/_/g, ' ')}
+            </Tag>
           </Space>
         }
         extra={
