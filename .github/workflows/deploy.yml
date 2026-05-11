@@ -78,7 +78,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
-            docker compose exec -T backend alembic upgrade head
+            docker compose exec -T erp_backend alembic upgrade head
             docker logout ghcr.io
             docker image prune -f
 

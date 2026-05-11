@@ -30,14 +30,14 @@ docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
 
 echo "[$(date -u --iso-8601=seconds)] Waiting for backend health…"
 for i in {1..30}; do
-    if docker compose -f "${COMPOSE_FILE}" exec -T backend curl -fs http://localhost:8000/health >/dev/null; then
+    if docker compose -f "${COMPOSE_FILE}" exec -T erp_backend curl -fs http://localhost:8000/health >/dev/null; then
         break
     fi
     sleep 2
 done
 
 echo "[$(date -u --iso-8601=seconds)] Running Alembic migrations…"
-docker compose -f "${COMPOSE_FILE}" exec -T backend alembic upgrade head
+docker compose -f "${COMPOSE_FILE}" exec -T erp_backend alembic upgrade head
 
 echo "[$(date -u --iso-8601=seconds)] Pruning dangling images…"
 docker image prune -f

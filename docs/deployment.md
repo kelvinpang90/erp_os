@@ -115,11 +115,11 @@ docker compose pull
 docker compose up -d
 
 # 等 backend 健康（最多 30 秒）
-until docker compose ps backend | grep -q "healthy"; do sleep 2; done
+until docker compose ps erp_backend | grep -q "healthy"; do sleep 2; done
 
-docker compose exec backend alembic upgrade head
-docker compose exec backend python scripts/seed_master_data.py
-docker compose exec backend python scripts/seed_transactional.py
+docker compose exec erp_backend alembic upgrade head
+docker compose exec erp_backend python scripts/seed_master_data.py
+docker compose exec erp_backend python scripts/seed_transactional.py
 ```
 
 ### 3.4 放置 vhost + reload nginx
