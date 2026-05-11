@@ -12,12 +12,13 @@ export async function loginViaUI(page: Page, role: DemoRole): Promise<void> {
 
   // ProForm wraps inputs in Form.Item; the `name` prop binds to form state,
   // not the DOM <input> element, so `input[name="email"]` won't match.
-  // Login page has exactly two inputs (email + password) — target by order.
-  const emailInput = page.locator('form input').nth(0)
-  const passwordInput = page.locator('form input').nth(1)
-  await emailInput.waitFor({ state: 'visible', timeout: 15_000 })
-  await emailInput.fill(creds.email)
-  await passwordInput.fill(creds.password)
+  // ProForm/Ant Form also injects a hidden text input before the real fields
+  // (autofill defence), so a naive `form input` query hits the hidden one.
+  // `:visible` skips past it. Order is then: email (text), password.
+  const visibleInputs = page.locator('form input:visible')
+  await visibleInputs.first().waitFor({ state: 'visible', timeout: 15_000 })
+  await visibleInputs.nth(0).fill(creds.email)
+  await visibleInputs.nth(1).fill(creds.password)
 
   // The submit button is the only one on the form.
   await page.locator('button[type="submit"]').click()
