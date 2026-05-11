@@ -23,6 +23,16 @@ CRM 已有的 A 记录不动。
 
 ## 二、共享基础设施改动（一次性）
 
+### 2.0 Clone 仓库到 VPS（前置）
+
+后续步骤要从仓库里拷贝 `erp.conf`，先把代码 clone 下来：
+
+```bash
+sudo mkdir -p /opt/erp_os && sudo chown $USER /opt/erp_os
+cd /opt/erp_os
+git clone https://github.com/<owner>/erp_os.git .
+```
+
 ### 2.1 MySQL（infra_mysql 容器内）
 
 ```bash
@@ -84,15 +94,9 @@ docker exec infra_nginx nginx -s reload
 
 ## 三、首次部署 ERP（VPS 上执行）
 
-### 3.1 clone 仓库
+> 仓库已在 2.0 步骤 clone 到 `/opt/erp_os`，下面所有命令默认在该目录执行。
 
-```bash
-sudo mkdir -p /opt/erp_os && sudo chown $USER /opt/erp_os
-cd /opt/erp_os
-git clone https://github.com/<owner>/erp_os.git .
-```
-
-### 3.2 准备 .env.production
+### 3.1 准备 .env.production
 
 ```bash
 cp .env.production.example .env.production
@@ -106,7 +110,7 @@ vim .env.production
 - `CORS_ORIGINS=https://erp.kelvinpeng.com`
 - `ANTHROPIC_API_KEY`（如需 AI 功能）
 
-### 3.3 登录 ghcr.io 并拉镜像
+### 3.2 登录 ghcr.io 并拉镜像
 
 ```bash
 # 用一个 read:packages PAT
@@ -115,7 +119,7 @@ echo $GHCR_PAT | docker login ghcr.io -u <github_user> --password-stdin
 docker compose -f docker-compose.prod.yml pull
 ```
 
-### 3.4 启动 + 迁移 + seed
+### 3.3 启动 + 迁移 + seed
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
@@ -124,13 +128,13 @@ docker compose -f docker-compose.prod.yml exec backend python scripts/seed_maste
 docker compose -f docker-compose.prod.yml exec backend python scripts/seed_transactional.py
 ```
 
-### 3.5 reload nginx
+### 3.4 reload nginx
 
 ```bash
 docker exec infra_nginx nginx -s reload
 ```
 
-### 3.6 冒烟
+### 3.5 冒烟
 
 ```bash
 curl -fsS https://erp.kelvinpeng.com/health         # 200, {"status":"ok"}
