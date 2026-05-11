@@ -76,19 +76,9 @@ sudo chmod 600 /srv/infra/nginx/certs/_wildcard.kelvinpeng.com/privkey.pem
 
 > 顺手把 `crm.conf` 里的 `ssl_certificate` 路径也改成 `_wildcard.kelvinpeng.com/`，统一证书源。改完 `nginx -t && nginx -s reload`。原 `crm.kelvinpeng.com/` 目录留作备份，确认无误后再删。
 
-**步骤 2：放置 vhost 配置**
+> **⚠️ vhost 配置（`erp.conf`）的复制和 reload 不在这一步做**，要等到第三章 ERP 容器起来后再做。nginx 解析 upstream 主机名（`erp_backend`）发生在 config 加载阶段，容器没起的话 `nginx -t` 会报 `host not found in upstream`。
 
-```bash
-sudo cp /opt/erp_os/nginx/conf.d/erp.conf /srv/infra/nginx/conf.d/erp.conf
-```
-
-**步骤 3：reload nginx**
-
-CRM 的 `/srv/infra/nginx/conf.d/crm.conf` 已是 `server_name crm.kelvinpeng.com;` + 443 SSL 模式，不需要改。
-```bash
-docker exec infra_nginx nginx -t            # 语法校验
-docker exec infra_nginx nginx -s reload
-```
+CRM 的 `/srv/infra/nginx/conf.d/crm.conf` 已是 `server_name crm.kelvinpeng.com;` + 443 SSL 模式，本次不需要改。
 
 ---
 
@@ -123,16 +113,29 @@ docker compose -f docker-compose.prod.yml pull
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
+
+# 等 backend 健康（最多 30 秒）
+until docker compose -f docker-compose.prod.yml ps backend | grep -q "healthy"; do sleep 2; done
+
 docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 docker compose -f docker-compose.prod.yml exec backend python scripts/seed_master_data.py
 docker compose -f docker-compose.prod.yml exec backend python scripts/seed_transactional.py
 ```
 
-### 3.4 reload nginx
+### 3.4 放置 vhost + reload nginx
+
+容器已经在 `proxy_net` 上跑起来了，nginx 现在能解析 `erp_backend` / `erp_frontend` 主机名：
 
 ```bash
+sudo cp /opt/erp_os/nginx/conf.d/erp.conf /srv/infra/nginx/conf.d/erp.conf
+docker exec infra_nginx nginx -t            # 语法校验
 docker exec infra_nginx nginx -s reload
 ```
+
+> 如果 `nginx -t` 报 `host not found in upstream "erp_backend:8000"`：
+> - 确认 `infra_nginx` 在 `proxy_net` 网络上：`docker inspect infra_nginx | grep -A2 Networks`
+> - 确认 erp 后端在同一网络：`docker network inspect proxy_net | grep erp_backend`
+> - 这两者必须在同一 `proxy_net`，nginx 才能通过 Docker DNS 解析容器名
 
 ### 3.5 冒烟
 
