@@ -80,11 +80,7 @@ services:
     environment:
       <<: *tz
     networks: [proxy_net]
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+    # 静态 SPA，容器活着即服务正常；不配 healthcheck（与 crm_os-frontend 一致）
 
 volumes:
   uploads_data:
