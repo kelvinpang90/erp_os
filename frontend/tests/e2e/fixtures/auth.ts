@@ -20,8 +20,12 @@ export async function loginViaUI(page: Page, role: DemoRole): Promise<void> {
   await visibleInputs.nth(0).fill(creds.email)
   await visibleInputs.nth(1).fill(creds.password)
 
-  // The submit button is the only one on the form.
-  await page.locator('button[type="submit"]').click()
+  // Pressing Enter inside the password field triggers the form's native
+  // submit handler. More robust than clicking the submit button — Ant
+  // ProForm's LoginForm uses `htmlType="button"` internally on the submit
+  // and binds onClick to form.submit(), so `button[type="submit"]` doesn't
+  // match the actual DOM.
+  await visibleInputs.nth(1).press('Enter')
 
   // Successful login navigates away from /login.
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 15_000 })
