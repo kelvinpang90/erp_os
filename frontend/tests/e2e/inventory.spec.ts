@@ -64,21 +64,21 @@ test.describe.serial('E2E-3 Inventory loop', () => {
     )
     expect(created.status).toBe('DRAFT')
 
-    // 2. Confirm: KL.reserved += 3
+    // 2. Confirm — pure approval, no stock movement (per stock_transfer.py docstring).
     const confirmed = await api.post<{ status: string; lines: { id: number }[] }>(
       `/stock-transfers/${created.id}/confirm`,
     )
     expect(confirmed.status).toBe('CONFIRMED')
-    const afterConfirm = await getStock(api, baseline.sku.id, baseline.warehouseKL.id)
-    expect(Number(afterConfirm.reserved) - Number(klBefore.reserved)).toBeCloseTo(3, 4)
 
-    // 3. Ship-out: KL.on_hand -= 3, KL.reserved -= 3, KL.in_transit (or destination's incoming) reflects movement
+    // 3. Ship-out: KL.on_hand -= 3 (from), Penang.in_transit += 3 (to).
     const shipped = await api.post<{ status: string }>(`/stock-transfers/${created.id}/ship-out`)
     expect(shipped.status).toBe('IN_TRANSIT')
-    const afterShip = await getStock(api, baseline.sku.id, baseline.warehouseKL.id)
-    expect(Number(klBefore.on_hand) - Number(afterShip.on_hand)).toBeCloseTo(3, 4)
+    const klAfterShip = await getStock(api, baseline.sku.id, baseline.warehouseKL.id)
+    const penAfterShip = await getStock(api, baseline.sku.id, baseline.warehousePenang.id)
+    expect(Number(klBefore.on_hand) - Number(klAfterShip.on_hand)).toBeCloseTo(3, 4)
+    expect(Number(penAfterShip.in_transit) - Number(penBefore.in_transit)).toBeCloseTo(3, 4)
 
-    // 4. Receive at Penang: full quantity
+    // 4. Receive at Penang: full quantity.
     const lineIds = confirmed.lines.map((l) => l.id)
     const received = await api.post<{ status: string }>(
       `/stock-transfers/${created.id}/receive`,
@@ -88,9 +88,10 @@ test.describe.serial('E2E-3 Inventory loop', () => {
     )
     expect(received.status).toBe('RECEIVED')
 
-    // 5. Stocks: Penang.on_hand += 3
+    // 5. After receive: Penang.in_transit drops back, Penang.on_hand rises by 3.
     const penAfter = await getStock(api, baseline.sku.id, baseline.warehousePenang.id)
     expect(Number(penAfter.on_hand) - Number(penBefore.on_hand)).toBeCloseTo(3, 4)
+    expect(Number(penAfter.in_transit) - Number(penBefore.in_transit)).toBeCloseTo(0, 4)
 
     // 6. UI: detail page shows RECEIVED
     await loginViaUI(page, 'manager')
