@@ -66,3 +66,7 @@ alembic/versions/*.pyc
 # ── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 logs/
+
+# ── Demo material build artifacts ──────────────────────────────────────────
+demo/decks/node_modules/
+demo/decks/package-lock.json
