@@ -700,6 +700,28 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 
 ---
 
+## VPS 接入 crm_os 共享栈（2026-05-11，W18 收尾补完）
+
+把 erp_os 接入已运行 crm_os 的 VPS，复用 vps_infra 的 nginx / mysql / redis 三个容器，通过子域名分流。代码侧改动已完成；VPS 上线动作落在 W21。
+
+### 已完成改动
+- `nginx/conf.d/erp.conf` 新增（仿 crm.conf 风格，含 OCR SSE 禁缓冲、health/openapi 路由）
+- `docker/nginx/nginx.prod.conf` 删除（路由交给 vps_infra 共享 nginx）
+- `docker-compose.prod.yml` 改：`build:` → `image: ghcr.io/${GHCR_OWNER}/erp_os-{backend,frontend}:${IMAGE_TAG}`
+- `.env.production.example` 改：Redis DB 5-8 + Celery 10/11（避开 crm_os 占用的 0-4）、`infra_mysql`/`infra_redis` 主机名、`GHCR_OWNER`/`IMAGE_TAG` 替换变量
+- `.github/workflows/deploy.yml` 新增（仿 crm_os：build → push ghcr.io → SSH pull/up/migrate），删除旧 `deploy-demo.yml`
+- `scripts/deploy.sh` 改：build 模式 → pull 模式（与 CI 一致）
+- `docs/deployment.md` 重写：6 节 runbook（DNS / 基础设施改动 / 首次部署 / GHA secrets / 验证 / 回滚 / 风险）
+
+### W21 真上线时还需手动做的事
+- Cloudflare 加 `erp.kelvinpeng.com` A 记录 + 签 Origin Certificate
+- VPS 上 infra_mysql 建 `erp_os` 库 + `erp_app`/`erp_ro` 账号
+- 把 Origin Cert 放到 `/srv/infra/nginx/certs/erp.kelvinpeng.com/`
+- 复制 `nginx/conf.d/erp.conf` 到 `/srv/infra/nginx/conf.d/` 并 reload
+- 配 GHA secrets（VPS_HOST / VPS_USER / VPS_PORT / VPS_SSH_KEY / 可选 ERP_PUBLIC_URL）
+
+---
+
 ## Window 21 —— 最终走查 + 兜底演练（缓冲）
 
 **目标**：发现最后的边缘问题 + 兜底预案。

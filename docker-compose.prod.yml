@@ -1,20 +1,20 @@
 # 生产 / Demo 站点 compose
 #
-# 前置：vps_infra 栈已起（独立仓库 https://github.com/.../vps_infra，部署在
-# VPS 的 /srv/infra/），external network proxy_net 和 data_net 必须已存在。
+# 前置：
+#   1. vps_infra 栈已起（独立仓库），external network proxy_net 和 data_net 已存在
+#   2. infra_mysql 已建 erp_os database + erp_app 账号
+#   3. ghcr.io 镜像已由 .github/workflows/deploy.yml 推送
+#   4. /srv/infra/nginx/conf.d/erp.conf 已就位（见仓库 nginx/conf.d/erp.conf）
 #
 # 启动：
 #   cp .env.production.example .env.production && vim .env.production
-#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker login ghcr.io                     # 用 GHCR_USER + GHCR_TOKEN
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
 #   docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 
 x-tz: &tz
   TZ: Asia/Kuala_Lumpur
-
-x-backend-build: &backend-build
-  build:
-    context: ./backend
-    dockerfile: Dockerfile
 
 networks:
   proxy_net:
@@ -24,8 +24,7 @@ networks:
 
 services:
   backend:
-    <<: *backend-build
-    image: erp/backend:latest
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
     container_name: erp_backend
     restart: unless-stopped
     env_file: .env.production
@@ -43,8 +42,7 @@ services:
       start_period: 30s
 
   celery_worker:
-    <<: *backend-build
-    image: erp/backend:latest
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
     container_name: erp_celery_worker
     restart: unless-stopped
     env_file: .env.production
@@ -59,8 +57,7 @@ services:
         condition: service_healthy
 
   celery_beat:
-    <<: *backend-build
-    image: erp/backend:latest
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
     container_name: erp_celery_beat
     restart: unless-stopped
     env_file: .env.production
@@ -73,11 +70,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: production
-    image: erp/frontend:latest
+    image: ghcr.io/${GHCR_OWNER}/erp_os-frontend:${IMAGE_TAG:-latest}
     container_name: erp_frontend
     restart: unless-stopped
     environment:
