@@ -714,9 +714,9 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 - `docs/deployment.md` 重写：6 节 runbook（DNS / 基础设施改动 / 首次部署 / GHA secrets / 验证 / 回滚 / 风险）
 
 ### W21 真上线时还需手动做的事
-- Cloudflare 加 `erp.kelvinpeng.com` A 记录 + 签 Origin Certificate
+- Cloudflare 加 `erp.kelvinpeng.com` A 记录（已有 *.kelvinpeng.com 通配符 Origin Cert，复用，不需新签）
 - VPS 上 infra_mysql 建 `erp_os` 库 + `erp_app`/`erp_ro` 账号
-- 把 Origin Cert 放到 `/srv/infra/nginx/certs/erp.kelvinpeng.com/`
+- 复用已有通配符证书：建 `/srv/infra/nginx/certs/_wildcard.kelvinpeng.com/`，从 `crm.kelvinpeng.com/` 拷贝 PEM
 - 复制 `nginx/conf.d/erp.conf` 到 `/srv/infra/nginx/conf.d/` 并 reload
 - 配 GHA secrets（VPS_HOST / VPS_USER / VPS_PORT / VPS_SSH_KEY / 可选 ERP_PUBLIC_URL）
 

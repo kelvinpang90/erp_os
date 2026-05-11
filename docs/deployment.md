@@ -48,23 +48,23 @@ FLUSH PRIVILEGES;
 
 > **真相源约定**：仓库内 `nginx/conf.d/erp.conf` 是**模板 + 版本控制副本**，**不**被任何 CI 自动同步到 VPS。真正生效的是 `/srv/infra/nginx/conf.d/erp.conf`，由人工 `scp` / `nano` 维护。改配置时两边都改，仓库改完 commit 留痕，VPS 改完 `nginx -t && nginx -s reload`。
 
-**步骤 1：准备 SSL 证书（Cloudflare Origin Certificate，与 CRM 同模式）**
+**步骤 1：准备 SSL 证书（复用 `*.kelvinpeng.com` 通配符 Origin Certificate）**
 
-在 Cloudflare → SSL/TLS → Origin Server 签发一张覆盖 `erp.kelvinpeng.com` 的 Origin Certificate（15 年有效），把 fullchain 和 private key 拷贝到 VPS：
+已有一张 Cloudflare Origin Certificate 覆盖 `*.kelvinpeng.com, kelvinpeng.com`（CRM 已在用），通配符天然覆盖 `erp.kelvinpeng.com`，**不需要重新签**。在 VPS 上把已有 PEM 文件搬到一个共享目录，两个 vhost 都引用它，未来续签只改一处：
 
 ```bash
-sudo mkdir -p /srv/infra/nginx/certs/erp.kelvinpeng.com
-sudo nano /srv/infra/nginx/certs/erp.kelvinpeng.com/fullchain.pem
-# 粘贴 Origin Certificate 全文（含 -----BEGIN/END CERTIFICATE-----）
-
-sudo nano /srv/infra/nginx/certs/erp.kelvinpeng.com/privkey.pem
-# 粘贴 Private Key 全文
-
-sudo chmod 644 /srv/infra/nginx/certs/erp.kelvinpeng.com/fullchain.pem
-sudo chmod 600 /srv/infra/nginx/certs/erp.kelvinpeng.com/privkey.pem
+sudo mkdir -p /srv/infra/nginx/certs/_wildcard.kelvinpeng.com
+sudo cp /srv/infra/nginx/certs/crm.kelvinpeng.com/fullchain.pem \
+        /srv/infra/nginx/certs/_wildcard.kelvinpeng.com/
+sudo cp /srv/infra/nginx/certs/crm.kelvinpeng.com/privkey.pem \
+        /srv/infra/nginx/certs/_wildcard.kelvinpeng.com/
+sudo chmod 644 /srv/infra/nginx/certs/_wildcard.kelvinpeng.com/fullchain.pem
+sudo chmod 600 /srv/infra/nginx/certs/_wildcard.kelvinpeng.com/privkey.pem
 ```
 
-容器内路径：`/etc/nginx/certs/erp.kelvinpeng.com/{fullchain.pem,privkey.pem}`，与 `erp.conf` 中的 `ssl_certificate` 一致。
+容器内路径：`/etc/nginx/certs/_wildcard.kelvinpeng.com/{fullchain.pem,privkey.pem}`，与 `erp.conf` 中的 `ssl_certificate` 一致。
+
+> 顺手把 `crm.conf` 里的 `ssl_certificate` 路径也改成 `_wildcard.kelvinpeng.com/`，统一证书源。改完 `nginx -t && nginx -s reload`。原 `crm.kelvinpeng.com/` 目录留作备份，确认无误后再删。
 
 **步骤 2：放置 vhost 配置**
 
