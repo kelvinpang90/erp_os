@@ -1,176 +1,87 @@
+# 生产 / Demo 站点 compose（默认 compose 文件，VPS 上直接 `docker compose ...`）
+# 本地开发用 docker-compose.dev.yml（含 mysql / redis / nginx 全栈）。
+#
+# 前置：
+#   1. vps_infra 栈已起（独立仓库），external network proxy_net 和 data_net 已存在
+#   2. infra_mysql 已建 erp_os database + erp_app 账号
+#   3. ghcr.io 镜像已由 .github/workflows/deploy.yml 推送
+#   4. /srv/infra/nginx/conf.d/erp.conf 已就位（见仓库 nginx/conf.d/erp.conf）
+#
+# 启动：
+#   cp .env.production.example .env && vim .env
+#   docker login ghcr.io
+#   docker compose pull
+#   docker compose up -d
+#   docker compose exec backend alembic upgrade head
+
 x-tz: &tz
   TZ: Asia/Kuala_Lumpur
 
+networks:
+  proxy_net:
+    external: true
+  data_net:
+    external: true
+
 services:
-  # ── MySQL 8.0 ────────────────────────────────────────────────────────────
-  # mysqld 强制 UTC（--default-time-zone='+00:00'）以匹配 CLAUDE.md A5
-  # "时间 UTC 存储"。容器 OS 仍是 +08 方便看日志；NOW()/CURRENT_TIMESTAMP
-  # 走 UTC，TIMESTAMP/DATETIME 列存盘都是 UTC，跨 region 部署零漂移。
-  mysql:
-    image: mysql:8.0
-    container_name: erp_mysql
-    restart: unless-stopped
-    command: --default-time-zone=+00:00
-    environment:
-      <<: *tz
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-erp_os}
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # ── Redis 7 ──────────────────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: erp_redis
-    restart: unless-stopped
-    environment:
-      <<: *tz
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-
-  # ── FastAPI backend ───────────────────────────────────────────────────────
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
     container_name: erp_backend
     restart: unless-stopped
     env_file: .env
     environment:
       <<: *tz
-    ports:
-      - "8000:8000"
     volumes:
-      - ./backend:/app
       - uploads_data:/app/uploads
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    networks: [proxy_net, data_net]
+    # 不发布 host 端口；nginx 通过 proxy_net 访问 erp_backend:8000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 30s
 
-  # ── Vite dev server ───────────────────────────────────────────────────────
+  celery_worker:
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
+    container_name: erp_celery_worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *tz
+    command: celery -A app.tasks.celery_app worker -l info -Q default,ai
+    volumes:
+      - uploads_data:/app/uploads
+    networks: [data_net]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  celery_beat:
+    image: ghcr.io/${GHCR_OWNER}/erp_os-backend:${IMAGE_TAG:-latest}
+    container_name: erp_celery_beat
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *tz
+    command: celery -A app.tasks.celery_app beat -l info
+    networks: [data_net]
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: dev
+    image: ghcr.io/${GHCR_OWNER}/erp_os-frontend:${IMAGE_TAG:-latest}
     container_name: erp_frontend
     restart: unless-stopped
     environment:
       <<: *tz
-      VITE_API_URL: http://backend:8000
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      # Mount config files individually so edits to vite.config.ts /
-      # tsconfig.json take effect on `docker compose restart frontend`
-      # without a full rebuild.
-      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
-      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
-      - ./frontend/index.html:/app/index.html
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  # ── Celery worker (default queue) ─────────────────────────────────────────
-  celery-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: erp_celery_worker
-    restart: unless-stopped
-    command: celery -A app.tasks.celery_app worker -Q default -l info -c 2
-    env_file: .env
-    environment:
-      <<: *tz
-    volumes:
-      - ./backend:/app
-      - uploads_data:/app/uploads
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # ── Celery worker (ai queue, isolated for long LLM calls) ─────────────────
-  celery-worker-ai:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: erp_celery_worker_ai
-    restart: unless-stopped
-    command: celery -A app.tasks.celery_app worker -Q ai -l info -c 1
-    env_file: .env
-    environment:
-      <<: *tz
-    volumes:
-      - ./backend:/app
-      - uploads_data:/app/uploads
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # ── Celery beat (scheduler) ───────────────────────────────────────────────
-  celery-beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: erp_celery_beat
-    restart: unless-stopped
-    command: celery -A app.tasks.celery_app beat -l info
-    env_file: .env
-    environment:
-      <<: *tz
-    volumes:
-      - ./backend:/app
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # ── Nginx reverse proxy ───────────────────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    container_name: erp_nginx
-    restart: unless-stopped
-    environment:
-      <<: *tz
-    ports:
-      - "80:80"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      backend:
-        condition: service_healthy
+    networks: [proxy_net]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
-  mysql_data:
-  redis_data:
   uploads_data:

@@ -86,11 +86,11 @@ CRM 的 `/srv/infra/nginx/conf.d/crm.conf` 已是 `server_name crm.kelvinpeng.co
 
 > 仓库已在 2.0 步骤 clone 到 `/opt/erp_os`，下面所有命令默认在该目录执行。
 
-### 3.1 准备 .env.production
+### 3.1 准备 .env
 
 ```bash
-cp .env.production.example .env.production
-vim .env.production
+cp .env.production.example .env
+vim .env
 ```
 
 必填：
@@ -106,20 +106,20 @@ vim .env.production
 # 用一个 read:packages PAT
 echo $GHCR_PAT | docker login ghcr.io -u <github_user> --password-stdin
 
-docker compose -f docker-compose.prod.yml pull
+docker compose pull
 ```
 
 ### 3.3 启动 + 迁移 + seed
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+docker compose up -d
 
 # 等 backend 健康（最多 30 秒）
-until docker compose -f docker-compose.prod.yml ps backend | grep -q "healthy"; do sleep 2; done
+until docker compose ps backend | grep -q "healthy"; do sleep 2; done
 
-docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
-docker compose -f docker-compose.prod.yml exec backend python scripts/seed_master_data.py
-docker compose -f docker-compose.prod.yml exec backend python scripts/seed_transactional.py
+docker compose exec backend alembic upgrade head
+docker compose exec backend python scripts/seed_master_data.py
+docker compose exec backend python scripts/seed_transactional.py
 ```
 
 ### 3.4 放置 vhost + reload nginx
@@ -176,13 +176,13 @@ ghcr.io 拉取凭据：workflow 用 `secrets.GITHUB_TOKEN` 临时换出 docker l
 
 ## 五、验证清单
 
-1. `docker compose -f docker-compose.prod.yml ps` 全部 healthy
+1. `docker compose ps` 全部 healthy
 2. `docker exec infra_nginx nginx -t` 通过
 3. `curl https://erp.kelvinpeng.com/health` → 200
 4. `curl https://crm.kelvinpeng.com/health` → 200（CRM 不受影响）
 5. 4 个演示账号能登录（Admin / Manager / Sales / Purchaser）
 6. Dashboard 出图，能下 1 张 PO + 1 张 SO + 1 张 e-Invoice（预校验走通）
-7. `docker compose -f docker-compose.prod.yml logs celery_beat | grep "demo_reset"` 看到调度
+7. `docker compose logs celery_beat | grep "demo_reset"` 看到调度
 
 ---
 
@@ -191,7 +191,7 @@ ghcr.io 拉取凭据：workflow 用 `secrets.GITHUB_TOKEN` 临时换出 docker l
 ```bash
 # 软停（保留数据）
 cd /opt/erp_os
-docker compose -f docker-compose.prod.yml down
+docker compose down
 
 # 撤掉 nginx 路由
 docker exec infra_nginx rm /etc/nginx/conf.d/erp.conf
@@ -211,6 +211,6 @@ docker volume rm erp_os_uploads_data
 ## 七、风险点
 
 - **R1 / SSL 证书过期**：Cloudflare Origin Certificate 默认 15 年，但要在到期前手动续签；可在 VPS 上 cron 定时检查 `openssl x509 -enddate -noout -in /srv/infra/nginx/certs/erp.kelvinpeng.com/fullchain.pem`。
-- **R2 / Redis DB 冲突**：部署前用 `redis-cli` `INFO keyspace` 核对 crm_os 实际占用了哪些 DB；erp 默认 5/6/7/8/10/11，按需调整 `.env.production`。
+- **R2 / Redis DB 冲突**：部署前用 `redis-cli` `INFO keyspace` 核对 crm_os 实际占用了哪些 DB；erp 默认 5/6/7/8/10/11，按需调整 `.env`。
 - **R3 / MySQL 共享**：所有 Alembic / 脚本必须用 `erp_app` 账号，禁止用 root。`erp_app` 没有 crm_os 库权限，即使写错 SQL 也碰不到 CRM 数据。
 - **R4 / 镜像可见性**：ghcr 包默认 Private。Workflow 内的 SSH script 已 inline `docker login` + `docker logout`，无需在 VPS 持久化凭据。

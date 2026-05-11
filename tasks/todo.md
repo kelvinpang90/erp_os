@@ -707,7 +707,7 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 ### 已完成改动
 - `nginx/conf.d/erp.conf` 新增（仿 crm.conf 风格，含 OCR SSE 禁缓冲、health/openapi 路由）
 - `docker/nginx/nginx.prod.conf` 删除（路由交给 vps_infra 共享 nginx）
-- `docker-compose.prod.yml` 改：`build:` → `image: ghcr.io/${GHCR_OWNER}/erp_os-{backend,frontend}:${IMAGE_TAG}`
+- `docker-compose.yml`（原 `docker-compose.prod.yml`）改：`build:` → `image: ghcr.io/${GHCR_OWNER}/erp_os-{backend,frontend}:${IMAGE_TAG}`，env_file 读 `.env`；本地开发 compose 迁到 `docker-compose.dev.yml`
 - `.env.production.example` 改：Redis DB 5-8 + Celery 10/11（避开 crm_os 占用的 0-4）、`infra_mysql`/`infra_redis` 主机名、`GHCR_OWNER`/`IMAGE_TAG` 替换变量
 - `.github/workflows/deploy.yml` 新增（仿 crm_os：build → push ghcr.io → SSH pull/up/migrate），删除旧 `deploy-demo.yml`
 - `scripts/deploy.sh` 改：build 模式 → pull 模式（与 CI 一致）

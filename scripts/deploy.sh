@@ -4,7 +4,7 @@
 # Run on the VPS directly OR have GitHub Actions ssh in and execute it.
 # Required env vars (set in shell or sourced from /etc/erp-os.env):
 #   REPO_DIR        absolute path to the checkout (default: /opt/erp_os)
-#   COMPOSE_FILE    docker compose file (default: $REPO_DIR/docker-compose.prod.yml)
+#   COMPOSE_FILE    docker compose file (default: $REPO_DIR/docker-compose.yml)
 #   BRANCH          git branch (default: main)
 #
 # Note: ghcr.io login must already be performed (docker login ghcr.io).
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/opt/erp_os}"
-COMPOSE_FILE="${COMPOSE_FILE:-${REPO_DIR}/docker-compose.prod.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-${REPO_DIR}/docker-compose.yml}"
 BRANCH="${BRANCH:-main}"
 
 cd "${REPO_DIR}"
