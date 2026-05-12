@@ -11,7 +11,7 @@ import asyncio
 import structlog
 from sqlalchemy import select
 
-from app.core.database import AsyncSessionLocal
+from app.tasks.db import AsyncSessionLocal
 from app.models.organization import Organization
 from app.services.dashboard import refresh_summary_now
 from app.tasks._helpers import get_system_user_for_org

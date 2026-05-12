@@ -12,7 +12,7 @@ import asyncio
 import structlog
 from sqlalchemy import select
 
-from app.core.database import AsyncSessionLocal
+from app.tasks.db import AsyncSessionLocal
 from app.models.organization import Organization
 from app.services.einvoice import run_finalize_scan
 from app.tasks._helpers import get_system_user_for_org

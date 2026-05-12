@@ -12,7 +12,7 @@ import asyncio
 import structlog
 
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal
+from app.tasks.db import AsyncSessionLocal
 from app.enums import DemoResetStatus, DemoResetTrigger
 from app.services.demo_reset import run_demo_reset
 from app.tasks.celery_app import celery_app
