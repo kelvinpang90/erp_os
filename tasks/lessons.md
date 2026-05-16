@@ -130,6 +130,37 @@
 **纠正**：删掉冗余的 local import，统一靠模块级 import
 **预防**：加 import 前先 `grep "import Customer"` 确认有没有，避免 shadow。也可启用 ruff F823 / F841 类规则检测。这条放进 CLAUDE.md Part 6 backend 命名/import 规范里。
 
+## Window 18 部署遗留:nginx proxy_pass + 变量 + 尾斜杠白屏 bug
+
+### [2026-05-16] erp.kelvinpeng.com 整页空白 4 天,根因外层 nginx `proxy_pass` 写法坑
+
+**场景**:VPS 上 erp.kelvinpeng.com 浏览器打开整页空白。容器全 UP,backend `/health` ok,frontend 容器里 `index.html` + `assets/index-Bfz-0VeK.js` 文件齐全且正确,但 frontend access log 4 天里完全没有任何 `/assets/*.js` 请求。
+
+**犯的错**:`/srv/infra/nginx/conf.d/erp.conf` 的 frontend SPA location 写成:
+```nginx
+set $erp_frontend "erp_frontend:80";
+location / {
+    proxy_pass http://$erp_frontend/;   # ← 致命的尾斜杠 + 变量
+}
+```
+当 `proxy_pass` URL **同时**含变量 **和** URI(本例 URI = `/`)时,nginx 用 proxy_pass 里的 URI **整体替换** request URI。所以浏览器请求 `/assets/index-Bfz-0VeK.js` 被改成 `GET /` 转给内层 erp_frontend,内层 try_files 返 `index.html`(400B,`text/html`),浏览器把 HTML 当 JS 解析失败 → 白屏。
+
+对比验证铁证(同一上游):
+- A 直连内层 `docker exec infra_nginx curl http://erp_frontend/assets/index-Bfz-0VeK.js` → JS,1.3MB
+- B 经外层 `docker exec infra_nginx curl -k -H "Host: erp.kelvinpeng.com" https://localhost/assets/index-Bfz-0VeK.js` → HTML,400B
+
+ETag size 一个 `13d541`(1299777) 一个 `190`(400),完美对应。
+
+**纠正**:去掉尾斜杠 —— `proxy_pass http://$erp_frontend;`(原 request URI 完整透传)。`/api/` `/api/files/` 同样的坑一并去 URI 段(它们的 `/api/auth/login` 也被错替换成 `/api/`,只是 UI 白屏没人去试 API 才没暴露)。
+
+**预防**:
+1. 写 `proxy_pass http://$var...` 时,**只允许两种形式**:
+   - `proxy_pass http://$var;` (无 URI,原样透传)
+   - `proxy_pass http://$var$request_uri;` (显式透传,等价但更明显)
+   绝对禁止 `proxy_pass http://$var/;` 或 `proxy_pass http://$var/some/path/;`
+2. 一开始的诊断弯路:连续怀疑了 Cloudflare Rocket Loader、CF 缓存、frontend build 缺 assets、SPA fallback try_files —— 全错。根因定位的关键是**双层 nginx 对比 curl**(直连内层 vs 经外层),立刻看出外层在改写 URI。以后排查代理 bug 第一步就该做这个对比,不要先怀疑 CDN。
+3. 仓库 `nginx/conf.d/erp.conf` 跟 VPS 上 `/srv/infra/nginx/conf.d/erp.conf` 长期不一致 —— vps_infra 拆 repo 后,erp_os 这边的副本变成了误导性的过时草稿。需要保持一致或在文件顶部明示"以 vps_infra repo 为准"。
+
 ## 通用教训
 
 （每完成一个 Phase 提炼一次）
