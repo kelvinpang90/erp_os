@@ -16,7 +16,7 @@ jobs:
       - name: Compose up
         run: |
           cp .env.example .env
-          docker compose up -d --build
+          docker compose -f docker-compose.dev.yml up -d --build
       - name: Wait for backend
         run: |
           for i in {1..60}; do
@@ -27,10 +27,10 @@ jobs:
           done
       - name: Apply migrations + seed
         run: |
-          docker compose exec -T backend alembic upgrade head
-          docker compose exec -T backend python scripts/seed_master_data.py || true
-          docker compose exec -T backend python scripts/seed_all_master.py || true
-          docker compose exec -T backend python scripts/seed_transactional.py || true
+          docker compose -f docker-compose.dev.yml exec -T backend alembic upgrade head
+          docker compose -f docker-compose.dev.yml exec -T backend python scripts/seed_master_data.py || true
+          docker compose -f docker-compose.dev.yml exec -T backend python scripts/seed_all_master.py || true
+          docker compose -f docker-compose.dev.yml exec -T backend python scripts/seed_transactional.py || true
       - uses: actions/setup-node@v4
         with: { node-version: "20", cache: npm, cache-dependency-path: frontend/package-lock.json }
       - name: Install Playwright
@@ -51,7 +51,7 @@ jobs:
           path: frontend/playwright-report
       - name: Compose logs on failure
         if: failure()
-        run: docker compose logs --tail=200
+        run: docker compose -f docker-compose.dev.yml logs --tail=200
       - name: Compose down
         if: always()
-        run: docker compose down -v
+        run: docker compose -f docker-compose.dev.yml down -v
