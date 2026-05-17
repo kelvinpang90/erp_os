@@ -87,7 +87,13 @@ class DemoResetResult:
 
 def _backup_path() -> Path:
     base = Path(os.getenv("DEMO_RESET_BACKUP_DIR", "/app/backups"))
-    base.mkdir(parents=True, exist_ok=True)
+    # Best-effort: backup is non-critical, so a non-writable dir (e.g. CI runner
+    # without /app) must not abort the entire reset. _run_mysqldump returns
+    # False if the path is unusable.
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("backup_dir_unwritable", path=str(base), err=str(exc))
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     return base / f"pre_reset_{ts}.sql.gz"
 
