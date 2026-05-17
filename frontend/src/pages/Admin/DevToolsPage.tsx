@@ -60,7 +60,6 @@ export default function DevToolsPage() {
     void loadHistory()
     openStream()
     return () => closeStream()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function openStream() {

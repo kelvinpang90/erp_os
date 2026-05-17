@@ -248,7 +248,7 @@ export default function AdjustmentCreatePage() {
       } else {
         message.error(data?.message ?? t('messages.create_failed'))
       }
-      // eslint-disable-next-line no-console
+       
       console.error('[AdjustmentCreate] submit failed', { values, response: data })
       return false
     } finally {

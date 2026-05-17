@@ -184,7 +184,7 @@ export default function TransferCreatePage() {
       } else {
         message.error(data?.message ?? t('messages.create_failed'))
       }
-      // eslint-disable-next-line no-console
+       
       console.error('[TransferCreate] submit failed', { values, response: data })
       return false
     } finally {
