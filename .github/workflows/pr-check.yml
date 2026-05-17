@@ -120,6 +120,8 @@ jobs:
           python -c "import json; from app.main import app; print(json.dumps(app.openapi()))" > ../frontend/openapi.json
       - name: Regenerate TS client and diff
         working-directory: frontend
+        env:
+          ORVAL_OPENAPI_URL: ./openapi.json
         run: |
           npm run gen:api
           if ! git diff --quiet src/api/generated; then
