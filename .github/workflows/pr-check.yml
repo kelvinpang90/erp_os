@@ -104,7 +104,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install backend
         working-directory: backend
-        run: pip install -r requirements.txt
+        # aiosqlite is only needed for the in-memory openapi dump below.
+        run: pip install -r requirements.txt aiosqlite
       - name: Install frontend
         working-directory: frontend
         run: npm ci
