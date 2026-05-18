@@ -27,6 +27,11 @@ htmlcov/
 coverage.xml
 *.coveragerc
 
+# ── Backend runtime artifacts ────────────────────────────────────────────────
+backend/backups/
+backend/celerybeat-schedule
+backend/uploads/
+
 # ── Node / Frontend ──────────────────────────────────────────────────────────
 node_modules/
 frontend/dist/
