@@ -8,7 +8,13 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "strict": true
+    "strict": true,
+    // Emit to a side dir, not next to the .ts sources. The stale sibling
+    // .js artifacts confuse tools that auto-discover config (e.g. orval
+    // loads orval.config.js before orval.config.ts and the .js loader
+    // returns options with input=undefined).
+    "outDir": "./.tsbuild/node",
+    "tsBuildInfoFile": "./.tsbuild/node/.tsbuildinfo"
   },
   "include": ["vite.config.ts", "orval.config.ts"]
 }
