@@ -128,34 +128,35 @@ async def _seed_pos(
 
         subtotal = Decimal("0")
         tax_total = Decimal("0")
+        lines: List[PurchaseOrderLine] = []
         for line_no, sku in enumerate(chosen_skus, start=1):
             tax = random.choice(tax_rates)
             qty = Decimal(random.randint(5, 50))
             unit_price = _q(Decimal(random.uniform(2, 80)), TWO)
             line_excl = _q(qty * unit_price, TWO)
-            line_tax = _q(line_excl * tax.rate_percent / Decimal("100"), TWO)
+            line_tax = _q(line_excl * tax.rate / Decimal("100"), TWO)
             line_incl = _q(line_excl + line_tax, TWO)
-            uom = uoms.get(sku.uom_id)
+            uom = uoms.get(sku.base_uom_id)
             if uom is None:
                 continue
 
-            session.add(
-                PurchaseOrderLine(
-                    purchase_order_id=po.id,
-                    line_no=line_no,
-                    sku_id=sku.id,
-                    description=sku.name,
-                    uom_id=uom.id,
-                    qty_ordered=qty,
-                    qty_received=Decimal("0"),
-                    unit_price_excl_tax=unit_price,
-                    tax_rate_id=tax.id,
-                    tax_rate_percent=tax.rate_percent,
-                    tax_amount=line_tax,
-                    line_total_excl_tax=line_excl,
-                    line_total_incl_tax=line_incl,
-                )
+            line = PurchaseOrderLine(
+                purchase_order_id=po.id,
+                line_no=line_no,
+                sku_id=sku.id,
+                description=sku.name,
+                uom_id=uom.id,
+                qty_ordered=qty,
+                qty_received=Decimal("0"),
+                unit_price_excl_tax=unit_price,
+                tax_rate_id=tax.id,
+                tax_rate_percent=tax.rate,
+                tax_amount=line_tax,
+                line_total_excl_tax=line_excl,
+                line_total_incl_tax=line_incl,
             )
+            session.add(line)
+            lines.append(line)
             subtotal += line_excl
             tax_total += line_tax
 
@@ -176,10 +177,10 @@ async def _seed_pos(
 
         # Reflect qty_received on lines proportionally
         if po.status == POStatus.FULLY_RECEIVED:
-            for ln in po.lines:
+            for ln in lines:
                 ln.qty_received = ln.qty_ordered
         elif po.status == POStatus.PARTIAL_RECEIVED:
-            for ln in po.lines:
+            for ln in lines:
                 ln.qty_received = _q(ln.qty_ordered * Decimal("0.5"), FOUR)
 
         created += 1
@@ -224,35 +225,36 @@ async def _seed_sos_and_invoices(
 
         subtotal = Decimal("0")
         tax_total = Decimal("0")
+        lines: List[SalesOrderLine] = []
         for line_no, sku in enumerate(chosen_skus, start=1):
             tax = random.choice(tax_rates)
             qty = Decimal(random.randint(1, 20))
             unit_price = _q(Decimal(random.uniform(5, 120)), TWO)
             line_excl = _q(qty * unit_price, TWO)
-            line_tax = _q(line_excl * tax.rate_percent / Decimal("100"), TWO)
+            line_tax = _q(line_excl * tax.rate / Decimal("100"), TWO)
             line_incl = _q(line_excl + line_tax, TWO)
-            uom = uoms.get(sku.uom_id)
+            uom = uoms.get(sku.base_uom_id)
             if uom is None:
                 continue
 
-            session.add(
-                SalesOrderLine(
-                    sales_order_id=so.id,
-                    line_no=line_no,
-                    sku_id=sku.id,
-                    description=sku.name,
-                    uom_id=uom.id,
-                    qty_ordered=qty,
-                    qty_shipped=Decimal("0"),
-                    qty_invoiced=Decimal("0"),
-                    unit_price_excl_tax=unit_price,
-                    tax_rate_id=tax.id,
-                    tax_rate_percent=tax.rate_percent,
-                    tax_amount=line_tax,
-                    line_total_excl_tax=line_excl,
-                    line_total_incl_tax=line_incl,
-                )
+            line = SalesOrderLine(
+                sales_order_id=so.id,
+                line_no=line_no,
+                sku_id=sku.id,
+                description=sku.name,
+                uom_id=uom.id,
+                qty_ordered=qty,
+                qty_shipped=Decimal("0"),
+                qty_invoiced=Decimal("0"),
+                unit_price_excl_tax=unit_price,
+                tax_rate_id=tax.id,
+                tax_rate_percent=tax.rate,
+                tax_amount=line_tax,
+                line_total_excl_tax=line_excl,
+                line_total_incl_tax=line_incl,
             )
+            session.add(line)
+            lines.append(line)
             subtotal += line_excl
             tax_total += line_tax
 
@@ -278,7 +280,7 @@ async def _seed_sos_and_invoices(
             so.fully_shipped_at = datetime.combine(
                 biz_date + timedelta(days=2), datetime.min.time()
             )
-            for ln in so.lines:
+            for ln in lines:
                 ln.qty_shipped = ln.qty_ordered
                 if so.status == SOStatus.INVOICED:
                     ln.qty_invoiced = ln.qty_ordered
@@ -322,7 +324,7 @@ async def _seed_sos_and_invoices(
             session.add(inv)
             await session.flush()
 
-            for line_no, sol in enumerate(so.lines, start=1):
+            for line_no, sol in enumerate(lines, start=1):
                 session.add(
                     InvoiceLine(
                         invoice_id=inv.id,
