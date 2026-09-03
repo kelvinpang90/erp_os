@@ -161,6 +161,41 @@ ETag size 一个 `13d541`(1299777) 一个 `190`(400),完美对应。
 2. 一开始的诊断弯路:连续怀疑了 Cloudflare Rocket Loader、CF 缓存、frontend build 缺 assets、SPA fallback try_files —— 全错。根因定位的关键是**双层 nginx 对比 curl**(直连内层 vs 经外层),立刻看出外层在改写 URI。以后排查代理 bug 第一步就该做这个对比,不要先怀疑 CDN。
 3. 仓库 `nginx/conf.d/erp.conf` 跟 VPS 上 `/srv/infra/nginx/conf.d/erp.conf` 长期不一致 —— vps_infra 拆 repo 后,erp_os 这边的副本变成了误导性的过时草稿。需要保持一致或在文件顶部明示"以 vps_infra repo 为准"。
 
+## W22 —— MyInvois 真实对接
+
+- **同步 mock 掩盖了异步现实**：Window 11 的 mock adapter 一次往返就返回 VALIDATED，
+  service 因此把 `DRAFT → VALIDATED` 写死。真实 LHDN 提交后返回 `uuid`，验证在服务端异步跑。
+  若照搬同步假设，提交成功但验证未完成时只能报错回滚 —— 单据已经在 LHDN 那边了，
+  用户重试会撞上 **10 分钟重复提交判重**。修法是启用早已存在却从未使用的 `SUBMITTED` 状态，
+  `SubmitResult.validated_at` 改成 `Optional`，为空即落 SUBMITTED 等对账。
+  **教训**：给外部系统写 mock 时，mock 的"时序形状"要和真实系统一致，
+  否则 mock 会把架构缺陷藏到真接入那天才暴露。
+
+- **协议细节必须查官方文档，不能凭记忆**：Credit Note 到底用 `CreditNote` 根节点还是
+  `Invoice` 根节点 + `InvoiceTypeCode=02`，直接决定文档能否被接收。查证结果是后者
+  （所有 e-Invoice 类型共用 Invoice UBL schema）。同时查到 **v1.0 明确关闭签名校验**，
+  这直接决定了"没有数字证书也能对接"这个前提成立。
+  **教训**：外部协议对接前先花 10 分钟核对官方 SDK 文档，比事后调试便宜得多。
+
+- **语义相近的字段最容易填错**：`IndustryClassificationCode/@name` 是 **MSIC 行业描述**，
+  不是公司名。第一版填了 `party.name`，dump 出样例文档人工比对时才发现。
+  **教训**：结构化报文写完一定要 dump 一份完整样例，对着官方 sample 逐字段扫一遍，
+  单测只能验"我以为的结构"，验不出"我理解错了字段含义"。
+
+- **配置错误要在启动时炸，不要在业务请求时炸**：缺凭据原本会在第一次提交发票时抛
+  ConfigurationError（一个 500）。改成 lifespan 里预先构造 adapter，容器直接起不来。
+  同理 `MYINVOIS_SIGN_ENABLED` 打开但签章未实现时硬失败，而不是静默发未签章文档 ——
+  合规问题晚发现代价极高。
+
+- **API base URL 不给 env 开关是有意的**：sandbox / production 域名由 `MYINVOIS_MODE` 推导。
+  如果做成独立变量，改一个值就能把 preprod 凭据打到生产库。少一个配置项 = 少一类事故。
+
+- **CN 行没有自己的 tax_rate**：`CreditNoteLine` 只有 `tax_rate_percent`，税种要从
+  `invoice_line.tax_rate` 继承。异步 SQLAlchemy 下漏 `selectinload` 不是 N+1 而是直接
+  `MissingGreenlet` 崩溃 —— 加映射字段前先确认仓储的 eager load 链路覆盖到了。
+
+---
+
 ## 通用教训
 
 （每完成一个 Phase 提炼一次）

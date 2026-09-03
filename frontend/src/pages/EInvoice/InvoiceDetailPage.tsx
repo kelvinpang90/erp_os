@@ -103,6 +103,28 @@ export default function InvoiceDetailPage() {
 
   useEffect(loadInvoice, [id])
 
+  // SUBMITTED means LHDN accepted the document but has not returned a
+  // validation verdict yet. Only reachable against the real MyInvois API —
+  // the mock adapter validates in a single round-trip.
+  const handleRefreshStatus = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await axiosInstance.post(`/invoices/${id}/refresh-status`)
+      setInv(res.data)
+      if (res.data.status === 'SUBMITTED') {
+        message.info(t('einvoice:messages.stillPending'))
+      } else {
+        message.success(t('einvoice:messages.statusRefreshed'))
+      }
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: { message?: string } } })?.response?.data
+      message.error(data?.message || t('einvoice:messages.refreshStatusFailed'))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const handleReject = async () => {
     if (!id || rejectReason.trim().length < 3) {
       message.warning(t('einvoice:messages.rejectReasonMin'))
@@ -177,6 +199,7 @@ export default function InvoiceDetailPage() {
     inv.seconds_until_finalize !== undefined &&
     inv.seconds_until_finalize > 0
   const isValidated = inv.status === 'VALIDATED'
+  const isAwaitingLhdn = inv.status === 'SUBMITTED'
   // Window 12: Credit Note can be issued against any non-cancelled invoice
   // that LHDN has accepted (VALIDATED or FINAL).
   const isCreditable = inv.status === 'VALIDATED' || inv.status === 'FINAL'
@@ -209,6 +232,15 @@ export default function InvoiceDetailPage() {
                 {t('einvoice:buttons.runPrecheckSubmit')}
               </Button>
             )}
+            {isAwaitingLhdn && (
+              <Button
+                type="primary"
+                loading={actionLoading}
+                onClick={handleRefreshStatus}
+              >
+                {t('einvoice:buttons.refreshStatus')}
+              </Button>
+            )}
             {isCreditable && (
               <Button
                 onClick={() =>
@@ -227,6 +259,15 @@ export default function InvoiceDetailPage() {
           </Space>
         }
       >
+        {isAwaitingLhdn && (
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message={t('einvoice:awaitingLhdn.title')}
+            description={t('einvoice:awaitingLhdn.description')}
+          />
+        )}
         <Row gutter={24}>
           <Col span={isValidated ? 16 : 24}>
             <ProDescriptions column={2}>

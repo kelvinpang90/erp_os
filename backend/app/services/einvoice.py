@@ -7,7 +7,11 @@ Covers:
 - ``submit_to_myinvois`` — call the configured adapter, transition
   DRAFT → VALIDATED, persist UIN/QR, publish ``DocumentStatusChanged`` and
   ``EInvoiceValidated`` (the latter triggers the buyer-notification handler
-  registered in ``app.events.registry``).
+  registered in ``app.events.registry``). Against the real LHDN API validation
+  is asynchronous, so the invoice may instead land on SUBMITTED.
+- ``refresh_status`` / ``run_pending_scan`` — reconcile SUBMITTED invoices
+  against LHDN's verdict, one invoice or one org at a time. No-ops under the
+  mock adapter, which validates in a single round-trip.
 - ``reject_by_buyer`` — VALIDATED → REJECTED within the 72h opposition
   window (72s in DEMO_MODE).
 - ``_lazy_finalize_if_due`` — on every read, opportunistically advance
@@ -52,8 +56,10 @@ from app.schemas.invoice import (
     InvoiceDetail,
     InvoiceLineResponse,
     InvoiceListItem,
+    PendingScanResult,
     RejectByBuyerIn,
 )
+from app.services.myinvois_payload import build_invoice_payload
 from app.services.sequence import next_document_no
 
 logger = structlog.get_logger()
@@ -138,35 +144,13 @@ def _assert_status(invoice: Invoice, allowed: set[InvoiceStatus], action: str) -
         )
 
 
-def _build_payload(
-    invoice: Invoice,
-) -> InvoicePayload:
-    org = invoice.organization
-    cust = invoice.customer
-    # Prefer snapshot TIN baked onto the invoice at draft creation; fall back
-    # to live org/customer TIN only when snapshot is missing (e.g. legacy rows
-    # before the snapshot migration). This guarantees the value submitted to
-    # MyInvois is the legal TIN at the moment the invoice was issued.
-    seller_tin = invoice.seller_tin or (org.tin if org else "") or ""
-    buyer_tin = invoice.buyer_tin or (cust.tin if cust else None) or "000000000000"
-    return InvoicePayload(
-        document_no=invoice.document_no,
-        invoice_type=invoice.invoice_type.value,
-        business_date=invoice.business_date.isoformat(),
-        currency=invoice.currency,
-        exchange_rate=invoice.exchange_rate,
-        seller_tin=seller_tin,
-        seller_name=org.name,
-        seller_msic_code=org.msic_code,
-        seller_sst_no=org.sst_registration_no,
-        buyer_tin=buyer_tin,
-        buyer_name=cust.name,
-        buyer_msic_code=cust.msic_code,
-        subtotal_excl_tax=invoice.subtotal_excl_tax,
-        tax_amount=invoice.tax_amount,
-        total_incl_tax=invoice.total_incl_tax,
-        line_count=len(invoice.lines or []),
-    )
+def _build_payload(invoice: Invoice) -> InvoicePayload:
+    """Map the invoice onto the provider-agnostic MyInvois payload.
+
+    The mapping (TIN snapshots, party addresses, lines) lives in
+    ``app.services.myinvois_payload`` so the Credit Note service shares it.
+    """
+    return build_invoice_payload(invoice)
 
 
 async def _lazy_finalize_if_due(
@@ -390,7 +374,15 @@ async def submit_to_myinvois(
     org_id: int,
     user: User,
 ) -> InvoiceDetail:
-    """DRAFT → VALIDATED via the configured adapter (mock by default)."""
+    """DRAFT → VALIDATED (or SUBMITTED) via the configured adapter.
+
+    The mock adapter validates in one round-trip, so the invoice lands on
+    VALIDATED. Against the real LHDN API, validation is asynchronous: when it
+    has not settled within the adapter's poll budget the invoice parks on
+    SUBMITTED with its UIN recorded, and ``refresh_status`` (called from the UI
+    or the Celery reconciler) completes the transition. Re-submitting is never
+    correct at that point — the document is already lodged with LHDN.
+    """
     repo = InvoiceRepository(session)
     invoice = await repo.get_detail(org_id, invoice_id)
     if invoice is None:
@@ -403,12 +395,15 @@ async def submit_to_myinvois(
     adapter = get_myinvois_adapter()
     result = await adapter.submit(_build_payload(invoice))
 
+    validated = result.validated_at is not None
+    new_status = InvoiceStatus.VALIDATED if validated else InvoiceStatus.SUBMITTED
+
     old_status = invoice.status.value
     invoice.submitted_at = result.submitted_at
     invoice.validated_at = result.validated_at
     invoice.uin = result.uin
     invoice.qr_code_url = result.qr_code_url
-    invoice.status = InvoiceStatus.VALIDATED
+    invoice.status = new_status
     invoice.updated_by = user.id
     session.add(invoice)
 
@@ -418,22 +413,25 @@ async def submit_to_myinvois(
             document_id=invoice.id,
             document_no=invoice.document_no,
             old_status=old_status,
-            new_status=InvoiceStatus.VALIDATED.value,
+            new_status=new_status.value,
             organization_id=org_id,
             actor_user_id=user.id,
         ),
         session,
     )
-    await event_bus.publish(
-        EInvoiceValidated(
-            organization_id=org_id,
-            invoice_id=invoice.id,
-            invoice_no=invoice.document_no,
-            uin=result.uin,
-            validated_at=result.validated_at.isoformat(),
-        ),
-        session,
-    )
+    # Only announce validation once LHDN has actually validated — the buyer
+    # notification and the 72h opposition clock both hang off this event.
+    if validated:
+        await event_bus.publish(
+            EInvoiceValidated(
+                organization_id=org_id,
+                invoice_id=invoice.id,
+                invoice_no=invoice.document_no,
+                uin=result.uin,
+                validated_at=result.validated_at.isoformat(),
+            ),
+            session,
+        )
 
     await session.flush()
     full = await repo.get_detail(org_id, invoice.id)
@@ -442,6 +440,88 @@ async def submit_to_myinvois(
         invoice_id=full.id,
         document_no=full.document_no,
         uin=full.uin,
+        status=full.status.value,
+    )
+    return _to_detail(full)
+
+
+async def refresh_status(
+    session: AsyncSession,
+    *,
+    invoice_id: int,
+    org_id: int,
+    user: User,
+) -> InvoiceDetail:
+    """Reconcile a SUBMITTED invoice against LHDN's current verdict.
+
+    Only SUBMITTED invoices are pending a verdict; anything else is returned
+    unchanged so the endpoint is safe to call from a polling UI. Against the
+    mock adapter this always resolves to VALIDATED, matching mock ``submit``.
+    """
+    repo = InvoiceRepository(session)
+    invoice = await repo.get_detail(org_id, invoice_id)
+    if invoice is None:
+        raise NotFoundError(
+            message=f"Invoice {invoice_id} not found.",
+            error_code="INVOICE_NOT_FOUND",
+        )
+    if invoice.status is not InvoiceStatus.SUBMITTED or not invoice.uin:
+        return _to_detail(await _lazy_finalize_if_due(session, invoice, actor_user_id=user.id))
+
+    adapter = get_myinvois_adapter()
+    result = await adapter.get_status(invoice.uin)
+    if result.status == "SUBMITTED":
+        # Still pending on LHDN's side — nothing to record.
+        return _to_detail(invoice)
+
+    old_status = invoice.status.value
+    invoice.updated_by = user.id
+    if result.qr_code_url:
+        invoice.qr_code_url = result.qr_code_url
+
+    if result.status == "REJECTED":
+        invoice.status = InvoiceStatus.REJECTED
+        invoice.rejected_at = _now()
+        invoice.rejected_by = RejectedBy.LHDN
+        invoice.rejection_reason = result.rejection_reason or "Rejected by LHDN."
+    else:
+        invoice.status = InvoiceStatus.VALIDATED
+        invoice.validated_at = result.validated_at or _now()
+    session.add(invoice)
+
+    await event_bus.publish(
+        DocumentStatusChanged(
+            document_type="INVOICE",
+            document_id=invoice.id,
+            document_no=invoice.document_no,
+            old_status=old_status,
+            new_status=invoice.status.value,
+            organization_id=org_id,
+            actor_user_id=user.id,
+        ),
+        session,
+    )
+    if invoice.status is InvoiceStatus.VALIDATED:
+        await event_bus.publish(
+            EInvoiceValidated(
+                organization_id=org_id,
+                invoice_id=invoice.id,
+                invoice_no=invoice.document_no,
+                uin=invoice.uin,
+                validated_at=invoice.validated_at.isoformat(),
+            ),
+            session,
+        )
+
+    await session.flush()
+    full = await repo.get_detail(org_id, invoice.id)
+    logger.info(
+        "invoice_status_refreshed",
+        invoice_id=full.id,
+        document_no=full.document_no,
+        uin=full.uin,
+        old_status=old_status,
+        new_status=full.status.value,
     )
     return _to_detail(full)
 
@@ -853,4 +933,57 @@ async def run_finalize_scan(
     return FinalizeScanResult(
         finalized_count=count,
         finalize_window_seconds=int(window.total_seconds()),
+    )
+
+
+async def run_pending_scan(
+    session: AsyncSession,
+    *,
+    org_id: int,
+    user: User,
+    limit: int = 100,
+) -> PendingScanResult:
+    """Reconcile every SUBMITTED invoice against LHDN's current verdict.
+
+    Drives the Celery reconciler and the admin button. One invoice failing —
+    LHDN down, an unknown status — must not abort the batch, so failures are
+    logged and counted as still-pending; the next cycle retries them.
+    """
+    repo = InvoiceRepository(session)
+    pending = await repo.list_pending_validation(org_id, limit=limit)
+
+    validated = rejected = still_pending = 0
+    for invoice in pending:
+        try:
+            detail = await refresh_status(
+                session, invoice_id=invoice.id, org_id=org_id, user=user
+            )
+        except Exception:
+            logger.exception(
+                "invoice_pending_scan_failed",
+                org_id=org_id,
+                invoice_id=invoice.id,
+            )
+            still_pending += 1
+            continue
+        if detail.status == InvoiceStatus.VALIDATED:
+            validated += 1
+        elif detail.status == InvoiceStatus.REJECTED:
+            rejected += 1
+        else:
+            still_pending += 1
+
+    if validated or rejected:
+        logger.info(
+            "invoice_pending_scan_done",
+            org_id=org_id,
+            scanned=len(pending),
+            validated=validated,
+            rejected=rejected,
+        )
+    return PendingScanResult(
+        scanned_count=len(pending),
+        validated_count=validated,
+        rejected_count=rejected,
+        still_pending_count=still_pending,
     )

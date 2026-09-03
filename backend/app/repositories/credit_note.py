@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.enums import CreditNoteStatus
-from app.models.invoice import CreditNote, CreditNoteLine
+from app.models.invoice import CreditNote, CreditNoteLine, InvoiceLine
 from app.repositories.base import BaseRepository
 
 
@@ -29,6 +29,11 @@ class CreditNoteRepository(BaseRepository[CreditNote]):
                 selectinload(CreditNote.lines).selectinload(CreditNoteLine.sku),
                 selectinload(CreditNote.lines).selectinload(CreditNoteLine.uom),
                 selectinload(CreditNote.lines).selectinload(CreditNoteLine.invoice_line),
+                # CN lines have no tax_rate of their own — the MyInvois payload
+                # inherits the tax type from the invoice line being credited.
+                selectinload(CreditNote.lines)
+                .selectinload(CreditNoteLine.invoice_line)
+                .selectinload(InvoiceLine.tax_rate),
                 selectinload(CreditNote.invoice),
                 selectinload(CreditNote.customer),
                 selectinload(CreditNote.organization),

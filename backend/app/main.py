@@ -39,6 +39,7 @@ from app.core.logging import RequestIDMiddleware, configure_logging, get_request
 from app.core.redis import ping_redis
 from app.events import event_bus
 from app.events.registry import setup_event_handlers
+from app.integrations.myinvois_factory import get_myinvois_adapter
 from app.routers import admin as admin_router
 from app.routers import ai as ai_router
 from app.routers import audit as audit_router
@@ -106,12 +107,18 @@ limiter = Limiter(
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     configure_logging()
     setup_event_handlers(event_bus)
+    # Build the MyInvois adapter eagerly so a bad live-mode configuration
+    # (missing credentials, signing requested) fails at boot rather than on the
+    # first invoice submission — by which point the operator has moved on.
+    if settings.MYINVOIS_MODE != "mock":
+        get_myinvois_adapter()
     logger.info(
         "startup",
         app=settings.APP_NAME,
         version=settings.APP_VERSION,
         environment=settings.ENVIRONMENT,
         demo_mode=settings.DEMO_MODE,
+        myinvois_mode=settings.MYINVOIS_MODE,
     )
     yield
     await engine.dispose()

@@ -124,6 +124,20 @@ class FinalizeScanResult(BaseModel):
     finalize_window_seconds: int
 
 
+class PendingScanResult(BaseModel):
+    """Response for POST /invoices/admin/run-pending-scan.
+
+    Reconciles invoices parked in SUBMITTED against LHDN's verdict. Only the
+    real MyInvois adapter can leave invoices in that state, so this reports
+    zeroes in mock mode.
+    """
+
+    scanned_count: int
+    validated_count: int
+    rejected_count: int
+    still_pending_count: int
+
+
 # ── Window 12: Consolidated invoice ──────────────────────────────────────────
 
 

@@ -50,6 +50,7 @@ from app.schemas.credit_note import (
     CreditNoteListItem,
 )
 from app.services import inventory as inventory_svc
+from app.services.myinvois_payload import build_credit_note_payload
 from app.services.sequence import next_document_no
 
 logger = structlog.get_logger()
@@ -114,26 +115,11 @@ def _assert_status(
 
 
 def _build_cn_payload(cn: CreditNote) -> InvoicePayload:
-    org = cn.organization
-    cust = cn.customer
-    return InvoicePayload(
-        document_no=cn.document_no,
-        invoice_type="CREDIT_NOTE",
-        business_date=cn.business_date.isoformat(),
-        currency=cn.currency,
-        exchange_rate=cn.exchange_rate,
-        seller_tin=(org.tin or "") if org else "",
-        seller_name=org.name if org else "",
-        seller_msic_code=(org.msic_code or None) if org else None,
-        seller_sst_no=(org.sst_registration_no or None) if org else None,
-        buyer_tin=(cust.tin or "000000000000") if cust else "000000000000",
-        buyer_name=cust.name if cust else "",
-        buyer_msic_code=(cust.msic_code or None) if cust else None,
-        subtotal_excl_tax=cn.subtotal_excl_tax,
-        tax_amount=cn.tax_amount,
-        total_incl_tax=cn.total_incl_tax,
-        line_count=len(cn.lines or []),
-    )
+    """Map the credit note onto the provider-agnostic MyInvois payload.
+
+    Shared with the Invoice service — see ``app.services.myinvois_payload``.
+    """
+    return build_credit_note_payload(cn)
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
@@ -323,7 +309,12 @@ async def submit_credit_note_to_myinvois(
     org_id: int,
     user: User,
 ) -> CreditNoteDetail:
-    """DRAFT → VALIDATED via the configured MyInvois adapter."""
+    """DRAFT → VALIDATED (or SUBMITTED) via the configured MyInvois adapter.
+
+    Mirrors ``einvoice.submit_to_myinvois``: LHDN validates asynchronously, so
+    a credit note whose verdict has not landed within the adapter's poll budget
+    parks on SUBMITTED with its UIN recorded rather than being re-submitted.
+    """
     repo = CreditNoteRepository(session)
     cn = await repo.get_detail(org_id, cn_id)
     if cn is None:
@@ -336,12 +327,15 @@ async def submit_credit_note_to_myinvois(
     adapter = get_myinvois_adapter()
     result = await adapter.submit(_build_cn_payload(cn))
 
+    validated = result.validated_at is not None
+    new_status = CreditNoteStatus.VALIDATED if validated else CreditNoteStatus.SUBMITTED
+
     old_status = cn.status.value
     cn.submitted_at = result.submitted_at
     cn.validated_at = result.validated_at
     cn.uin = result.uin
     cn.qr_code_url = result.qr_code_url
-    cn.status = CreditNoteStatus.VALIDATED
+    cn.status = new_status
     cn.updated_by = user.id
     session.add(cn)
 
@@ -351,7 +345,7 @@ async def submit_credit_note_to_myinvois(
             document_id=cn.id,
             document_no=cn.document_no,
             old_status=old_status,
-            new_status=CreditNoteStatus.VALIDATED.value,
+            new_status=new_status.value,
             organization_id=org_id,
             actor_user_id=user.id,
         ),
@@ -359,16 +353,17 @@ async def submit_credit_note_to_myinvois(
     )
     # Reuse the buyer-notification path so customers see a CN-validated entry
     # in their notification centre alongside invoice validation events.
-    await event_bus.publish(
-        EInvoiceValidated(
-            organization_id=org_id,
-            invoice_id=cn.id,  # reused field — handler treats it opaquely
-            invoice_no=cn.document_no,
-            uin=result.uin,
-            validated_at=result.validated_at.isoformat(),
-        ),
-        session,
-    )
+    if validated:
+        await event_bus.publish(
+            EInvoiceValidated(
+                organization_id=org_id,
+                invoice_id=cn.id,  # reused field — handler treats it opaquely
+                invoice_no=cn.document_no,
+                uin=result.uin,
+                validated_at=result.validated_at.isoformat(),
+            ),
+            session,
+        )
 
     await session.flush()
     full = await repo.get_detail(org_id, cn.id)

@@ -54,6 +54,12 @@ def _build_app() -> Celery:
                 "task": "app.tasks.einvoice.task_finalize_scan_all_orgs",
                 "schedule": float(finalize_interval),
             },
+            # Reconciles invoices LHDN has not finished validating. Idle under
+            # the mock adapter, which never leaves an invoice in SUBMITTED.
+            "einvoice-pending-scan": {
+                "task": "app.tasks.einvoice.task_pending_scan_all_orgs",
+                "schedule": 2.0 * 60,
+            },
             "dashboard-ai-summary-refresh": {
                 "task": "app.tasks.dashboard.task_refresh_ai_summary_all_orgs",
                 "schedule": 30.0 * 60,

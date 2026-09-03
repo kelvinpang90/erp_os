@@ -67,7 +67,12 @@
     "reject": "Reject",
     "runPrecheckSubmit": "Run Precheck & Submit",
     "issueCreditNote": "Issue Credit Note",
-    "generateMonthlyConsolidated": "Generate Monthly Consolidated"
+    "generateMonthlyConsolidated": "Generate Monthly Consolidated",
+    "refreshStatus": "Refresh Status"
+  },
+  "awaitingLhdn": {
+    "title": "Awaiting LHDN validation",
+    "description": "MyInvois accepted this document and issued a UIN, but validation is still running. The status updates automatically in the background — or refresh it now."
   },
   "columns": {
     "so": "SO",
@@ -94,7 +99,10 @@
     "finalizeScanFailed": "Failed to run finalize scan.",
     "consolidatedNoneFound": "No eligible B2C sales orders found for {{month}}.",
     "consolidatedGenerated": "Generated {{count}} Consolidated Invoice(s) covering {{customers}} customer(s) for {{month}}.",
-    "consolidatedFailed": "Failed to generate consolidated invoices."
+    "consolidatedFailed": "Failed to generate consolidated invoices.",
+    "stillPending": "LHDN has not finished validating this invoice yet. Try again shortly.",
+    "statusRefreshed": "Invoice status updated from LHDN.",
+    "refreshStatusFailed": "Could not reach LHDN to refresh the status."
   },
   "countdown": {
     "elapsedHint": "Opposition window has elapsed — click <b>Run Finalize Scan</b> or refresh to advance to FINAL."
