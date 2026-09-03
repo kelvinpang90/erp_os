@@ -73,8 +73,24 @@ class Settings(BaseSettings):
     GR_OVER_RECEIPT_TOLERANCE: Decimal = Field(default=Decimal("0.05"), ge=0, le=1)
 
     # ── e-Invoice / MyInvois ─────────────────────────────────────────────────
-    # Adapter selection: "mock" (Window 11 default), "sandbox", "production".
+    # Adapter selection. "mock" is offline and deterministic — the demo default.
+    # "sandbox" / "production" hit LHDN and require credentials below.
+    # API/portal base URLs are derived from this value, never configured
+    # separately, so a preprod credential cannot be aimed at production.
     MYINVOIS_MODE: Literal["mock", "sandbox", "production"] = "mock"
+    MYINVOIS_CLIENT_ID: str = ""
+    MYINVOIS_CLIENT_SECRET: str = ""
+    # Intermediary TIN — only set when submitting on behalf of another taxpayer.
+    MYINVOIS_ON_BEHALF_OF: str = ""
+    MYINVOIS_TIMEOUT_SECONDS: float = 30.0
+    # LHDN validates asynchronously. We poll this many times before parking the
+    # invoice in SUBMITTED and letting the Celery reconciler finish the job.
+    MYINVOIS_POLL_ATTEMPTS: int = 3
+    MYINVOIS_POLL_INTERVAL_SECONDS: float = 2.0
+    # XAdES signing (document v1.1) is not implemented — it needs an X.509
+    # certificate from a Malaysian licensed CA. Enabling this fails loudly at
+    # adapter construction rather than silently submitting unsigned documents.
+    MYINVOIS_SIGN_ENABLED: bool = False
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -15,6 +15,7 @@ from app.schemas.invoice import (
     GenerateFromSOIn,
     InvoiceDetail,
     InvoiceListItem,
+    PendingScanResult,
     RejectByBuyerIn,
 )
 from app.services import einvoice as einvoice_service
@@ -61,6 +62,20 @@ async def run_finalize_scan(
     user: User = Depends(require_role(*_ADMIN_ROLES)),
 ) -> FinalizeScanResult:
     return await einvoice_service.run_finalize_scan(
+        db, org_id=user.organization_id, user=user
+    )
+
+
+@router.post(
+    "/admin/run-pending-scan",
+    response_model=PendingScanResult,
+)
+async def run_pending_scan(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role(*_ADMIN_ROLES)),
+) -> PendingScanResult:
+    """Reconcile invoices parked in SUBMITTED against LHDN's current verdict."""
+    return await einvoice_service.run_pending_scan(
         db, org_id=user.organization_id, user=user
     )
 
@@ -144,6 +159,18 @@ async def submit_invoice(
     user: User = Depends(require_role(*_WRITE_ROLES)),
 ) -> InvoiceDetail:
     return await einvoice_service.submit_to_myinvois(
+        db, invoice_id=invoice_id, org_id=user.organization_id, user=user
+    )
+
+
+@router.post("/{invoice_id}/refresh-status", response_model=InvoiceDetail)
+async def refresh_invoice_status(
+    invoice_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role(*_WRITE_ROLES)),
+) -> InvoiceDetail:
+    """Re-check a SUBMITTED invoice against LHDN. No-op for other statuses."""
+    return await einvoice_service.refresh_status(
         db, invoice_id=invoice_id, org_id=user.organization_id, user=user
     )
 

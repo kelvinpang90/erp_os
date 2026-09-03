@@ -67,7 +67,12 @@
     "reject": "拒绝",
     "runPrecheckSubmit": "预校验并提交",
     "issueCreditNote": "开具贷项通知单",
-    "generateMonthlyConsolidated": "生成月度合并发票"
+    "generateMonthlyConsolidated": "生成月度合并发票",
+    "refreshStatus": "刷新状态"
+  },
+  "awaitingLhdn": {
+    "title": "等待 LHDN 校验",
+    "description": "MyInvois 已接收该单据并签发 UIN，校验仍在进行中。系统会在后台自动更新状态，也可立即手动刷新。"
   },
   "columns": {
     "so": "销售单",
@@ -94,7 +99,10 @@
     "finalizeScanFailed": "运行终态扫描失败。",
     "consolidatedNoneFound": "{{month}} 没有符合条件的 B2C 销售单。",
     "consolidatedGenerated": "已生成 {{count}} 张合并发票，覆盖 {{customers}} 个客户（{{month}}）。",
-    "consolidatedFailed": "生成合并发票失败。"
+    "consolidatedFailed": "生成合并发票失败。",
+    "stillPending": "LHDN 尚未完成校验，请稍后再试。",
+    "statusRefreshed": "已从 LHDN 更新发票状态。",
+    "refreshStatusFailed": "无法连接 LHDN 刷新状态。"
   },
   "countdown": {
     "elapsedHint": "反对期已结束 — 点击 <b>运行终态扫描</b> 或刷新以推进至 FINAL。"

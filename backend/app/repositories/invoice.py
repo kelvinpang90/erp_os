@@ -138,3 +138,28 @@ class InvoiceRepository(BaseRepository[Invoice]):
         )
         result = await self.session.execute(stmt)
         return result.rowcount or 0
+
+    async def list_pending_validation(
+        self,
+        org_id: int,
+        *,
+        limit: int = 100,
+    ) -> list[Invoice]:
+        """Invoices lodged with LHDN whose validation verdict is still pending.
+
+        Only reachable in sandbox/production mode — the mock adapter validates
+        in one round-trip and never leaves an invoice in SUBMITTED. Ordered
+        oldest-first so a backlog drains in submission order.
+        """
+        stmt = (
+            select(Invoice)
+            .where(
+                Invoice.organization_id == org_id,
+                Invoice.deleted_at.is_(None),
+                Invoice.status == InvoiceStatus.SUBMITTED,
+                Invoice.uin.is_not(None),
+            )
+            .order_by(Invoice.submitted_at.asc())
+            .limit(limit)
+        )
+        return list((await self.session.execute(stmt)).scalars().all())

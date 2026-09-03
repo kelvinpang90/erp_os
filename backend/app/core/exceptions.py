@@ -142,3 +142,37 @@ class InsufficientStockError(BusinessRuleError):
 class InvalidStatusTransitionError(BusinessRuleError):
     default_error_code = "INVALID_STATUS_TRANSITION"
     default_message = "This status transition is not allowed."
+
+
+# ── MyInvois / LHDN e-Invoice integration ────────────────────────────────────
+
+
+class ConfigurationError(AppException):
+    """A required setting is missing or contradictory. Surfaced at startup."""
+
+    http_status = 500
+    default_error_code = "CONFIGURATION_ERROR"
+    default_message = "The server is not configured correctly for this operation."
+
+
+class MyInvoisError(AppException):
+    """LHDN MyInvois was unreachable or returned an unexpected response.
+
+    502 rather than 500: the fault is upstream, and the distinction matters
+    when triaging a failed submission.
+    """
+
+    http_status = 502
+    default_error_code = "MYINVOIS_UNAVAILABLE"
+    default_message = "Could not reach LHDN MyInvois. Please try again shortly."
+
+
+class MyInvoisRejectedError(BusinessRuleError):
+    """LHDN rejected the document outright — the payload needs fixing.
+
+    ``detail`` carries LHDN's own error structure so the UI can show which
+    field failed validation.
+    """
+
+    default_error_code = "MYINVOIS_REJECTED"
+    default_message = "LHDN MyInvois rejected this document."
