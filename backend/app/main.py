@@ -35,6 +35,7 @@ from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import engine
 from app.core.exceptions import AppException, RateLimitError
+from app.core.json import UtcJSONResponse
 from app.core.logging import RequestIDMiddleware, configure_logging, get_request_id
 from app.core.redis import ping_redis
 from app.events import event_bus
@@ -134,6 +135,11 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json",
     lifespan=lifespan,
+    # Every datetime this system stores is naive UTC. Sent without a `Z` the
+    # browser is entitled to read it as local time, which is why the back office
+    # showed a 16:49 order as 08:49. One line here covers all 123 response
+    # models, and the one somebody adds next week.
+    default_response_class=UtcJSONResponse,
 )
 
 # Attach limiter to app state (required by slowapi)
@@ -184,7 +190,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         message=exc.message,
         http_status=exc.http_status,
     )
-    return JSONResponse(
+    return UtcJSONResponse(
         status_code=exc.http_status,
         content=_error_body(
             exc.error_code, exc.message, exc.detail, exc.i18n_key, exc.i18n_args
@@ -195,7 +201,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     err = RateLimitError()
-    return JSONResponse(
+    return UtcJSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content=_error_body(err.error_code, str(exc.detail) or err.message),
         headers={"Retry-After": "60"},
@@ -206,7 +212,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    return JSONResponse(
+    return UtcJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=_error_body(
             "VALIDATION_ERROR",
@@ -219,7 +225,7 @@ async def validation_exception_handler(
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("unhandled_exception", exc_info=exc)
-    return JSONResponse(
+    return UtcJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=_error_body("INTERNAL_ERROR", "An unexpected error occurred."),
     )

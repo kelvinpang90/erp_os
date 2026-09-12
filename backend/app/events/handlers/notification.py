@@ -14,6 +14,7 @@ from decimal import Decimal
 import structlog
 from sqlalchemy import and_, select
 
+from app.core.business_time import local_label
 from app.core.database import AsyncSessionLocal
 from app.enums import NotificationSeverity, NotificationType, RoleCode
 from app.events.base import DomainEvent
@@ -155,7 +156,11 @@ async def notify_on_einvoice_validated(event: DomainEvent) -> None:
                 type=NotificationType.EINVOICE_VALIDATED,
                 title=f"Invoice {event.invoice_no} validated by LHDN",
                 body=(
-                    f"UIN {event.uin} issued at {event.validated_at}. "
+                    # Prose, so there is no browser to convert it and no `Z` to
+                    # tell one to. Written on the shop's clock here, or this line
+                    # would read eight hours earlier than the invoice page it
+                    # sits beside.
+                    f"UIN {event.uin} issued at {local_label(event.validated_at)}. "
                     "Buyer has 72 hours to dispute (72 seconds in demo mode)."
                 ),
                 i18n_key="notification.einvoice_validated",

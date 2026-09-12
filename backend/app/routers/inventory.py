@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from decimal import Decimal
 
+from app.core.business_time import day_after, day_starts_at
 from app.core.deps import get_db, require_role
 from app.enums import RoleCode, StockMovementSourceType, StockMovementType
 from app.models.organization import User
@@ -68,12 +69,16 @@ async def list_stock_movements(
         filters.append(StockMovement.sku_id == sku_id)
     if warehouse_id is not None:
         filters.append(StockMovement.warehouse_id == warehouse_id)
+    # `occurred_at` is naive UTC and these dates are days on a Malaysian wall
+    # clock, so the boundaries are converted rather than compared directly.
+    # Comparing them raw put the start of "the 12th" at 08:00 on the 12th, which
+    # was invisible only because the list column was reading UTC as local too.
     if date_from is not None:
-        filters.append(StockMovement.occurred_at >= date_from)
+        filters.append(StockMovement.occurred_at >= day_starts_at(date_from))
     if date_to is not None:
-        # date_to is inclusive — extend to end of day on the SQL side by using
-        # < (date_to + 1) semantics via simple LE on the date cast.
-        filters.append(func.date(StockMovement.occurred_at) <= date_to)
+        # Inclusive of date_to: everything before the next day began, so a
+        # movement in the last second of the day is not dropped.
+        filters.append(StockMovement.occurred_at < day_after(date_to))
 
     where_clause = and_(*filters)
     count_stmt = select(func.count()).select_from(StockMovement).where(where_clause)
