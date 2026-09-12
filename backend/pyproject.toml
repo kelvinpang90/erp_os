@@ -54,6 +54,18 @@ pythonpath = ["."]
 filterwarnings = [
     "error",
     "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    # anyio is pinned nowhere -- it arrives transitively through starlette -- so
+    # a new release of it reaches CI on its own. The current one deprecates
+    # `anyio.abc.BlockingPortal`, which the starlette version fastapi 0.115
+    # requires still touches at import time. That is a warning raised while
+    # *collecting* any module importing `fastapi.testclient`, so with warnings
+    # as errors it does not fail a test, it aborts the whole run: coverage then
+    # reads 37% and every suite looks broken.
+    #
+    # Ignored rather than pinned because the deprecation is upstream's to fix and
+    # the pin would have to hold anyio back across three packages. Delete this
+    # line once starlette stops using the alias.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
 ]
 
 [tool.coverage.run]
