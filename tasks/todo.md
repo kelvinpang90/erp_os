@@ -844,3 +844,9 @@ SSE（Server-Sent Events，服务器推送事件）= HTTP 协议上的"单向流
 - 哪些窗口超预期 / 不足预期：
 - 如果重来会怎么做：
 - 客户反馈：
+
+## 部署加主机级锁（2026-11-15，Kelvin 2026-11-14 批准）
+
+- 起因：同一台 VPS 上，另一个项目部署成功后的 `docker image prune` 正好落在别的项目 `compose pull` 的几秒里，containerd 报 `content digest not found` / `failed to extract layer`，部署失败（2026-10-27、11-03、11-14 三次）。决定：主机上所有用 docker 部署的项目共用一把 `flock`，部署一个接一个跑。约定登记在 vps_infra README「部署串行化」。
+- 改动：`.github/workflows/deploy.yml` 的 SSH 内联脚本开头取锁，最多等 300 秒，等不到就在动任何东西之前失败（重跑该 job 即可）；`command_timeout` 从默认 10m 调到 13m，留出等锁时间。
+- 验证：在 WSL（Ubuntu 24.04，真 `flock`）按 appleboy/ssh-action v1.0.3（drone-ssh 1.7.3）的方式拼出脚本，用假 docker / git 跑，bash、dash 都过：锁空闲直接过；被占时打印持锁方并等待，释放后继续；超时时非零退出、没调用任何 git / docker；锁文件不可写时退回只读打开照样能锁；与另一个项目同时跑时，后到的一方排队。
