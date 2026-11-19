@@ -194,6 +194,13 @@ ETag size 一个 `13d541`(1299777) 一个 `190`(400),完美对应。
   `invoice_line.tax_rate` 继承。异步 SQLAlchemy 下漏 `selectinload` 不是 N+1 而是直接
   `MissingGreenlet` 崩溃 —— 加映射字段前先确认仓储的 eager load 链路覆盖到了。
 
+- **只锁直接依赖 = 没锁**（2026-11-19）：`celery==5.4.0` 锁了，但它只把 kombu 限制在
+  `<6.0`。11-15 重建镜像时 pip 装上了 kombu 5.7.0，它要求 redis-py ≥ 6.1，而我们锁的是
+  `redis==5.2.1` → `erp_celery_worker` / `erp_celery_beat` 每分钟崩一次，约 3.5 天里
+  4,800 多次重启，定时任务和异步任务全停，网站本身照常 200，没人发现（最后是 VPS 巡检发现的）。
+  **教训**：直接依赖锁了，对版本敏感的传递依赖也要锁（kombu 现锁 5.6.2）；兼容性用
+  不联网也能跑的单测守住（`tests/unit/test_celery_broker_deps.py`），CI 全新安装时就会挂。
+
 ---
 
 ## 通用教训
